@@ -1,0 +1,4 @@
+Strato data: database, letture (gestori IA), segreti, sync, cose di sistema.
+Può usare domain. Non deve mai usare ui.
+Segreti (cookie/token claude.ai): solo sul dispositivo, cifrati, mai nei log.
+Vuoto nel Blocco 0: si riempie nel Blocco 2.

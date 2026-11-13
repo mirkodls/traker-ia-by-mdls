@@ -1,0 +1,5 @@
+package it.mdls.traker_ia
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
