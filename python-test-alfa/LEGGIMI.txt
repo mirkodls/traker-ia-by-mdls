@@ -1,0 +1,47 @@
+TRAKER USO CLAUDE - come si usa
+
+AVVIO
+1. Serve Python (una volta sola): apri Microsoft Store, cerca "Python 3.12", premi Installa.
+2. Doppio clic su avvia.bat.
+
+LETTURA AUTOMATICA (ogni 10 minuti, cambiabile in Impostazioni)
+Metodo PRINCIPALE - estensione Edge (non scade, Edge rinnova il login da solo):
+  1. In Edge scrivi nella barra indirizzi: edge://extensions  e premi Invio.
+  2. A sinistra accendi "Modalità sviluppatore".
+  3. Premi "Carica decompressa" e scegli la cartella "estensione_edge" (dentro la cartella del traker).
+  4. In Edge scrivi: edge://settings/system  e accendi
+     "Continua a eseguire estensioni e app in background dopo la chiusura di Microsoft Edge"
+     e "Avvio ottimizzato". Così legge anche con Edge chiuso.
+  5. Resta loggato su claude.ai in Edge (non fare logout).
+  Nel traker comparirà "Ultima lettura HH:MM (Edge)".
+Il cookie (metodo B sotto) resta come RISERVA se Edge non manda niente.
+Se le letture falliscono 2 volte di fila, compare un avviso a schermo.
+
+Metodo A - se hai Claude Code installato e fai il login: funziona da solo.
+Metodo B - cookie del browser:
+  1. Apri claude.ai nel browser (Chrome/Edge), già loggato.
+  2. Premi F12 > scheda "Application" (o "Applicazione") > Cookies > https://claude.ai
+  3. Copia il valore di "sessionKey" (inizia con sk-ant-sid...).
+  4. Nel traker: Impostazioni > incolla nel campo cookie > Salva e prova.
+  ATTENZIONE: il sessionKey è come la password del tuo account. Non darlo a nessuno.
+  Viene salvato cifrato, leggibile solo dal tuo utente Windows su questo PC.
+  Se fai logout da claude.ai il cookie smette di funzionare: rifai i passi.
+Se la lettura automatica non va: tasto "Lettura manuale".
+
+TASTI
+- Nota + "Aggiungi nota": segna sul grafico un momento (es. "aggiunto progetto X").
+  Sotto il grafico scegli la nota e vedi se il consumo è SCESO, SALITO o COSTANTE dopo.
+- Inizio lavoro / Fine lavoro: colora di verde i periodi di lavoro. Il traker NON si ferma mai.
+- Il traker vede da solo se sei al PC (mouse/tastiera) o se il PC lavora in automatico:
+  sotto il grafico trovi il consumo "al PC" e "in automatico".
+
+GRAFICO
+Blu = settimanale, arancione = sessione 5h, viola = note, grigio tratteggiato = reset.
+Pallino pieno = lettura automatica, vuoto = manuale.
+
+AVVIO CON WINDOWS
+Doppio clic su attiva_avvio_automatico.bat (per toglierlo: togli_avvio_automatico.bat).
+
+DATI
+Cartella "dati": letture.csv e eventi.csv (si aprono con Excel). Non cancellarla.
+Il traker legge solo mentre è aperto.

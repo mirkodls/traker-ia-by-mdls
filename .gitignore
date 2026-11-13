@@ -1,0 +1,28 @@
+# MAI dati personali (repo diventera' pubblico)
+**/dati/
+*.csv
+**/impostazioni.json
+*.reg
+**/STATO*.md
+COORDINAMENTO.md
+**/ORDINI*.md
+**/ISTRUZIONI*.txt
+**/PROGETTO_MULTI.md
+riordina.bat
+# segreti
+.env
+*.key
+*.pem
+**/credentials*.json
+**/*cookie*
+# python
+__pycache__/
+*.pyc
+# flutter
+**/build/
+**/.dart_tool/
+**/.flutter-plugins*
+**/local.properties
+**/key.properties
+*.jks
+*.keystore
