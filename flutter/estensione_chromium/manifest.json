@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "TraKer IA by mdls",
+  "version": "1.0.0",
+  "description": "Legge la percentuale d'uso di Claude (sessione 5 ore e settimana) da claude.ai e la passa all'app TraKer IA sul tuo PC.",
+  "permissions": ["alarms"],
+  "host_permissions": ["https://claude.ai/*", "http://127.0.0.1:45782/*"],
+  "background": { "service_worker": "sfondo.js" },
+  "minimum_chrome_version": "120"
+}
