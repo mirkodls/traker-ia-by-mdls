@@ -1,0 +1,59 @@
+// TraKer IA by mdls — Copyright (C) 2026 Mirko Del Sette. Tutti i diritti riservati.
+//
+// Strato ui: cosa serve alla grafica dal resto dell'app. La ui NON importa
+// data: main.dart crea l'oggetto vero che collega archivio, cassaforte,
+// lettori e finestra.
+import 'package:traker_ia/domain/catena.dart';
+import 'package:traker_ia/domain/modelli.dart';
+
+/// Esito di un import dei vecchi dati.
+typedef EsitoImportUi = ({int file, int letture, int eventi, int scartate});
+
+/// Servizi usati dalla grafica.
+abstract interface class Servizi {
+  /// Tutte le letture, ordinate.
+  Future<List<Lettura>> letture();
+
+  /// Tutti gli eventi, ordinati.
+  Future<List<Evento>> eventi();
+
+  /// Salva una lettura.
+  Future<void> aggiungiLettura(Lettura l);
+
+  /// Salva un evento.
+  Future<void> aggiungiEvento(Evento e);
+
+  /// Impostazioni salvate per le [chiavi] (null = mancante).
+  Future<Map<String, String?>> impostazioni(List<String> chiavi);
+
+  /// Salva impostazioni (mai segreti).
+  Future<void> salvaImpostazioni(Map<String, String> valori);
+
+  /// Una lettura col [metodo] (auto, estensione, claude_code, cookie).
+  /// Errore -> ErroreLettura.
+  Future<RisultatoCatena> leggi(String metodo);
+
+  /// Arrivo di un messaggio dall'estensione del browser.
+  Stream<void> get arriviEstensione;
+
+  /// Vero se Claude Code è installato su questo dispositivo.
+  bool get claudeCodeTrovato;
+
+  /// Vero se c'è un cookie salvato in cassaforte.
+  Future<bool> cookieSalvato();
+
+  /// Salva il cookie in cassaforte (vuoto = cancella).
+  Future<void> salvaCookie(String cookie);
+
+  /// Cartella proposta per i vecchi dati Python.
+  String get cartellaImportPredefinita;
+
+  /// Importa letture.csv / eventi.csv dalla [cartella] (senza doppioni).
+  Future<EsitoImportUi> importaVecchi(String cartella);
+
+  /// Vero se "Sempre in primo piano" funziona qui (solo Windows).
+  bool get primoPianoDisponibile;
+
+  /// Accende/spegne "Sempre in primo piano".
+  Future<void> primoPiano({required bool acceso});
+}

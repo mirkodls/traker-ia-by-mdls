@@ -7,7 +7,7 @@ import 'dart:math' as math;
 import 'coppie.dart';
 import 'modelli.dart';
 import 'tempo.dart';
-import 'testi.dart';
+import 'traduzioni/testi_it.dart';
 
 /// Consumo nel periodo <= questi punti = dato debole.
 const double puntiDeboli = 1;
@@ -135,21 +135,17 @@ List<String> frasi(
   if (p.debole) {
     out.add(Testi.datoDebole);
   } else if (p.primaDelReset) {
-    out.add(
-      'A questo ritmo finisci ${quando(p.ora100!)}. Reset ${quando(resetSett)}.',
-    );
+    out.add(Testi.finisciPrima(quando(p.ora100!), quando(resetSett)));
   } else {
-    out.add(
-      'A questo ritmo arrivi al reset senza finire. Reset ${quando(resetSett)}.',
-    );
+    out.add(Testi.arriviAlReset(quando(resetSett)));
   }
   final double? b = budgetGiorno(p.att, adesso, resetSett);
   if (b != null) {
-    out.add('Oggi puoi usare ancora ${numero(b, dec: 1)} punti.');
+    out.add(Testi.budgetOggi(numero(b, dec: 1)));
   }
   final double? h = oreFullGasRimaste(letture, ore: ore);
   if (h != null) {
-    out.add('A pieno regime ti restano circa ${durata(h)} di lavoro.');
+    out.add(Testi.pienoRegime(durata(h)));
   }
   return out;
 }

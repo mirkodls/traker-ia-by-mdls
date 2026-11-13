@@ -7,7 +7,7 @@ import 'combinazioni.dart';
 import 'coppie.dart';
 import 'modelli.dart';
 import 'tempo.dart';
-import 'testi.dart';
+import 'traduzioni/testi_it.dart';
 
 /// Effetto della spunta "Conta solo lavoro".
 enum FiltroLavoro {
@@ -106,16 +106,16 @@ ConfrontoNota confrontoNota(
 
 /// '(2,0 h prima / 3,5 h dopo)'.
 String testoOreNota(ConfrontoNota c) =>
-    '(${testoOre(c.orePrima)} prima / ${testoOre(c.oreDopo)} dopo)';
+    Testi.oreNota(testoOre(c.orePrima), testoOre(c.oreDopo));
 
 /// '(B solo 0,1 h)' / '(manca un dato)'. Vuoto se entrambe >= 1 h.
 String motivoDebole(double? oreA, double? oreB) {
   if (oreA == null || oreB == null) {
-    return '(manca un dato)';
+    return Testi.mancaDato;
   }
   final List<String> corti = <String>[
-    if (oreA < oreMinime) 'A solo ${testoOre(oreA)}',
-    if (oreB < oreMinime) 'B solo ${testoOre(oreB)}',
+    if (oreA < oreMinime) Testi.soloOre('A', testoOre(oreA)),
+    if (oreB < oreMinime) Testi.soloOre('B', testoOre(oreB)),
   ];
   return corti.isEmpty ? '' : '(${corti.join(', ')})';
 }
@@ -206,35 +206,38 @@ String testoClassifica(List<VoceClassifica> cl) {
   final String voci = cl
       .map((VoceClassifica v) => '${v.modello} ${numero(v.ritmo)} (${testoOre(v.ore)})')
       .join('  ·  ');
-  return 'Classifica modelli (dal più vorace): $voci';
+  return Testi.classifica(voci);
 }
 
 /// Riga al PC / automatico.
 String testoPresenza(double? pc, double? auto) =>
-    'Al PC ${numero(pc)}  ·  automatico ${numero(auto)}  pt%/h sett '
-    '(questa settimana)';
+    Testi.presenza(numero(pc), numero(auto));
 
 /// Spiegazione del numero "prima".
 String spiegaPrima(ConfrontoNota c) =>
-    'PRIMA della nota: ritmo medio da ${quandoData(c.da)} (reset settimana) '
-    'a ${quandoData(c.nota)}.\n'
-    'Ore di letture usate: ${testoOre(c.orePrima)} ${testoFiltro(c.filtro)}.'
-    '\n\n${Testi.pth}';
+    Testi.spiegaPrima(
+      quandoData(c.da),
+      quandoData(c.nota),
+      testoOre(c.orePrima),
+      testoFiltro(c.filtro),
+    );
 
 /// Spiegazione del numero "dopo".
 String spiegaDopo(ConfrontoNota c, DateTime fine) =>
-    'DOPO la nota: ritmo medio da ${quandoData(c.nota)} a ${quandoData(fine)}.\n'
-    'Ore di letture usate: ${testoOre(c.oreDopo)} ${testoFiltro(c.filtro)}.'
-    '\n\n${Testi.pth}';
+    Testi.spiegaDopo(
+      quandoData(c.nota),
+      quandoData(fine),
+      testoOre(c.oreDopo),
+      testoFiltro(c.filtro),
+    );
 
 /// Spiegazione di una combinazione (A o B).
 String spiegaCombo(String nome, Combo k, Periodo? periodo, double? ore) {
   final List<String> righe = <String>[
-    '$nome = ${etichetta(k)}',
-    if (ore != null) 'Ore di letture usate: ${testoOre(ore)}.',
+    Testi.comboUguale(nome, etichetta(k)),
+    if (ore != null) Testi.oreUsate(testoOre(ore)),
     if (periodo != null)
-      'Da ${quandoData(periodo.inizio)} a ${quandoData(periodo.fine)} '
-          '(solo gli intervalli con questa combinazione).',
+      Testi.periodoCombo(quandoData(periodo.inizio), quandoData(periodo.fine)),
     if (k == comboVuota) ...<String>['', Testi.spiegaNonSegnato],
   ];
   return '${righe.join('\n')}\n\n${Testi.pth}\n${Testi.sett}';

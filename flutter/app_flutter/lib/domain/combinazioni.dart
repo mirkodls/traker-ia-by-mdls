@@ -7,7 +7,7 @@ import 'dart:math' as math;
 import 'analisi.dart';
 import 'coppie.dart';
 import 'modelli.dart';
-import 'testi.dart';
+import 'traduzioni/testi_it.dart';
 
 /// Combinazione: modelli e skill normalizzati ('A|B').
 typedef Combo = ({String modelli, String skill});

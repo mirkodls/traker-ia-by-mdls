@@ -6,7 +6,7 @@ import 'package:traker_ia/domain/confronti.dart';
 import 'package:traker_ia/domain/coppie.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/previsione.dart';
-import 'package:traker_ia/domain/testi.dart';
+import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 
 import 'aiuti.dart';
 
