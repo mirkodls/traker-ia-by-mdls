@@ -144,3 +144,7 @@ Sync (tra dispositivi della STESSA persona)
   - Carta CONFRONTI unica e compatta, con spiegazione su ogni numero (mouse sopra / dito tenuto premuto) e "Come leggere".
   - Linee nitide anche con schermo ingrandito (125%, 150%).
 - Leggerezza: l'app deve essere leggera e fluida (regole in STATO_FLUTTER.md).
+
+## 13. Skill (aggiunta 13/11/2026 sera, chat coordinamento, decisa da Mirko)
+- Nella prima versione: tasto "Skill" disattivato con scritta "in arrivo".
+- Dopo l'MVP: sezione Skill con 5 skill da copiare (caveman, risparmio token, consiglio modello, progetto a blocchi, risparmio GitHub Actions). Tasti "Copia testo" e "Salva .zip". Testi puliti, senza dati personali.

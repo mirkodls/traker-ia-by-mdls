@@ -93,3 +93,7 @@ Nome app: TraKer IA by mdls. Entrano nell'MVP (vedi PROGETTO.md §12):
 Riferimento Python (in python-test-alfa\): domain/vista.py, riordino.py, periodo.py, confronti.py, lavoro.py, ui/layout.py, ui/tooltip.py (capire e riscrivere).
 Testo istruzioni progetto aggiornato col nome: file ISTRUZIONI_PROGETTO_FLUTTER.txt.
 - P8 Python: spunta "Conta solo lavoro" nei confronti + orario reset arrotondato (±2 min a :00) → anche in MVP (Blocco 1 logica, Blocco 3 grafica).
+
+## Aggiunta 13/11/2026 sera (chat coordinamento, decisa da Mirko) — Skill
+- MVP (Blocco 3): tasto "Skill" visibile ma DISATTIVATO con scritta "in arrivo". Nient'altro.
+- FUORI DA MVP: sezione Skill nell'app. Per ogni skill: nome, a cosa serve, tasto "Copia testo" e "Salva .zip" (da caricare su claude.ai > Impostazioni > Skill). Skill: caveman · risparmio token (progetto multi-chat) · consiglio modello · progetto a blocchi · risparmio GitHub Actions (separata). Testi riscritti puliti: niente nomi, percorsi, % o dati di Mirko. Testi in file traduzioni.
