@@ -2,12 +2,15 @@
 //
 // Strato ui: finestre di dialogo (lettura manuale, impostazioni, modifica
 // tasti, avviso letture fallite).
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:material_ui/material_ui.dart';
 
 import 'package:traker_ia/domain/catena.dart';
+import 'package:traker_ia/domain/collegamenti.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
+import 'package:traker_ia/ui/servizi.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 import 'package:traker_ia/ui/tema.dart';
 
@@ -147,6 +150,7 @@ class _StatoImpostazioni extends State<_Impostazioni> {
       : metodoAuto;
   bool _cancellaCookie = false;
   late bool _avvio = widget.stato.avvioWindows;
+  String? _esitoClaudeCode;
   String? _errore;
   String? _esitoImport;
 
@@ -174,6 +178,17 @@ class _StatoImpostazioni extends State<_Impostazioni> {
       cookie: _cancellaCookie ? '' : (ck.isEmpty ? null : ck),
       avvioWindows: _avvio,
     );
+  }
+
+  Future<void> _accediClaudeCode() async {
+    final bool ok = await widget.stato.servizi.accediClaudeCode();
+    if (mounted) {
+      setState(
+        () => _esitoClaudeCode = ok
+            ? Testi.claudeCodeAperto
+            : Testi.claudeCodeErrore,
+      );
+    }
   }
 
   Future<void> _importa() async {
@@ -255,6 +270,31 @@ class _StatoImpostazioni extends State<_Impostazioni> {
                 title: const Text(Testi.avvioWindows, style: stileNormale),
               ),
               const Text(Testi.spiegaX, style: stilePiccolo),
+            ],
+            if (widget.stato.servizi.collegamentiDisponibili) ...<Widget>[
+              const SizedBox(height: 14),
+              const Text(Testi.collegaFonti, style: stileNormale),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 10,
+                runSpacing: 6,
+                children: <Widget>[
+                  OutlinedButton(
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (_) =>
+                          DialogoEstensione(servizi: widget.stato.servizi),
+                    ),
+                    child: const Text(Testi.installaEstensione),
+                  ),
+                  OutlinedButton(
+                    onPressed: _accediClaudeCode,
+                    child: const Text(Testi.accediClaudeCode),
+                  ),
+                ],
+              ),
+              if (_esitoClaudeCode != null)
+                Text(_esitoClaudeCode!, style: stilePiccolo),
             ],
             if (_errore != null)
               Padding(
@@ -456,3 +496,103 @@ Future<void> apriAvviso(BuildContext context, String messaggio) =>
         ],
       ),
     );
+
+/// Installazione guidata dell'estensione: scegli browser → cartella pronta,
+/// percorso copiato, pagina estensioni aperta, passi da seguire.
+class DialogoEstensione extends StatefulWidget {
+  /// Crea il dialogo.
+  const DialogoEstensione({required this.servizi, super.key});
+
+  /// Servizi dell'app.
+  final Servizi servizi;
+
+  @override
+  State<DialogoEstensione> createState() => _DialogoEstensioneStato();
+}
+
+class _DialogoEstensioneStato extends State<DialogoEstensione> {
+  BrowserEstensione? _scelto;
+  String? _cartella;
+  bool _aperta = false;
+  bool _lavoro = false;
+
+  Future<void> _scegli(BrowserEstensione b) async {
+    setState(() {
+      _scelto = b;
+      _lavoro = true;
+    });
+    final String cartella = await widget.servizi.preparaEstensione();
+    await Clipboard.setData(ClipboardData(text: cartella));
+    final bool aperta = await widget.servizi.apriPaginaEstensioni(b.id);
+    await widget.servizi.mostraCartella(cartella);
+    if (mounted) {
+      setState(() {
+        _cartella = cartella;
+        _aperta = aperta;
+        _lavoro = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final BrowserEstensione? b = _scelto;
+    final String? cartella = _cartella;
+    return AlertDialog(
+      title: const Text(Testi.titoloEstensione),
+      content: SizedBox(
+        width: 480,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text(Testi.scegliBrowser, style: stileNormale),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: <Widget>[
+                  for (final BrowserEstensione x in browserEstensione)
+                    ChoiceChip(
+                      label: Text(x.nome),
+                      selected: b?.id == x.id,
+                      onSelected: x.pronto && !_lavoro
+                          ? (_) => _scegli(x)
+                          : null,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(Testi.firefoxInArrivo, style: stilePiccolo),
+              if (b != null && cartella != null) ...<Widget>[
+                const SizedBox(height: 12),
+                for (final (int i, String p) in Testi.passiEstensione(
+                  browser: b.nome,
+                  pagina: b.pagina,
+                  tasto: b.tasto,
+                  aperta: _aperta,
+                ).indexed)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text('${i + 1}. $p', style: stileNormale),
+                  ),
+                const SizedBox(height: 6),
+                SelectableText(
+                  Testi.cartellaEstensione(cartella),
+                  style: stilePiccolo,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text(Testi.chiudi),
+        ),
+      ],
+    );
+  }
+}

@@ -480,6 +480,61 @@ abstract final class Testi {
       "La X nasconde la finestra: l'app resta accesa vicino all'orologio. "
       "Per chiuderla davvero: clic destro sull'icona > Esci.";
 
+  // ------------------------------------------------------- collegamenti
+
+  /// Impostazioni: titolo sezione collegamenti.
+  static const String collegaFonti = 'Collega le letture';
+
+  /// Tasto: installa estensione.
+  static const String installaEstensione = 'Installa estensione browser';
+
+  /// Tasto: accesso a Claude Code.
+  static const String accediClaudeCode = 'Accedi a Claude Code';
+
+  /// Esito: finestra cmd aperta.
+  static const String claudeCodeAperto =
+      'Si è aperta una finestra nera: segui i passi scritti lì.';
+
+  /// Esito: finestra cmd non partita.
+  static const String claudeCodeErrore =
+      'Non riesco ad aprire la finestra di Claude Code.';
+
+  /// Titolo dialogo estensione.
+  static const String titoloEstensione = 'Installa estensione';
+
+  /// Dialogo estensione: scelta browser.
+  static const String scegliBrowser =
+      'Scegli il browser dove sei collegato a claude.ai:';
+
+  /// Firefox non ancora pronto.
+  static const String firefoxInArrivo =
+      'Firefox: in arrivo (serve la firma di Mozilla).';
+
+  /// Passi installazione estensione.
+  static List<String> passiEstensione({
+    required String browser,
+    required String pagina,
+    required String tasto,
+    required bool aperta,
+  }) => <String>[
+    if (aperta)
+      'Si è aperta la pagina estensioni di $browser.'
+    else
+      'Apri $browser e scrivi nella barra degli indirizzi: $pagina',
+    'Accendi "Modalità sviluppatore" (interruttore nella pagina).',
+    'Si è aperta anche la cartella Documenti > TraKer IA by mdls > '
+        'estensioni: trascina la cartella "chromium" sopra la pagina '
+        'estensioni e lasciala.',
+    'Se il trascinamento non va: clic su "$tasto" e scegli quella '
+        'cartella "chromium".',
+    'Apri claude.ai in $browser e fai il login, se non lo sei già.',
+    'Fatto: la lettura parte da sola entro pochi minuti.',
+  ];
+
+  /// Percorso cartella estensione.
+  static String cartellaEstensione(String percorso) =>
+      'Cartella (già copiata): $percorso';
+
   // ------------------------------------------------------------ manuale
 
   /// Titolo dialogo manuale.

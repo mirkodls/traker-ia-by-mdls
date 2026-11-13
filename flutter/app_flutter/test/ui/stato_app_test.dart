@@ -218,4 +218,8 @@ void main() {
     expect(f.tray.length, 2);
     expect(f.tray.last, contains('Sessione 16% · Settimana 22%'));
   });
+  test('avvio: scrive la cartella fissa dell\'estensione', () async {
+    await nuovo().avvia();
+    expect(f.collegamenti, contains('prepara'));
+  });
 }

@@ -131,4 +131,35 @@ class ServiziFinti implements Servizi {
 
   @override
   Future<void> aggiornaTray(String testo) async => tray.add(testo);
+
+  /// Browser "installati" per apriPaginaEstensioni.
+  final Set<String> browserTrovati = <String>{'edge'};
+
+  /// Chiamate ai collegamenti (`estensione:<id>`, `claude_code`).
+  final List<String> collegamenti = <String>[];
+
+  @override
+  bool get collegamentiDisponibili => true;
+
+  @override
+  Future<String> preparaEstensione() async {
+    collegamenti.add('prepara');
+    return r'C:\Doc\TraKer IA by mdls\estensioni\chromium';
+  }
+
+  @override
+  Future<void> mostraCartella(String percorso) async =>
+      collegamenti.add('cartella');
+
+  @override
+  Future<bool> apriPaginaEstensioni(String idBrowser) async {
+    collegamenti.add('estensione:$idBrowser');
+    return browserTrovati.contains(idBrowser);
+  }
+
+  @override
+  Future<bool> accediClaudeCode() async {
+    collegamenti.add('claude_code');
+    return true;
+  }
 }

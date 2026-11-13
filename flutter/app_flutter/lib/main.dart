@@ -8,15 +8,18 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:traker_ia/data/archivio.dart';
 import 'package:traker_ia/data/cassaforte.dart';
+import 'package:traker_ia/data/collegamenti_pc.dart';
 import 'package:traker_ia/data/database.dart';
 import 'package:traker_ia/data/import_file.dart';
 import 'package:traker_ia/data/lettori_anthropic.dart';
 import 'package:traker_ia/data/rete.dart';
 import 'package:traker_ia/data/ricevitore.dart';
 import 'package:traker_ia/domain/catena.dart';
+import 'package:traker_ia/domain/collegamenti.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/app.dart';
@@ -158,6 +161,34 @@ class ServiziVeri implements Servizi {
       'esci': Testi.trayEsci,
     });
   }
+
+  final CollegamentiPc _collegamenti = CollegamentiPc(
+    cartellaBase: getApplicationSupportDirectory,
+    cartellaDocumenti: getApplicationDocumentsDirectory,
+  );
+
+  @override
+  bool get collegamentiDisponibili => Platform.isWindows;
+
+  @override
+  Future<String> preparaEstensione() => _collegamenti.preparaEstensione();
+
+  @override
+  Future<void> mostraCartella(String percorso) =>
+      _collegamenti.mostraInEsplora(percorso);
+
+  @override
+  Future<bool> apriPaginaEstensioni(String idBrowser) async {
+    for (final BrowserEstensione b in browserEstensione) {
+      if (b.id == idBrowser) {
+        return _collegamenti.apriPaginaEstensioni(b);
+      }
+    }
+    return false;
+  }
+
+  @override
+  Future<bool> accediClaudeCode() => _collegamenti.accediClaudeCode();
 
   /// Chiama la finestra Windows; errori = null (finestra non pronta, test).
   Future<T?> _finestra<T>(String metodo, [Object? argomenti]) async {

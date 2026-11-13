@@ -70,4 +70,20 @@ abstract interface class Servizi {
   /// Aggiorna l'icona vicino all'orologio: testo col mouse sopra ed
   /// etichette del menu.
   Future<void> aggiornaTray(String testo);
+
+  /// Vero se si possono usare i collegamenti guidati (solo Windows).
+  bool get collegamentiDisponibili;
+
+  /// Scrive l'estensione nella cartella dati dell'app; restituisce il
+  /// percorso della cartella.
+  Future<String> preparaEstensione();
+
+  /// Apre Esplora risorse con la cartella [percorso] selezionata.
+  Future<void> mostraCartella(String percorso);
+
+  /// Apre la pagina estensioni del browser [idBrowser]. Falso = non trovato.
+  Future<bool> apriPaginaEstensioni(String idBrowser);
+
+  /// Apre la finestra cmd con l'accesso guidato a Claude Code.
+  Future<bool> accediClaudeCode();
 }

@@ -189,6 +189,7 @@ class StatoApp extends ChangeNotifier {
     }
     _cookie = await servizi.cookieSalvato();
     await _avvioPrimaVolta(imp[Chiavi.avvioDeciso]);
+    await _scriviEstensione();
     await _ricarica();
     if (_letture.isEmpty && imp[Chiavi.importFatto] != '1') {
       // Primo avvio: prova da solo a importare i vecchi dati Python.
@@ -226,11 +227,25 @@ class StatoApp extends ChangeNotifier {
     }
     if (deciso != '1') {
       await servizi.impostaAvvioWindows(acceso: true);
-      await servizi.salvaImpostazioni(<String, String>{Chiavi.avvioDeciso: '1'});
+      await servizi.salvaImpostazioni(<String, String>{
+        Chiavi.avvioDeciso: '1',
+      });
     } else if (await servizi.avvioWindows()) {
       await servizi.impostaAvvioWindows(acceso: true);
     }
     _avvio = await servizi.avvioWindows();
+  }
+
+  /// Tiene aggiornata la cartella fissa dell'estensione (Documenti).
+  Future<void> _scriviEstensione() async {
+    if (!servizi.collegamentiDisponibili) {
+      return;
+    }
+    try {
+      await servizi.preparaEstensione();
+    } on Object {
+      // non blocca l'avvio: il tasto in Impostazioni riprova
+    }
   }
 
   static Object? _json(String? s) {

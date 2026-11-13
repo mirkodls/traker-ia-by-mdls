@@ -1,0 +1,19 @@
+ESTENSIONE "TraKer IA by mdls" - come installarla (Edge, Chrome, Brave, Opera)
+
+Cosa fa: ogni tot minuti legge da claude.ai le percentuali d'uso (sessione 5 ore e
+settimana) usando il login che hai già nel browser, e le passa all'app TraKer IA
+sul tuo PC. Non salva niente e non manda niente su internet: parla solo con
+claude.ai e con l'app sul tuo PC (indirizzo 127.0.0.1, porta 45782).
+
+Installazione (Edge):
+1. Apri Edge e scrivi nella barra degli indirizzi: edge://extensions
+2. In basso a sinistra accendi "Modalità sviluppatore".
+3. Clic su "Carica decompressa".
+4. Scegli questa cartella (estensione_chromium) e clic su "Seleziona cartella".
+5. Deve essere collegato a claude.ai in Edge (fai il login se serve).
+
+Chrome/Brave/Opera: uguale, ma l'indirizzo è chrome://extensions
+(Opera: opera://extensions) e il tasto si chiama "Carica estensione non pacchettizzata".
+
+Nota: l'app vecchia in Python usa un'altra estensione e la porta 45781.
+Le due possono stare installate insieme senza darsi fastidio.

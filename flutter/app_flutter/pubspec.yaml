@@ -57,6 +57,9 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  # Estensione browser (copia di flutter/estensione_chromium, test controlla uguale).
+  assets:
+    - assets/estensione/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
