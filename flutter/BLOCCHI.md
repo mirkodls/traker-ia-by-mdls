@@ -49,7 +49,7 @@ Cattura schermo · elenco chat claude.ai · IA dentro l'app · abbonamento mensi
 | 6 | Sync Wi-Fi | Abbinamento con codice, ricerca in rete, scambio cifrato, unione dati, prova PC ↔ telefono. FINE MVP. |
 | 7+ | Dopo MVP | Uno per volta dalla lista FUORI DA MVP (si decide a fine MVP). |
 
-Ordine obbligato (agg. 13/11, grafica alla fine): 0 → 1 → 2 → 5 → 6 → 3 → 4. Una chat alla volta.
+Ordine obbligato (agg. 13/11 sera, deciso da Mirko: prima app desktop Windows completa, poi Android, poi sync): 0 → 1 → 2 → 3 → 4 → 5 → 6. Una chat alla volta. Prima del Blocco 3 Mirko lancia flutter\strumenti_pc\installa_flutter.bat (grafica si prova sul PC).
 
 ## Primo messaggio per ogni chat (copia e incolla)
 Blocco 0: Base. Collega cartella C:\Users\User\Desktop\applicazione traker claude, leggi flutter\PROGETTO.md, flutter\BLOCCHI.md e flutter\STATO_FLUTTER.md. Prepara .bat per installare Flutter e Build Tools sul PC, crea flutter\app_flutter con i 3 strati, lint rigido, LICENSE chiusa, controlla licenze pacchetti, prova test e build Android nel cloud.
