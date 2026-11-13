@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "it.mdls.traker_ia"
+    namespace = "mdls.traker_ia"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "it.mdls.traker_ia"
+        applicationId = "mdls.traker_ia"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

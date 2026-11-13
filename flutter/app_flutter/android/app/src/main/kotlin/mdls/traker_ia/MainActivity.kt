@@ -1,4 +1,4 @@
-package it.mdls.traker_ia
+package mdls.traker_ia
 
 import io.flutter.embedding.android.FlutterActivity
 
