@@ -26,3 +26,5 @@ __pycache__/
 **/key.properties
 *.jks
 *.keystore
+# exe/apk compilati (Blocco 4/5)
+release/

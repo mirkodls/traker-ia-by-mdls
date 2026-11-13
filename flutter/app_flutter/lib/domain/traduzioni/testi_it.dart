@@ -3,6 +3,7 @@
 // File traduzioni (italiano): TUTTI i testi dell'app, della logica e della
 // grafica. Dart puro (niente Flutter): lo usano domain e ui.
 // Per l'inglese (dopo l'MVP): copia questo file in testi_en.dart.
+import '../analisi.dart' show Verdetto;
 
 /// 0.94 -> '0,94'; null -> '-'.
 String numero(double? x, {int dec = 2}) =>
@@ -435,6 +436,49 @@ abstract final class Testi {
 
   /// Tasto chiudi.
   static const String chiudi = 'Chiudi';
+
+  // ------------------------------------------------------------ tray
+
+  /// Tray senza letture.
+  static const String trayNessunaLettura = 'Nessuna lettura ancora';
+
+  /// Tray: riga percentuali.
+  static String trayPercentuali(String sess, String sett) =>
+      'Sessione $sess · Settimana $sett';
+
+  /// Tray: ultima ora senza dati.
+  static const String trayOraVuota = 'Ultima ora: nessun dato';
+
+  /// Tray: intensità ultima ora (+ tendenza e intensità di prima).
+  static String trayUltimaOra(String pth, String tendenza, String prima) =>
+      'Ultima ora $pth pt/h'
+      '${tendenza.isEmpty ? '' : ' $tendenza'}'
+      '${prima.isEmpty ? '' : ' (prima $prima)'}';
+
+  /// Tray: tendenza rispetto al resto della sessione.
+  static const Map<Verdetto, String> trayTendenza = <Verdetto, String>{
+    Verdetto.salito: '↑ in salita',
+    Verdetto.sceso: '↓ in discesa',
+    Verdetto.costante: '= costante',
+  };
+
+  /// Menu tray: mostra finestra.
+  static const String trayMostra = 'Mostra';
+
+  /// Menu tray: nascondi finestra.
+  static const String trayNascondi = 'Nascondi';
+
+  /// Menu tray: esci davvero.
+  static const String trayEsci = 'Esci';
+
+  /// Impostazioni: avvio con Windows.
+  static const String avvioWindows =
+      "Avvio con Windows (parte nascosta vicino all'orologio)";
+
+  /// Impostazioni: spiegazione tasto X.
+  static const String spiegaX =
+      "La X nasconde la finestra: l'app resta accesa vicino all'orologio. "
+      "Per chiuderla davvero: clic destro sull'icona > Esci.";
 
   // ------------------------------------------------------------ manuale
 

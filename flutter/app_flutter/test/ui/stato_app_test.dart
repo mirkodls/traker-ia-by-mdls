@@ -152,4 +152,70 @@ void main() {
     expect(s.confrontoCombo, isNotNull);
     expect(s.classifica, contains('Opus'));
   });
+  test('avvio con Windows: acceso da solo la prima volta', () async {
+    final StatoApp s = nuovo();
+    await s.avvia();
+    expect(f.avvioChiamate, <bool>[true]);
+    expect(f.imp[Chiavi.avvioDeciso], '1');
+    expect(s.avvioWindows, isTrue);
+  });
+
+  test('avvio spento dall\'utente: resta spento ai riavvii', () async {
+    f.imp[Chiavi.avvioDeciso] = '1';
+    final StatoApp s = nuovo();
+    await s.avvia();
+    expect(f.avvioChiamate, isEmpty);
+    expect(s.avvioWindows, isFalse);
+  });
+
+  test('avvio acceso: riscrive il percorso a ogni avvio', () async {
+    f.imp[Chiavi.avvioDeciso] = '1';
+    f.avvio = true;
+    await nuovo().avvia();
+    expect(f.avvioChiamate, <bool>[true]);
+  });
+
+  test('avvio non disponibile (debug/Android): nessuna chiamata', () async {
+    f.avvioDisponibile = false;
+    final StatoApp s = nuovo();
+    await s.avvia();
+    expect(f.avvioChiamate, isEmpty);
+    expect(f.imp[Chiavi.avvioDeciso], isNull);
+    expect(s.avvioWindows, isFalse);
+  });
+
+  test('impostazioni: spegne e riaccende avvio con Windows', () async {
+    f.risposte.add(const Uso(sett: 10, sess: 5));
+    final StatoApp s = nuovo();
+    await s.avvia();
+    await s.salvaImpostazioni(
+      minuti: 10,
+      metodo: 'auto',
+      cartella: '',
+      avvioWindows: false,
+    );
+    expect(s.avvioWindows, isFalse);
+    await s.salvaImpostazioni(minuti: 10, metodo: 'auto', cartella: '');
+    expect(f.avvioChiamate, <bool>[true, false]);
+    await s.salvaImpostazioni(
+      minuti: 10,
+      metodo: 'auto',
+      cartella: '',
+      avvioWindows: true,
+    );
+    expect(s.avvioWindows, isTrue);
+  });
+
+  test('tray: testo mandato all\'avvio e solo quando cambia', () async {
+    f.lett.add(Lettura(ora: _t('2026-11-13 11:00'), sett: 21, sess: 14));
+    final StatoApp s = nuovo();
+    await s.avvia();
+    expect(f.tray.length, 1);
+    expect(f.tray.last, contains('Sessione 14% · Settimana 21%'));
+    s.scegliCombo(0, (modelli: 'Opus', skill: '')); // ricalcolo, dati uguali
+    expect(f.tray.length, 1);
+    await s.aggiungiManuale(_t('2026-11-13 11:30'), 22, 16);
+    expect(f.tray.length, 2);
+    expect(f.tray.last, contains('Sessione 16% · Settimana 22%'));
+  });
 }

@@ -27,3 +27,4 @@ Note:
 - Quando si aggiunge un pacchetto: ricontrollare anche i pacchetti che si porta dietro (comando: flutter pub deps).
 - Apache 2.0: nell'app va mostrata la pagina Licenze (Flutter la genera da solo con showLicensePage).
 - Blocco 2, solo sviluppo (non finiscono nell'app): drift_dev (MIT), build_runner (BSD-3).
+- Blocco 4 (firma: chat 4): tray_manager e launch_at_startup NON usati. Icona tray, avvio con Windows e una sola copia fatti con codice nostro in windows/runner/sistema.cpp e flutter_window.cpp (API di Windows), zero pacchetti nuovi.

@@ -49,3 +49,6 @@ app.*.map.json
 
 # output controlla.bat (solo PC)
 controllo.txt
+
+# output compila_exe.bat (solo PC)
+compila.txt

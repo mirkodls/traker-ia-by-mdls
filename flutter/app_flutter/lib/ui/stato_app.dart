@@ -20,6 +20,7 @@ import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/previsione.dart' as prev;
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
+import 'package:traker_ia/domain/tray.dart';
 import 'package:traker_ia/domain/vista.dart';
 import 'package:traker_ia/ui/grafico_dati.dart';
 import 'package:traker_ia/ui/servizi.dart';
@@ -56,6 +57,8 @@ class StatoApp extends ChangeNotifier {
   bool _inLettura = false;
   bool _pronto = false;
   bool _cookie = false;
+  bool _avvio = false;
+  String _trayInviato = '';
   String _cartella = '';
   String _stato = Testi.avvio;
   bool _statoErrore = false;
@@ -107,6 +110,9 @@ class StatoApp extends ChangeNotifier {
 
   /// C'è un cookie salvato.
   bool get cookie => _cookie;
+
+  /// L'app parte con Windows.
+  bool get avvioWindows => _avvio;
 
   /// Cartella dei vecchi dati.
   String get cartellaImport => _cartella;
@@ -182,6 +188,7 @@ class StatoApp extends ChangeNotifier {
       _cartella = servizi.cartellaImportPredefinita;
     }
     _cookie = await servizi.cookieSalvato();
+    await _avvioPrimaVolta(imp[Chiavi.avvioDeciso]);
     await _ricarica();
     if (_letture.isEmpty && imp[Chiavi.importFatto] != '1') {
       // Primo avvio: prova da solo a importare i vecchi dati Python.
@@ -209,6 +216,21 @@ class StatoApp extends ChangeNotifier {
       _programma();
       _minuto = Timer.periodic(const Duration(minutes: 1), (_) => _ricalcola());
     }
+  }
+
+  /// Avvio con Windows: acceso da solo la prima volta, poi decide l'utente.
+  /// Se acceso, riscrive il percorso dell'exe attuale (es. nuova release).
+  Future<void> _avvioPrimaVolta(String? deciso) async {
+    if (!servizi.avvioWindowsDisponibile) {
+      return;
+    }
+    if (deciso != '1') {
+      await servizi.impostaAvvioWindows(acceso: true);
+      await servizi.salvaImpostazioni(<String, String>{Chiavi.avvioDeciso: '1'});
+    } else if (await servizi.avvioWindows()) {
+      await servizi.impostaAvvioWindows(acceso: true);
+    }
+    _avvio = await servizi.avvioWindows();
   }
 
   static Object? _json(String? s) {
@@ -410,7 +432,14 @@ class StatoApp extends ChangeNotifier {
     required String metodo,
     required String cartella,
     String? cookie,
+    bool? avvioWindows,
   }) async {
+    if (avvioWindows != null &&
+        avvioWindows != _avvio &&
+        servizi.avvioWindowsDisponibile) {
+      await servizi.impostaAvvioWindows(acceso: avvioWindows);
+      _avvio = await servizi.avvioWindows();
+    }
     if (cookie != null) {
       await servizi.salvaCookie(cookie);
       _cookie = await servizi.cookieSalvato();
@@ -556,6 +585,20 @@ class StatoApp extends ChangeNotifier {
       }
     }
     _classifica = testoClassifica(classificaModelli(_letture));
+    _aggiornaTray(ora);
     _avvisa();
+  }
+
+  /// Testo dell'icona vicino all'orologio: mandato solo se cambia.
+  void _aggiornaTray(DateTime ora) {
+    final String t = testoTray(
+      _letture,
+      ora,
+      resetSess: arrotondaReset(_ultimoUso?.resetSess),
+    );
+    if (t != _trayInviato) {
+      _trayInviato = t;
+      unawaited(servizi.aggiornaTray(t));
+    }
   }
 }

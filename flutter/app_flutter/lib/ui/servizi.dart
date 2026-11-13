@@ -56,4 +56,18 @@ abstract interface class Servizi {
 
   /// Accende/spegne "Sempre in primo piano".
   Future<void> primoPiano({required bool acceso});
+
+  /// Vero se "Avvio con Windows" si può usare qui (solo exe Windows).
+  bool get avvioWindowsDisponibile;
+
+  /// Vero se l'app parte con Windows.
+  Future<bool> avvioWindows();
+
+  /// Accende/spegne l'avvio con Windows (acceso = riscrive anche il
+  /// percorso dell'exe attuale).
+  Future<void> impostaAvvioWindows({required bool acceso});
+
+  /// Aggiorna l'icona vicino all'orologio: testo col mouse sopra ed
+  /// etichette del menu.
+  Future<void> aggiornaTray(String testo);
 }

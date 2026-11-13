@@ -44,6 +44,9 @@ abstract final class Chiavi {
   /// Cartella dei vecchi dati Python.
   static const String cartellaImport = 'cartella_import';
 
+  /// Avvio con Windows già deciso una volta ('1'): da lì decide l'utente.
+  static const String avvioDeciso = 'avvio_windows_deciso';
+
   /// Tutte le chiavi lette all'avvio.
   static const List<String> tutte = <String>[
     minuti,
@@ -57,6 +60,7 @@ abstract final class Chiavi {
     vista,
     importFatto,
     cartellaImport,
+    avvioDeciso,
   ];
 }
 

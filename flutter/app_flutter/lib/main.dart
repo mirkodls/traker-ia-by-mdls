@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,11 +18,13 @@ import 'package:traker_ia/data/rete.dart';
 import 'package:traker_ia/data/ricevitore.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/modelli.dart';
+import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/app.dart';
 import 'package:traker_ia/ui/servizi.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 
-/// Canale verso la finestra Windows (windows/runner/flutter_window.cpp).
+/// Canale verso la finestra Windows (windows/runner/flutter_window.cpp):
+/// primo piano, tray, avvio con Windows.
 const MethodChannel _canaleFinestra = MethodChannel('traker_ia/finestra');
 
 /// Servizi veri: collegano lo strato data alla grafica.
@@ -128,13 +131,42 @@ class ServiziVeri implements Servizi {
   bool get primoPianoDisponibile => Platform.isWindows;
 
   @override
-  Future<void> primoPiano({required bool acceso}) async {
+  Future<void> primoPiano({required bool acceso}) =>
+      _finestra<void>('primoPiano', acceso);
+
+  /// Solo exe vero (release): in debug il percorso sarebbe quello di prova.
+  @override
+  bool get avvioWindowsDisponibile => Platform.isWindows && kReleaseMode;
+
+  @override
+  Future<bool> avvioWindows() async =>
+      await _finestra<bool>('avvioWindows') ?? false;
+
+  @override
+  Future<void> impostaAvvioWindows({required bool acceso}) =>
+      _finestra<bool>('impostaAvvioWindows', acceso);
+
+  @override
+  Future<void> aggiornaTray(String testo) async {
+    if (!Platform.isWindows) {
+      return;
+    }
+    await _finestra<void>('tray', <String, String>{
+      'testo': testo,
+      'mostra': Testi.trayMostra,
+      'nascondi': Testi.trayNascondi,
+      'esci': Testi.trayEsci,
+    });
+  }
+
+  /// Chiama la finestra Windows; errori = null (finestra non pronta, test).
+  Future<T?> _finestra<T>(String metodo, [Object? argomenti]) async {
     try {
-      await _canaleFinestra.invokeMethod<void>('primoPiano', acceso);
+      return await _canaleFinestra.invokeMethod<T>(metodo, argomenti);
     } on PlatformException {
-      // finestra non pronta: niente
+      return null;
     } on MissingPluginException {
-      // canale assente (es. test): niente
+      return null;
     }
   }
 }

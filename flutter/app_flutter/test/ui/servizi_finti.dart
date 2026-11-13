@@ -104,4 +104,31 @@ class ServiziFinti implements Servizi {
   @override
   Future<void> primoPiano({required bool acceso}) async =>
       primoPianoChiamate.add(acceso);
+
+  /// Avvio con Windows disponibile.
+  bool avvioDisponibile = true;
+
+  /// Stato avvio con Windows.
+  bool avvio = false;
+
+  /// Chiamate a impostaAvvioWindows.
+  final List<bool> avvioChiamate = <bool>[];
+
+  /// Testi mandati al tray.
+  final List<String> tray = <String>[];
+
+  @override
+  bool get avvioWindowsDisponibile => avvioDisponibile;
+
+  @override
+  Future<bool> avvioWindows() async => avvio;
+
+  @override
+  Future<void> impostaAvvioWindows({required bool acceso}) async {
+    avvioChiamate.add(acceso);
+    avvio = acceso;
+  }
+
+  @override
+  Future<void> aggiornaTray(String testo) async => tray.add(testo);
 }

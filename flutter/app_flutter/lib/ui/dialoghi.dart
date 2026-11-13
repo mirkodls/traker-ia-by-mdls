@@ -146,6 +146,7 @@ class _StatoImpostazioni extends State<_Impostazioni> {
       ? widget.stato.preferenze.metodo
       : metodoAuto;
   bool _cancellaCookie = false;
+  late bool _avvio = widget.stato.avvioWindows;
   String? _errore;
   String? _esitoImport;
 
@@ -171,6 +172,7 @@ class _StatoImpostazioni extends State<_Impostazioni> {
       metodo: _metodo,
       cartella: _cartella.text,
       cookie: _cancellaCookie ? '' : (ck.isEmpty ? null : ck),
+      avvioWindows: _avvio,
     );
   }
 
@@ -244,6 +246,16 @@ class _StatoImpostazioni extends State<_Impostazioni> {
                   Expanded(child: Text(_esitoImport!, style: stilePiccolo)),
               ],
             ),
+            if (widget.stato.servizi.avvioWindowsDisponibile) ...<Widget>[
+              const SizedBox(height: 14),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _avvio,
+                onChanged: (bool v) => setState(() => _avvio = v),
+                title: const Text(Testi.avvioWindows, style: stileNormale),
+              ),
+              const Text(Testi.spiegaX, style: stilePiccolo),
+            ],
             if (_errore != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
