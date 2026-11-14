@@ -472,72 +472,60 @@ abstract final class Testi {
   static const String trayEsci = 'Esci';
 
   /// Impostazioni: avvio con Windows.
-  static const String avvioWindows =
-      "Avvio con Windows (parte nascosta vicino all'orologio)";
+  static const String avvioWindows = 'Avvia con Windows';
 
   /// Impostazioni: spiegazione tasto X.
-  static const String spiegaX =
-      "La X nasconde la finestra: l'app resta accesa vicino all'orologio. "
-      "Per chiuderla davvero: clic destro sull'icona > Esci.";
+  static const String spiegaX = 'X = nascondi. Chiudi: icona orologio > Esci.';
 
   // ------------------------------------------------------- collegamenti
 
   /// Impostazioni: titolo sezione collegamenti.
-  static const String collegaFonti = 'Collega le letture';
+  static const String collegaFonti = 'Collegamenti';
 
   /// Tasto: installa estensione.
-  static const String installaEstensione = 'Installa estensione browser';
+  static const String installaEstensione = 'Estensione browser';
 
   /// Tasto: accesso a Claude Code.
   static const String accediClaudeCode = 'Accedi a Claude Code';
 
   /// Esito: finestra cmd aperta.
-  static const String claudeCodeAperto =
-      'Si è aperta una finestra nera: segui i passi scritti lì.';
+  static const String claudeCodeAperto = 'Segui i passi nella finestra nera.';
 
   /// Esito: finestra cmd non partita.
-  static const String claudeCodeErrore =
-      'Non riesco ad aprire la finestra di Claude Code.';
+  static const String claudeCodeErrore = 'Finestra non aperta.';
 
   /// Titolo dialogo estensione.
-  static const String titoloEstensione = 'Installa estensione';
-
-  /// Dialogo estensione: scelta browser.
-  static const String scegliBrowser =
-      'Scegli il browser dove sei collegato a claude.ai:';
+  static const String titoloEstensione = 'Estensione browser';
 
   /// Firefox non ancora pronto.
-  static const String firefoxInArrivo =
-      'Firefox: in arrivo (serve la firma di Mozilla).';
+  static const String firefoxInArrivo = 'Firefox: presto.';
 
-  /// Passi installazione estensione: si trascina la cartella, il percorso
-  /// lo prepara l'app da sola.
-  static List<String> passiEstensione({
-    required String browser,
-    required String pagina,
-    required bool aperta,
-  }) => <String>[
-    if (aperta)
-      'Si è aperta la pagina estensioni di $browser.'
-    else
-      'Apri $browser e scrivi nella barra degli indirizzi: $pagina',
-    'In alto a destra accendi "Modalità sviluppatore" (interruttore).',
-    'Si è aperta anche una cartella con dentro "chromium": mettila accanto '
-        'a $browser.',
-    'Tieni premuto il clic su "chromium", trascinala dentro la pagina '
-        'estensioni e lascia.',
-    'Compare "TraKer IA by mdls": fatto. Apri claude.ai in $browser e fai '
-        'il login, se non lo sei già. La lettura parte da sola.',
-  ];
+  /// Tasto: apri pagina estensioni.
+  static const String apriPagina = 'Apri pagina';
 
-  /// Nota sotto i passi.
-  static const String notaEstensione =
-      'Niente da cercare o incollare: la cartella la crea e la aggiorna '
-      "l'app da sola, sempre nello stesso posto.";
+  /// Tasto: apri cartella estensione.
+  static const String apriCartella = 'Apri cartella';
 
-  /// Percorso cartella estensione.
-  static String cartellaEstensione(String percorso) =>
-      'Cartella pronta: $percorso';
+  /// Passo 1 (con tasto Apri pagina).
+  static String passoPagina(String pagina) => 'Apri $pagina';
+
+  /// Passo 2.
+  static const String passoSviluppatore =
+      'Accendi "Modalità sviluppatore" (in alto a destra)';
+
+  /// Passo 3 (con tasto Apri cartella).
+  static const String passoCartella = 'Apri la cartella';
+
+  /// Passo 4.
+  static const String passoTrascina = 'Trascina "chromium" nella pagina';
+
+  /// Passo 5.
+  static const String passoFatto =
+      'Fatto: compare "TraKer IA by mdls". Login su claude.ai.';
+
+  /// Browser non trovato.
+  static String browserNonTrovato(String pagina) =>
+      'Browser non trovato: aprilo e scrivi $pagina';
 
   // ------------------------------------------------------------ manuale
 

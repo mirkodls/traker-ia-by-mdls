@@ -1,5 +1,4 @@
 // TraKer IA by mdls — Copyright (C) 2026 Mirko Del Sette. Tutti i diritti riservati.
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
@@ -8,49 +7,52 @@ import 'package:traker_ia/ui/dialoghi.dart';
 import 'servizi_finti.dart';
 
 void main() {
-  testWidgets('estensione: scegli browser → cartella, pagina, passi', (
+  testWidgets('estensione: cartella pronta da sola, 2 tasti, 5 passi', (
     WidgetTester tester,
   ) async {
-    final List<String> appunti = <String>[];
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      (MethodCall c) async {
-        if (c.method == 'Clipboard.setData') {
-          appunti.add('${(c.arguments as Map<Object?, Object?>)['text']}');
-        }
-        return null;
-      },
-    );
     final ServiziFinti f = ServiziFinti();
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(body: DialogoEstensione(servizi: f)),
       ),
     );
-    expect(find.text(Testi.firefoxInArrivo), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(f.collegamenti, <String>['prepara']);
+    expect(find.text('Firefox'), findsNothing);
+    expect(
+      find.text('1. ${Testi.passoPagina('brave://extensions')}'),
+      findsOneWidget,
+    );
+    expect(find.text('4. ${Testi.passoTrascina}'), findsOneWidget);
 
+    // Brave non trovato → avviso
+    await tester.tap(find.text(Testi.apriPagina));
+    await tester.pumpAndSettle();
+    expect(f.collegamenti.last, 'estensione:brave');
+    expect(
+      find.text(Testi.browserNonTrovato('brave://extensions')),
+      findsOneWidget,
+    );
+
+    // Edge trovato → niente avviso
     await tester.tap(find.text('Edge'));
     await tester.pumpAndSettle();
-    expect(f.collegamenti, <String>['prepara', 'estensione:edge', 'cartella']);
-    expect(appunti, <String>[r'C:\Doc\TraKer IA by mdls\estensioni\chromium']);
     expect(
-      find.textContaining('Si è aperta la pagina estensioni di Edge'),
+      find.text('1. ${Testi.passoPagina('edge://extensions')}'),
       findsOneWidget,
     );
-    expect(find.textContaining('trascinala dentro la pagina'), findsOneWidget);
-    expect(find.text(Testi.notaEstensione), findsOneWidget);
-
-    await tester.tap(find.text('Brave'));
+    await tester.tap(find.text(Testi.apriPagina));
     await tester.pumpAndSettle();
-    expect(
-      find.textContaining(
-        'scrivi nella barra degli indirizzi: brave://extensions',
-      ),
-      findsOneWidget,
-    );
+    expect(f.collegamenti.last, 'estensione:edge');
+    expect(find.textContaining('Browser non trovato'), findsNothing);
 
-    await tester.tap(find.text('Firefox'));
+    await tester.tap(find.text(Testi.apriCartella));
     await tester.pumpAndSettle();
-    expect(f.collegamenti.where((String c) => c.contains('firefox')), isEmpty);
+    expect(f.collegamenti, <String>[
+      'prepara',
+      'estensione:brave',
+      'estensione:edge',
+      'cartella',
+    ]);
   });
 }

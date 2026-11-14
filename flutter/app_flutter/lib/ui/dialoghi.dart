@@ -2,7 +2,8 @@
 //
 // Strato ui: finestre di dialogo (lettura manuale, impostazioni, modifica
 // tasti, avviso letture fallite).
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 import 'package:traker_ia/domain/catena.dart';
@@ -497,8 +498,7 @@ Future<void> apriAvviso(BuildContext context, String messaggio) =>
       ),
     );
 
-/// Installazione guidata dell'estensione: scegli browser → cartella pronta,
-/// percorso copiato, pagina estensioni aperta, passi da seguire.
+/// Mini guida estensione: scegli browser, poi 5 passi con 2 tasti.
 class DialogoEstensione extends StatefulWidget {
   /// Crea il dialogo.
   const DialogoEstensione({required this.servizi, super.key});
@@ -511,78 +511,103 @@ class DialogoEstensione extends StatefulWidget {
 }
 
 class _DialogoEstensioneStato extends State<DialogoEstensione> {
-  BrowserEstensione? _scelto;
+  BrowserEstensione _scelto = browserEstensione.first;
   String? _cartella;
-  bool _aperta = false;
-  bool _lavoro = false;
+  bool _nonTrovato = false;
 
-  Future<void> _scegli(BrowserEstensione b) async {
-    setState(() {
-      _scelto = b;
-      _lavoro = true;
-    });
-    final String cartella = await widget.servizi.preparaEstensione();
-    await Clipboard.setData(ClipboardData(text: cartella));
-    final bool aperta = await widget.servizi.apriPaginaEstensioni(b.id);
-    await widget.servizi.mostraCartella(cartella);
+  @override
+  void initState() {
+    super.initState();
+    // La cartella la prepara l'app da sola.
+    unawaited(_prepara());
+  }
+
+  Future<String> _prepara() async {
+    final String c = _cartella ?? await widget.servizi.preparaEstensione();
+    if (mounted && _cartella == null) {
+      setState(() => _cartella = c);
+    }
+    return c;
+  }
+
+  Future<void> _apriPagina() async {
+    final bool ok = await widget.servizi.apriPaginaEstensioni(_scelto.id);
     if (mounted) {
-      setState(() {
-        _cartella = cartella;
-        _aperta = aperta;
-        _lavoro = false;
-      });
+      setState(() => _nonTrovato = !ok);
     }
   }
 
+  Future<void> _apriCartella() async {
+    await widget.servizi.mostraCartella(await _prepara());
+  }
+
+  Widget _passo(int n, String testo, [Widget? tasto]) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(
+      children: <Widget>[
+        Expanded(child: Text('$n. $testo', style: stileNormale)),
+        ?tasto,
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final BrowserEstensione? b = _scelto;
-    final String? cartella = _cartella;
+    final BrowserEstensione b = _scelto;
     return AlertDialog(
       title: const Text(Testi.titoloEstensione),
       content: SizedBox(
-        width: 480,
+        width: 440,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text(Testi.scegliBrowser, style: stileNormale),
-              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
                 children: <Widget>[
                   for (final BrowserEstensione x in browserEstensione)
-                    ChoiceChip(
-                      label: Text(x.nome),
-                      selected: b?.id == x.id,
-                      onSelected: x.pronto && !_lavoro
-                          ? (_) => _scegli(x)
-                          : null,
-                    ),
+                    if (x.pronto)
+                      ChoiceChip(
+                        label: Text(x.nome),
+                        selected: b.id == x.id,
+                        onSelected: (_) => setState(() {
+                          _scelto = x;
+                          _nonTrovato = false;
+                        }),
+                      ),
                 ],
               ),
-              const SizedBox(height: 4),
               const Text(Testi.firefoxInArrivo, style: stilePiccolo),
-              if (b != null && cartella != null) ...<Widget>[
-                const SizedBox(height: 12),
-                for (final (int i, String p) in Testi.passiEstensione(
-                  browser: b.nome,
-                  pagina: b.pagina,
-                  aperta: _aperta,
-                ).indexed)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text('${i + 1}. $p', style: stileNormale),
-                  ),
-                const SizedBox(height: 6),
-                const Text(Testi.notaEstensione, style: stilePiccolo),
-                SelectableText(
-                  Testi.cartellaEstensione(cartella),
-                  style: stilePiccolo,
+              const SizedBox(height: 12),
+              _passo(
+                1,
+                Testi.passoPagina(b.pagina),
+                OutlinedButton(
+                  onPressed: _apriPagina,
+                  child: const Text(Testi.apriPagina),
                 ),
-              ],
+              ),
+              if (_nonTrovato)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    Testi.browserNonTrovato(b.pagina),
+                    style: stilePiccolo,
+                  ),
+                ),
+              _passo(2, Testi.passoSviluppatore),
+              _passo(
+                3,
+                Testi.passoCartella,
+                OutlinedButton(
+                  onPressed: _cartella == null ? null : _apriCartella,
+                  child: const Text(Testi.apriCartella),
+                ),
+              ),
+              _passo(4, Testi.passoTrascina),
+              _passo(5, Testi.passoFatto),
             ],
           ),
         ),
