@@ -37,7 +37,8 @@ void main() {
       find.textContaining('Si è aperta la pagina estensioni di Edge'),
       findsOneWidget,
     );
-    expect(find.textContaining('Carica decompressa'), findsOneWidget);
+    expect(find.textContaining('trascinala dentro la pagina'), findsOneWidget);
+    expect(find.text(Testi.notaEstensione), findsOneWidget);
 
     await tester.tap(find.text('Brave'));
     await tester.pumpAndSettle();

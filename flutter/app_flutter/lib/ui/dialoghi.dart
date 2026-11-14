@@ -570,7 +570,6 @@ class _DialogoEstensioneStato extends State<DialogoEstensione> {
                 for (final (int i, String p) in Testi.passiEstensione(
                   browser: b.nome,
                   pagina: b.pagina,
-                  tasto: b.tasto,
                   aperta: _aperta,
                 ).indexed)
                   Padding(
@@ -578,6 +577,7 @@ class _DialogoEstensioneStato extends State<DialogoEstensione> {
                     child: Text('${i + 1}. $p', style: stileNormale),
                   ),
                 const SizedBox(height: 6),
+                const Text(Testi.notaEstensione, style: stilePiccolo),
                 SelectableText(
                   Testi.cartellaEstensione(cartella),
                   style: stilePiccolo,

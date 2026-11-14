@@ -510,30 +510,34 @@ abstract final class Testi {
   static const String firefoxInArrivo =
       'Firefox: in arrivo (serve la firma di Mozilla).';
 
-  /// Passi installazione estensione.
+  /// Passi installazione estensione: si trascina la cartella, il percorso
+  /// lo prepara l'app da sola.
   static List<String> passiEstensione({
     required String browser,
     required String pagina,
-    required String tasto,
     required bool aperta,
   }) => <String>[
     if (aperta)
       'Si è aperta la pagina estensioni di $browser.'
     else
       'Apri $browser e scrivi nella barra degli indirizzi: $pagina',
-    'Accendi "Modalità sviluppatore" (interruttore nella pagina).',
-    'Si è aperta anche la cartella Documenti > TraKer IA by mdls > '
-        'estensioni: trascina la cartella "chromium" sopra la pagina '
-        'estensioni e lasciala.',
-    'Se il trascinamento non va: clic su "$tasto" e scegli quella '
-        'cartella "chromium".',
-    'Apri claude.ai in $browser e fai il login, se non lo sei già.',
-    'Fatto: la lettura parte da sola entro pochi minuti.',
+    'In alto a destra accendi "Modalità sviluppatore" (interruttore).',
+    'Si è aperta anche una cartella con dentro "chromium": mettila accanto '
+        'a $browser.',
+    'Tieni premuto il clic su "chromium", trascinala dentro la pagina '
+        'estensioni e lascia.',
+    'Compare "TraKer IA by mdls": fatto. Apri claude.ai in $browser e fai '
+        'il login, se non lo sei già. La lettura parte da sola.',
   ];
+
+  /// Nota sotto i passi.
+  static const String notaEstensione =
+      'Niente da cercare o incollare: la cartella la crea e la aggiorna '
+      "l'app da sola, sempre nello stesso posto.";
 
   /// Percorso cartella estensione.
   static String cartellaEstensione(String percorso) =>
-      'Cartella (già copiata): $percorso';
+      'Cartella pronta: $percorso';
 
   // ------------------------------------------------------------ manuale
 
