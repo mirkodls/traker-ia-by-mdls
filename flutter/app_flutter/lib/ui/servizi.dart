@@ -94,6 +94,9 @@ abstract interface class Servizi {
   /// Cookie della pagina di login per [sito] ('' = nessuno).
   Future<String> cookieWeb(String sito);
 
+  /// Sistema la pagina di login con id [id] (popup, cookie terze parti).
+  Future<void> preparaWeb(int id);
+
   /// Vero se la batteria è "senza limiti" per l'app (null = non so / PC).
   Future<bool?> batteriaLibera();
 

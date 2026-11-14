@@ -13,6 +13,7 @@ import android.webkit.CookieManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugins.webviewflutter.WebViewFlutterAndroidExternalApi
 
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -23,6 +24,19 @@ class MainActivity : FlutterActivity() {
                     "cookie" -> {
                         val sito = call.argument<String>("sito") ?: ""
                         result.success(CookieManager.getInstance().getCookie(sito) ?: "")
+                    }
+                    "preparaWeb" -> {
+                        // Pagina di login: popup nella stessa pagina (senza
+                        // questo i popup di login spariscono = pagina nera)
+                        // e cookie di terze parti (controlli anti-bot).
+                        val id = (call.argument<Number>("id") ?: -1).toLong()
+                        @Suppress("DEPRECATION")
+                        val w = WebViewFlutterAndroidExternalApi.getWebView(flutterEngine, id)
+                        if (w != null) {
+                            w.settings.setSupportMultipleWindows(false)
+                            CookieManager.getInstance().setAcceptThirdPartyCookies(w, true)
+                        }
+                        result.success(w != null)
                     }
                     "batteriaLibera" -> {
                         val pm = getSystemService(POWER_SERVICE) as PowerManager

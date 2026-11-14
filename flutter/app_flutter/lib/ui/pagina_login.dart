@@ -3,7 +3,8 @@
 // Strato ui (solo telefono): pagina di login del fornitore dentro l'app
 // (webview_flutter). Fatto il login prende da sola il cookie di sessione e
 // lo restituisce a chi l'ha aperta (che lo mette in cassaforte).
-// Il cookie non si mostra e non si scrive mai nei log.
+// Il cookie non si mostra e non si scrive mai nei log: la riga di
+// controllo mostra solo sito+percorso, quanti cookie e se c'è la sessione.
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
@@ -13,6 +14,7 @@ import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/servizi.dart';
 import 'package:traker_ia/ui/tema.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 /// Apre la pagina di login di [fornitore]; restituisce il cookie di
 /// sessione (null = chiusa senza login).
@@ -51,7 +53,11 @@ class _StatoPaginaLogin extends State<PaginaLogin> {
   Timer? _controllo;
   bool _fatto = false;
   bool _carica = true;
-  bool _errore = false;
+  String? _errore;
+  String _url = '';
+  String _pagina = '';
+  int _cookie = 0;
+  bool _sessione = false;
 
   @override
   void initState() {
@@ -65,26 +71,44 @@ class _StatoPaginaLogin extends State<PaginaLogin> {
   }
 
   Future<void> _prepara() async {
+    final Object p = _web.platform;
+    if (p is AndroidWebViewController) {
+      await widget.servizi.preparaWeb(p.webViewIdentifier);
+    }
     await _web.setJavaScriptMode(JavaScriptMode.unrestricted);
     await _web.setUserAgent(agenteWebTelefono);
     await _web.setBackgroundColor(Colori.sfondo);
     await _web.setNavigationDelegate(
       NavigationDelegate(
-        onPageStarted: (_) => _segna(carica: true),
-        onPageFinished: (_) {
-          _segna(carica: false);
+        onPageStarted: (String u) => _segna(carica: true, url: u),
+        onPageFinished: (String u) {
+          _segna(carica: false, url: u);
           unawaited(_controlla());
         },
-        onUrlChange: (_) => unawaited(_controlla()),
+        onUrlChange: (UrlChange c) {
+          _segna(carica: _carica, url: c.url);
+          unawaited(_controlla());
+        },
         onWebResourceError: (WebResourceError e) {
           if (e.isForMainFrame ?? false) {
-            _segna(carica: false, errore: true);
+            _segna(carica: false, errore: '${e.errorCode}');
+          }
+        },
+        onHttpError: (HttpResponseError e) {
+          if (e.request?.uri.toString() == _url) {
+            _segna(
+              carica: false,
+              errore: 'HTTP ${e.response?.statusCode ?? 0}',
+            );
           }
         },
       ),
     );
-    await _web.loadRequest(Uri.parse(widget.fornitore.paginaAccesso));
+    await _ricomincia();
   }
+
+  Future<void> _ricomincia() =>
+      _web.loadRequest(Uri.parse(widget.fornitore.paginaAccesso));
 
   @override
   void dispose() {
@@ -92,28 +116,58 @@ class _StatoPaginaLogin extends State<PaginaLogin> {
     super.dispose();
   }
 
-  void _segna({required bool carica, bool errore = false}) {
-    if (mounted) {
-      setState(() {
-        _carica = carica;
-        _errore = errore;
-      });
+  /// Solo sito + percorso: mai la parte dopo "?" (può avere codici).
+  void _segna({required bool carica, String? url, String? errore}) {
+    if (!mounted) {
+      return;
     }
+    setState(() {
+      _carica = carica;
+      _errore = errore;
+      if (url != null) {
+        _url = url;
+        final Uri? u = Uri.tryParse(url);
+        _pagina = u == null ? '' : '${u.host}${u.path}';
+      }
+    });
   }
 
   Future<void> _controlla() async {
     if (_fatto) {
       return;
     }
-    final String? valore = widget.fornitore.cookieSessione(
-      await widget.servizi.cookieWeb(widget.fornitore.sito),
-    );
-    if (valore == null || _fatto || !mounted) {
+    final String tutti = await widget.servizi.cookieWeb(widget.fornitore.sito);
+    final String? valore = widget.fornitore.cookieSessione(tutti);
+    if (!mounted || _fatto) {
+      return;
+    }
+    final int n = tutti.trim().isEmpty ? 0 : tutti.split(';').length;
+    if (n != _cookie || (valore != null) != _sessione) {
+      setState(() {
+        _cookie = n;
+        _sessione = valore != null;
+      });
+    }
+    if (valore == null) {
       return;
     }
     _fatto = true;
     _controllo?.cancel();
     Navigator.of(context).pop(valore);
+  }
+
+  /// Android: composizione ibrida (più sicura contro lo schermo nero).
+  Widget _vista() {
+    final Object p = _web.platform;
+    if (p is AndroidWebViewController) {
+      return WebViewWidget.fromPlatformCreationParams(
+        params: AndroidWebViewWidgetCreationParams(
+          controller: p,
+          displayWithHybridComposition: true,
+        ),
+      );
+    }
+    return WebViewWidget(controller: _web);
   }
 
   @override
@@ -122,20 +176,40 @@ class _StatoPaginaLogin extends State<PaginaLogin> {
     appBar: AppBar(
       backgroundColor: Colori.carta,
       title: Text(Testi.titoloLogin(widget.fornitore.nome)),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => unawaited(_web.reload()),
+          child: const Text(Testi.ricarica),
+        ),
+        TextButton(
+          onPressed: () => unawaited(_ricomincia()),
+          child: const Text(Testi.ricomincia),
+        ),
+      ],
     ),
     body: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 2),
           child: Text(
-            _errore ? Testi.loginErrore : Testi.spiegaLogin,
-            style: _errore
-                ? const TextStyle(color: Colori.errore)
-                : stilePiccolo,
+            _errore == null ? Testi.spiegaLogin : Testi.loginErrore(_errore!),
+            style: _errore == null
+                ? stilePiccolo
+                : const TextStyle(color: Colori.errore),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+          child: Text(
+            Testi.controlloLogin(_pagina, _cookie, sessione: _sessione),
+            style: stilePiccolo,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         if (_carica) const LinearProgressIndicator(minHeight: 2),
-        Expanded(child: WebViewWidget(controller: _web)),
+        Expanded(child: _vista()),
       ],
     ),
   );

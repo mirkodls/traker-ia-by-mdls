@@ -188,6 +188,9 @@ class ServiziFinti implements Servizi {
   Future<String> cookieWeb(String sito) async => cookieDellaPagina;
 
   @override
+  Future<void> preparaWeb(int id) async {}
+
+  @override
   Future<bool?> batteriaLibera() async => batteria;
 
   @override

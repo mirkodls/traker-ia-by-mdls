@@ -119,6 +119,10 @@ class Telefono {
   Future<String> cookie(String sito) async =>
       await _chiama<String>('cookie', <String, String>{'sito': sito}) ?? '';
 
+  /// Sistema la pagina di login [id] (popup, cookie di terze parti).
+  Future<void> preparaWeb(int id) =>
+      _chiama<bool>('preparaWeb', <String, int>{'id': id});
+
   /// Vero se la batteria è "senza limiti" per l'app (null = non so).
   Future<bool?> batteriaLibera() => _chiama<bool>('batteriaLibera');
 

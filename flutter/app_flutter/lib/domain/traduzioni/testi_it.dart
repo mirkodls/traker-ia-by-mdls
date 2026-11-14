@@ -658,8 +658,22 @@ abstract final class Testi {
       'Entra con email + codice. Google spesso non va qui. '
       'Fatto il login la pagina si chiude da sola.';
 
+  /// Riga di controllo della pagina login (mai valori dei cookie).
+  static String controlloLogin(
+    String pagina,
+    int cookie, {
+    required bool sessione,
+  }) => '$pagina · cookie: $cookie · sessione: ${sessione ? 'sì' : 'no'}';
+
+  /// Tasto: ricarica la pagina.
+  static const String ricarica = 'Ricarica';
+
+  /// Tasto: torna alla pagina di login.
+  static const String ricomincia = 'Ricomincia';
+
   /// Pagina login non caricata.
-  static const String loginErrore = 'Pagina non caricata. Controlla internet.';
+  static String loginErrore(String dettaglio) =>
+      'Pagina non caricata ($dettaglio). Controlla internet, poi Ricarica.';
 
   /// Riga batteria.
   static String batteria(bool? libera) => switch (libera) {

@@ -209,6 +209,9 @@ class ServiziVeri implements Servizi {
   Future<String> cookieWeb(String sito) => _telefono.cookie(sito);
 
   @override
+  Future<void> preparaWeb(int id) => _telefono.preparaWeb(id);
+
+  @override
   Future<bool?> batteriaLibera() async =>
       telefono ? _telefono.batteriaLibera() : null;
 
