@@ -14,6 +14,16 @@ namespace {
 
 // Messaggio dell'icona tray verso la finestra.
 constexpr UINT kMessaggioTray = WM_APP + 1;
+// Timer: da nascosta ridà memoria a Windows ogni 10 minuti.
+constexpr UINT_PTR kTimerMemoria = 7;
+constexpr UINT kOgniDieciMinuti = 10 * 60 * 1000;
+
+// Ridà a Windows la memoria non usata adesso (RAM del Task Manager giù).
+// Torna da sola quando serve: nessun dato perso.
+void LiberaMemoria() {
+  SetProcessWorkingSetSize(GetCurrentProcess(), static_cast<SIZE_T>(-1),
+                           static_cast<SIZE_T>(-1));
+}
 constexpr UINT kIdTray = 1;
 constexpr UINT kVoceMostra = 1;
 constexpr UINT kVoceEsci = 2;
@@ -220,6 +230,7 @@ void FlutterWindow::MenuTray(int x, int y) {
 
 void FlutterWindow::Mostra() {
   HWND h = GetHandle();
+  KillTimer(h, kTimerMemoria);
   if (IsIconic(h)) {
     ShowWindow(h, SW_RESTORE);
   } else {
@@ -228,7 +239,12 @@ void FlutterWindow::Mostra() {
   SetForegroundWindow(h);
 }
 
-void FlutterWindow::Nascondi() { ShowWindow(GetHandle(), SW_HIDE); }
+void FlutterWindow::Nascondi() {
+  HWND h = GetHandle();
+  ShowWindow(h, SW_HIDE);
+  LiberaMemoria();
+  SetTimer(h, kTimerMemoria, kOgniDieciMinuti, nullptr);
+}
 
 void FlutterWindow::Esci() {
   in_uscita_ = true;
@@ -263,6 +279,20 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   switch (message) {
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
+      break;
+    case WM_TIMER:
+      if (wparam == kTimerMemoria) {
+        if (!IsWindowVisible(hwnd)) {
+          LiberaMemoria();
+        }
+        return 0;
+      }
+      break;
+    case WM_SIZE:
+      // Ridotta a icona: stessa pulizia, poi Windows gestisce il resto.
+      if (wparam == SIZE_MINIMIZED) {
+        LiberaMemoria();
+      }
       break;
     case WM_CLOSE:
       // X = nascondi: l'app resta accesa nel tray. Esci vero dal menu.
