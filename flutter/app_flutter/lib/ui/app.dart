@@ -14,6 +14,7 @@ import 'package:traker_ia/domain/vista.dart';
 import 'package:traker_ia/ui/dialoghi.dart';
 import 'package:traker_ia/ui/grafico.dart';
 import 'package:traker_ia/ui/grafico_dati.dart';
+import 'package:traker_ia/ui/schermo_telefono.dart';
 import 'package:traker_ia/ui/sezioni.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 import 'package:traker_ia/ui/tema.dart';
@@ -412,14 +413,16 @@ class _StatoFinestra extends State<Finestra> {
               child: Stack(
                 children: <Widget>[
                   Positioned.fill(
-                    child: soloUno
+                    child: _s.servizi.telefono
+                        ? SchermoTelefono(stato: _s, mouse: _mouse)
+                        : soloUno
                         ? _soloUno()
                         : LayoutBuilder(
                             builder: (BuildContext context, BoxConstraints c) =>
                                 _tutto(c),
                           ),
                   ),
-                  if (senzaTasti)
+                  if (senzaTasti && !_s.servizi.telefono)
                     Positioned(right: 8, top: 6, child: _tastoVista()),
                 ],
               ),

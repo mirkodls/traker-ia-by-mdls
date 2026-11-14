@@ -235,46 +235,47 @@ class _GruppoTasti extends StatelessWidget {
     required this.stato,
     required this.modifica,
     this.destra = false,
+    this.compatta = false,
   });
 
   final Gruppo gruppo;
   final StatoApp stato;
   final VoidCallback modifica;
   final bool destra;
+  final bool compatta;
 
   @override
   Widget build(BuildContext context) {
     final Preferenze p = stato.preferenze;
     final Set<String> acc = p.accesi(gruppo).toSet();
+    final List<Widget> figli = <Widget>[
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Text(
+          gruppo == Gruppo.modelli ? Testi.gruppoModelli : Testi.gruppoSkill,
+          style: stileTitolo,
+        ),
+      ),
+      for (final String n in p.elenco(gruppo))
+        _Tasto(gruppo: gruppo, nome: n, acceso: acc.contains(n), stato: stato),
+      TextButton(
+        onPressed: modifica,
+        style: TextButton.styleFrom(foregroundColor: Colori.spento),
+        child: const Text(
+          Testi.modifica,
+          style: TextStyle(fontSize: Misure.piccolo),
+        ),
+      ),
+    ];
+    if (compatta) {
+      return Row(mainAxisSize: MainAxisSize.min, spacing: 4, children: figli);
+    }
     return Wrap(
       spacing: 4,
       runSpacing: 4,
       alignment: destra ? WrapAlignment.end : WrapAlignment.start,
       crossAxisAlignment: WrapCrossAlignment.center,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            gruppo == Gruppo.modelli ? Testi.gruppoModelli : Testi.gruppoSkill,
-            style: stileTitolo,
-          ),
-        ),
-        for (final String n in p.elenco(gruppo))
-          _Tasto(
-            gruppo: gruppo,
-            nome: n,
-            acceso: acc.contains(n),
-            stato: stato,
-          ),
-        TextButton(
-          onPressed: modifica,
-          style: TextButton.styleFrom(foregroundColor: Colori.spento),
-          child: const Text(
-            Testi.modifica,
-            style: TextStyle(fontSize: Misure.piccolo),
-          ),
-        ),
-      ],
+      children: figli,
     );
   }
 }
@@ -282,7 +283,15 @@ class _GruppoTasti extends StatelessWidget {
 /// Barra tasti: skill a sinistra, modelli a destra (a capo se stretto).
 class BarraTasti extends StatelessWidget {
   /// Crea la barra.
-  const BarraTasti({required this.stato, required this.modifica, super.key});
+  const BarraTasti({
+    required this.stato,
+    required this.modifica,
+    this.compatta = false,
+    super.key,
+  });
+
+  /// Telefono: una riga sola che scorre di lato (modelli poi skill).
+  final bool compatta;
 
   /// Stato dell'app.
   final StatoApp stato;
@@ -292,6 +301,31 @@ class BarraTasti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (compatta) {
+      return Carta(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: <Widget>[
+              _GruppoTasti(
+                gruppo: Gruppo.modelli,
+                stato: stato,
+                modifica: () => modifica(Gruppo.modelli),
+                compatta: true,
+              ),
+              const SizedBox(width: 10),
+              _GruppoTasti(
+                gruppo: Gruppo.skill,
+                stato: stato,
+                modifica: () => modifica(Gruppo.skill),
+                compatta: true,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final Widget sk = _GruppoTasti(
       gruppo: Gruppo.skill,
       stato: stato,

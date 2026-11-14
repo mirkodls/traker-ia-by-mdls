@@ -110,7 +110,12 @@ void main() {
     await tester.runAsync(s.avvia);
     await tester.pumpWidget(TrakerApp(stato: s));
     await tester.pump();
-    await tester.ensureVisible(find.text(Testi.impostazioni));
+    // Telefono: tutto in una schermata, rotella ⚙ → menu → Impostazioni.
+    expect(find.text(Testi.letturaManuale), findsNothing);
+    expect(find.text(Testi.aiutoZoom), findsOneWidget);
+    expect(find.byType(InteractiveViewer), findsOneWidget);
+    await tester.tap(find.byTooltip(Testi.impostazioni));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(Testi.impostazioni));
     await tester.pumpAndSettle();
     expect(find.text(Testi.accedi('Claude')), findsOneWidget);

@@ -692,4 +692,13 @@ abstract final class Testi {
   /// Spiegazione letture a app chiusa.
   static const String spiegaSfondo =
       'App chiusa: legge circa ogni 15 min (Android decide il momento).';
+
+  /// Telefono: aiuto sotto il grafico.
+  static const String aiutoZoom = 'Due dita: zoom · Tieni premuto: dettagli';
+
+  /// Telefono: titoli corti delle carte.
+  static const String cortoSess = '5 ORE';
+
+  /// Telefono: titolo corto settimana.
+  static const String cortoSett = 'SETT.';
 }
