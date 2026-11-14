@@ -102,8 +102,18 @@ class SchermoTelefono extends StatelessWidget {
           children: <Widget>[
             _voce(c, Icons.settings, Testi.impostazioni, 'imp'),
             _voce(c, Icons.edit_note, Testi.letturaManuale, 'man'),
-            _voce(c, Icons.smart_toy_outlined, Testi.gruppoModelli, 'mod'),
-            _voce(c, Icons.bolt, Testi.gruppoSkill, 'skill'),
+            _voce(
+              c,
+              Icons.smart_toy_outlined,
+              Testi.titoloModifica(Testi.gruppoModelli.toLowerCase()),
+              'mod',
+            ),
+            _voce(
+              c,
+              Icons.bolt,
+              Testi.titoloModifica(Testi.gruppoSkill.toLowerCase()),
+              'skill',
+            ),
           ],
         ),
       ),

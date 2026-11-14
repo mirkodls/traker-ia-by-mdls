@@ -312,6 +312,23 @@ class StatoApp extends ChangeNotifier {
     _avvio = await servizi.avvioWindows();
   }
 
+  /// PC: a ogni lettura riprende in silenzio quello che la vecchia app
+  /// Python ha scritto (senza doppioni), così le due app restano uguali.
+  Future<void> _seguiPython() async {
+    if (servizi.telefono || _cartella.isEmpty) {
+      return;
+    }
+    try {
+      final EsitoImportUi e = await servizi.importaVecchi(_cartella);
+      if (e.letture + e.eventi > 0) {
+        await _ricarica();
+        _ricalcola();
+      }
+    } on Exception {
+      // Cartella sparita o file in scrittura: si riprova al prossimo giro.
+    }
+  }
+
   /// Tiene aggiornata la cartella fissa dell'estensione (Documenti).
   Future<void> _scriviEstensione() async {
     if (!servizi.collegamentiDisponibili) {
@@ -389,6 +406,7 @@ class StatoApp extends ChangeNotifier {
     if (_inLettura || _chiuso) {
       return;
     }
+    await _seguiPython();
     if (_pref.metodo == metodoManuale) {
       _scriviStato(Testi.soloManuale);
       _avvisa();

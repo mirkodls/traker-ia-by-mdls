@@ -562,6 +562,12 @@ abstract final class Testi {
   /// Tasto togli.
   static const String togli = 'Togli';
 
+  /// Sposta su il nome scelto.
+  static const String su = '↑ Su';
+
+  /// Sposta giù il nome scelto.
+  static const String giu = '↓ Giù';
+
   /// Nota rinomina.
   static const String notaRinomina =
       'Rinomina vale da ora: le letture vecchie tengono il nome vecchio.';

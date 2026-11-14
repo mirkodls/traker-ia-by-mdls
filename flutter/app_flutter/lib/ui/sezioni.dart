@@ -128,12 +128,16 @@ class _Tasto extends StatelessWidget {
     required this.nome,
     required this.acceso,
     required this.stato,
+    this.fisso = false,
   });
 
   final Gruppo gruppo;
   final String nome;
   final bool acceso;
   final StatoApp stato;
+
+  /// Telefono: solo tocco, niente trascina (ordine dalla rotella ⚙).
+  final bool fisso;
 
   Widget _faccia({bool ombra = false}) {
     final Color sfondo = acceso
@@ -190,6 +194,12 @@ class _Tasto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (fisso) {
+      return GestureDetector(
+        onTap: () => stato.tocca(gruppo, nome),
+        child: _faccia(),
+      );
+    }
     final List<String> lista = stato.preferenze.elenco(gruppo);
     return DragTarget<(Gruppo, String)>(
       onWillAcceptWithDetails: (DragTargetDetails<(Gruppo, String)> d) =>
@@ -257,19 +267,23 @@ class _GruppoTasti extends StatelessWidget {
         ),
       ),
       for (final String n in p.elenco(gruppo))
-        _Tasto(gruppo: gruppo, nome: n, acceso: acc.contains(n), stato: stato),
-      TextButton(
-        onPressed: modifica,
-        style: TextButton.styleFrom(foregroundColor: Colori.spento),
-        child: const Text(
-          Testi.modifica,
-          style: TextStyle(fontSize: Misure.piccolo),
+        _Tasto(
+          gruppo: gruppo,
+          nome: n,
+          acceso: acc.contains(n),
+          stato: stato,
+          fisso: compatta,
         ),
-      ),
+      if (!compatta)
+        TextButton(
+          onPressed: modifica,
+          style: TextButton.styleFrom(foregroundColor: Colori.spento),
+          child: const Text(
+            Testi.modifica,
+            style: TextStyle(fontSize: Misure.piccolo),
+          ),
+        ),
     ];
-    if (compatta) {
-      return Row(mainAxisSize: MainAxisSize.min, spacing: 4, children: figli);
-    }
     return Wrap(
       spacing: 4,
       runSpacing: 4,
@@ -302,27 +316,26 @@ class BarraTasti extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (compatta) {
+      // Telefono: tasti fermi (vanno a capo), solo tocco.
       return Carta(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: <Widget>[
-              _GruppoTasti(
-                gruppo: Gruppo.modelli,
-                stato: stato,
-                modifica: () => modifica(Gruppo.modelli),
-                compatta: true,
-              ),
-              const SizedBox(width: 10),
-              _GruppoTasti(
-                gruppo: Gruppo.skill,
-                stato: stato,
-                modifica: () => modifica(Gruppo.skill),
-                compatta: true,
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            _GruppoTasti(
+              gruppo: Gruppo.modelli,
+              stato: stato,
+              modifica: () => modifica(Gruppo.modelli),
+              compatta: true,
+            ),
+            const SizedBox(height: 4),
+            _GruppoTasti(
+              gruppo: Gruppo.skill,
+              stato: stato,
+              modifica: () => modifica(Gruppo.skill),
+              compatta: true,
+            ),
+          ],
         ),
       );
     }

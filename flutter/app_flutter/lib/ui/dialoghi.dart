@@ -485,6 +485,28 @@ class _StatoModifica extends State<_Modifica> {
     setState(() => _scelto = null);
   }
 
+  /// Sposta il nome scelto di [passo] posti (su = -1, giù = +1).
+  Future<void> _sposta(int passo) async {
+    final String? v = _scelto;
+    if (v == null) {
+      setState(() => _errore = Testi.scegliNome);
+      return;
+    }
+    final List<String> l = List<String>.of(
+      widget.stato.preferenze.elenco(widget.gruppo),
+    );
+    final int i = l.indexOf(v);
+    final int j = i + passo;
+    if (i < 0 || j < 0 || j >= l.length) {
+      return;
+    }
+    l
+      ..removeAt(i)
+      ..insert(j, v);
+    await widget.stato.riordina(widget.gruppo, l);
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<String> lista = widget.stato.preferenze.elenco(widget.gruppo);
@@ -492,41 +514,43 @@ class _StatoModifica extends State<_Modifica> {
         ? Testi.gruppoModelli
         : Testi.gruppoSkill;
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
       title: Text(Testi.titoloModifica(nomeGruppo.toLowerCase())),
       content: SizedBox(
         width: 460,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Container(
-                  width: 200,
-                  height: 220,
-                  color: Colori.carta2,
-                  child: ListView(
-                    children: <Widget>[
-                      for (final String n in lista)
-                        ListTile(
-                          dense: true,
-                          selected: n == _scelto,
-                          selectedTileColor: Colori.accento,
-                          selectedColor: Colors.white,
-                          title: Text(n),
-                          onTap: () => setState(() {
-                            _scelto = n;
-                            _nome.text = n;
-                            _errore = null;
-                          }),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LayoutBuilder(
+                builder: (BuildContext c, BoxConstraints k) {
+                  // Material (non Container colorato): si vede il nome scelto.
+                  final Widget elenco = Material(
+                    color: Colori.carta2,
+                    child: SizedBox(
+                      width: k.maxWidth < 400 ? double.infinity : 200,
+                      height: k.maxWidth < 400 ? 170 : 220,
+                      child: ListView(
+                        children: <Widget>[
+                          for (final String n in lista)
+                            ListTile(
+                              dense: true,
+                              selected: n == _scelto,
+                              selectedTileColor: Colori.accento,
+                              selectedColor: Colors.white,
+                              title: Text(n),
+                              onTap: () => setState(() {
+                                _scelto = n;
+                                _nome.text = n;
+                                _errore = null;
+                              }),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                  final Widget tasti = Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       _campo(_nome, Testi.campoNome),
@@ -544,16 +568,51 @@ class _StatoModifica extends State<_Modifica> {
                         onPressed: _togli,
                         child: const Text(Testi.togli),
                       ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => unawaited(_sposta(-1)),
+                              child: const Text(Testi.su),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => unawaited(_sposta(1)),
+                              child: const Text(Testi.giu),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (_errore != null)
-              Text(_errore!, style: const TextStyle(color: Colori.errore)),
-            const Text(Testi.notaRinomina, style: stilePiccolo),
-          ],
+                  );
+                  return k.maxWidth < 400
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            elenco,
+                            const SizedBox(height: 8),
+                            tasti,
+                          ],
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            elenco,
+                            const SizedBox(width: 12),
+                            Expanded(child: tasti),
+                          ],
+                        );
+                },
+              ),
+              const SizedBox(height: 8),
+              if (_errore != null)
+                Text(_errore!, style: const TextStyle(color: Colori.errore)),
+              const Text(Testi.notaRinomina, style: stilePiccolo),
+            ],
+          ),
         ),
       ),
       actions: <Widget>[

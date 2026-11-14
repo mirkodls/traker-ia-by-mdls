@@ -129,4 +129,61 @@ void main() {
     expect(f.infoApp, 1);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('telefono: tasti fermi, ordine da ⚙ > Modifica modelli', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    f.cookie = 'sk';
+    final StatoApp s = nuovo();
+    await tester.runAsync(s.avvia);
+    await tester.pumpWidget(TrakerApp(stato: s));
+    await tester.pump();
+    expect(find.byType(Draggable<(Gruppo, String)>), findsNothing);
+    final List<String> prima = s.preferenze.elenco(Gruppo.modelli);
+    await tester.tap(find.byTooltip(Testi.impostazioni));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.text(Testi.titoloModifica(Testi.gruppoModelli.toLowerCase())),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, prima[1]));
+    await tester.pump();
+    await tester.ensureVisible(find.text(Testi.su));
+    await tester.tap(find.text(Testi.su));
+    await tester.pumpAndSettle();
+    expect(s.preferenze.elenco(Gruppo.modelli).first, prima[1]);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('PC: a ogni lettura riprende i dati Python nuovi', () async {
+    f
+      ..tel = false
+      ..imp[Chiavi.cartellaImport] = 'C:/vecchi'
+      ..imp[Chiavi.importFatto] = '1'
+      ..risposte.addAll(<Object>[const Uso(sett: 1), const Uso(sett: 2)]);
+    final StatoApp s = nuovo();
+    await s.avvia();
+    f.daImportare.add(Lettura(ora: _t('2026-11-14 11:00'), sett: 9));
+    await s.leggi();
+    expect(f.importate, <String>['C:/vecchi']);
+    expect(s.letture.any((Lettura l) => l.sett == 9), isTrue);
+    f.daImportare.clear();
+    await s.leggi();
+    expect(f.importate, hasLength(2));
+  });
+
+  test('telefono: niente import Python', () async {
+    f
+      ..cookie = 'sk'
+      ..imp[Chiavi.cartellaImport] = 'C:/vecchi'
+      ..imp[Chiavi.importFatto] = '1'
+      ..risposte.add(const Uso(sett: 1));
+    final StatoApp s = nuovo();
+    await s.avvia();
+    await s.leggi();
+    expect(f.importate, isEmpty);
+  });
 }
