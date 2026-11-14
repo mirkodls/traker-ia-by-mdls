@@ -28,3 +28,5 @@ __pycache__/
 *.keystore
 # exe/apk compilati (Blocco 4/5)
 release/
+# chiave firma APK (Blocco 5): solo sul PC, mai nel repo
+firma-backup/

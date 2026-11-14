@@ -8,9 +8,12 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/collegamenti.dart';
+import 'package:traker_ia/domain/fornitori.dart';
 import 'package:traker_ia/domain/preferenze.dart';
+import 'package:traker_ia/domain/sfondo.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
+import 'package:traker_ia/ui/pagina_login.dart';
 import 'package:traker_ia/ui/servizi.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 import 'package:traker_ia/ui/tema.dart';
@@ -145,10 +148,12 @@ class _StatoImpostazioni extends State<_Impostazioni> {
   late final TextEditingController _cartella = TextEditingController(
     text: widget.stato.cartellaImport,
   );
-  late String _metodo =
-      Testi.nomiMetodi.containsKey(widget.stato.preferenze.metodo)
-      ? widget.stato.preferenze.metodo
-      : metodoAuto;
+  late final bool _tel = widget.stato.servizi.telefono;
+  late String _metodo = metodoValido(
+    widget.stato.preferenze.metodo,
+    telefono: _tel,
+  );
+  String? _esitoLogin;
   bool _cancellaCookie = false;
   late bool _avvio = widget.stato.avvioWindows;
   String? _esitoClaudeCode;
@@ -192,6 +197,22 @@ class _StatoImpostazioni extends State<_Impostazioni> {
     }
   }
 
+  Future<void> _login(FornitoreWeb f) async {
+    final StatoApp st = widget.stato;
+    final String? valore = await apriLogin(context, st.servizi, f);
+    if (valore == null) {
+      return;
+    }
+    if (mounted) {
+      setState(() => _esitoLogin = Testi.loginFatto);
+    }
+    await st.salvaLoginWeb(valore);
+  }
+
+  Future<void> _infoApp() async {
+    await widget.stato.servizi.apriInfoApp();
+  }
+
   Future<void> _importa() async {
     final String e = await widget.stato.importaOra(_cartella.text);
     if (mounted) {
@@ -199,8 +220,67 @@ class _StatoImpostazioni extends State<_Impostazioni> {
     }
   }
 
+  /// Telefono: login nell'app, batteria Samsung, letture a app chiusa.
+  List<Widget> _telefono() {
+    final StatoApp st = widget.stato;
+    return <Widget>[
+      const Text(Testi.titoloAccesso, style: stileNormale),
+      Text(
+        _esitoLogin ??
+            Testi.statoLogin(fatto: st.cookie, scaduto: st.loginScaduto),
+        style: TextStyle(
+          color: st.loginScaduto ? Colori.errore : Colori.spento,
+          fontSize: Misure.piccolo,
+        ),
+      ),
+      Wrap(
+        spacing: 10,
+        runSpacing: 6,
+        children: <Widget>[
+          for (final FornitoreWeb f in fornitoriWeb)
+            FilledButton(
+              onPressed: () => unawaited(_login(f)),
+              style: stileAccento(),
+              child: Text(Testi.accedi(f.nome)),
+            ),
+        ],
+      ),
+      const SizedBox(height: 10),
+      // Si aggiorna da sola tornando da Info app.
+      ListenableBuilder(
+        listenable: st,
+        builder: (BuildContext _, Widget? _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              Testi.batteria(st.batteriaLibera),
+              style: TextStyle(
+                color: st.batteriaLibera == false
+                    ? Colori.errore
+                    : Colori.spento,
+                fontSize: Misure.piccolo,
+              ),
+            ),
+            if (st.batteriaLibera != true) ...<Widget>[
+              const Text(Testi.passiBatteria, style: stilePiccolo),
+              OutlinedButton(
+                onPressed: () => unawaited(_infoApp()),
+                child: const Text(Testi.apriInfoApp),
+              ),
+            ],
+          ],
+        ),
+      ),
+      const Text(Testi.spiegaSfondo, style: stilePiccolo),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) => AlertDialog(
+    // Telefono: bordi stretti, più spazio ai campi.
+    insetPadding: _tel
+        ? const EdgeInsets.symmetric(horizontal: 12, vertical: 24)
+        : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
     title: const Text(Testi.titoloImpostazioni),
     content: SizedBox(
       width: 460,
@@ -217,15 +297,20 @@ class _StatoImpostazioni extends State<_Impostazioni> {
               dropdownColor: Colori.carta2,
               style: stileNormale,
               items: <DropdownMenuItem<String>>[
-                for (final MapEntry<String, String> e
-                    in Testi.nomiMetodi.entries)
-                  DropdownMenuItem<String>(value: e.key, child: Text(e.value)),
+                for (final String m in metodiDisponibili(telefono: _tel))
+                  DropdownMenuItem<String>(
+                    value: m,
+                    child: Text(Testi.nomiMetodi[m] ?? m),
+                  ),
               ],
               onChanged: (String? v) =>
                   setState(() => _metodo = v ?? metodoAuto),
             ),
             const SizedBox(height: 6),
-            Text(Testi.claudeCode(widget.claudeCode), style: stilePiccolo),
+            if (_tel)
+              ..._telefono()
+            else
+              Text(Testi.claudeCode(widget.claudeCode), style: stilePiccolo),
             const SizedBox(height: 14),
             _campo(_cookie, Testi.campoCookie, segreto: true),
             Row(
@@ -249,19 +334,21 @@ class _StatoImpostazioni extends State<_Impostazioni> {
               Testi.avvisoCookie,
               style: TextStyle(color: Colori.errore, fontSize: Misure.piccolo),
             ),
-            const SizedBox(height: 14),
-            _campo(_cartella, Testi.campoCartella),
-            Row(
-              children: <Widget>[
-                FilledButton(
-                  onPressed: _importa,
-                  child: const Text(Testi.importaOra),
-                ),
-                const SizedBox(width: 10),
-                if (_esitoImport != null)
-                  Expanded(child: Text(_esitoImport!, style: stilePiccolo)),
-              ],
-            ),
+            if (!_tel) ...<Widget>[
+              const SizedBox(height: 14),
+              _campo(_cartella, Testi.campoCartella),
+              Row(
+                children: <Widget>[
+                  FilledButton(
+                    onPressed: _importa,
+                    child: const Text(Testi.importaOra),
+                  ),
+                  const SizedBox(width: 10),
+                  if (_esitoImport != null)
+                    Expanded(child: Text(_esitoImport!, style: stilePiccolo)),
+                ],
+              ),
+            ],
             if (widget.stato.servizi.avvioWindowsDisponibile) ...<Widget>[
               const SizedBox(height: 14),
               SwitchListTile(

@@ -625,4 +625,57 @@ abstract final class Testi {
       ? 'Nessun file trovato nella cartella.'
       : 'Import: $letture letture e $eventi eventi nuovi'
             '${scartate > 0 ? ', $scartate righe rotte saltate' : ''}.';
+
+  // ------------------------------------------------------------ telefono
+
+  /// Login scaduto (401/403): rifare.
+  static const String rifaiLogin =
+      'Login claude.ai scaduto. Rifai login: ⚙ > Accedi a claude.ai.';
+
+  /// Telefono senza login.
+  static const String serveLogin = 'Serve login: ⚙ > Accedi a claude.ai.';
+
+  /// Impostazioni: titolo sezione accesso.
+  static const String titoloAccesso = 'Accesso';
+
+  /// Tasto: login nella pagina dell'app.
+  static String accedi(String fornitore) => 'Accedi a $fornitore';
+
+  /// Stato login.
+  static String statoLogin({required bool fatto, required bool scaduto}) =>
+      scaduto
+      ? 'Login: scaduto, rifallo.'
+      : (fatto ? 'Login: fatto.' : 'Login: non fatto.');
+
+  /// Esito: login riuscito.
+  static const String loginFatto = 'Login fatto. Leggo…';
+
+  /// Titolo pagina login.
+  static String titoloLogin(String fornitore) => 'Login $fornitore';
+
+  /// Spiegazione pagina login.
+  static const String spiegaLogin =
+      'Entra con email + codice. Google spesso non va qui. '
+      'Fatto il login la pagina si chiude da sola.';
+
+  /// Pagina login non caricata.
+  static const String loginErrore = 'Pagina non caricata. Controlla internet.';
+
+  /// Riga batteria.
+  static String batteria(bool? libera) => switch (libera) {
+    true => 'Batteria: senza limiti. Ok.',
+    false => 'Batteria: limitata. Letture a app chiusa bloccate.',
+    null => 'Batteria: stato sconosciuto.',
+  };
+
+  /// Passi batteria Samsung.
+  static const String passiBatteria =
+      'Apri Info app > Batteria > Senza limiti. Poi torna qui.';
+
+  /// Tasto Info app.
+  static const String apriInfoApp = 'Apri Info app';
+
+  /// Spiegazione letture a app chiusa.
+  static const String spiegaSfondo =
+      'App chiusa: legge circa ogni 15 min (Android decide il momento).';
 }

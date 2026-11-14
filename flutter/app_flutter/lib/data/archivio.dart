@@ -65,6 +65,13 @@ class Archivio {
     return out;
   }
 
+  /// Butta la copia in memoria: il database può essere cambiato da fuori
+  /// (lettura in sottofondo sul telefono).
+  void dimenticaCache() {
+    _letture = null;
+    _eventi = null;
+  }
+
   /// Salva una lettura.
   Future<void> aggiungiLettura(Lettura l) async {
     await _db.into(_db.letture).insert(_rigaLettura(l));

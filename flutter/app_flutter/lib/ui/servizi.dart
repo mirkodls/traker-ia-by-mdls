@@ -86,4 +86,23 @@ abstract interface class Servizi {
 
   /// Apre la finestra cmd con l'accesso guidato a Claude Code.
   Future<bool> accediClaudeCode();
+
+  /// Vero sul telefono: login claude.ai dentro l'app e lettura in
+  /// sottofondo; niente estensione, Claude Code, cartella vecchi dati.
+  bool get telefono;
+
+  /// Cookie della pagina di login per [sito] ('' = nessuno).
+  Future<String> cookieWeb(String sito);
+
+  /// Vero se la batteria è "senza limiti" per l'app (null = non so / PC).
+  Future<bool?> batteriaLibera();
+
+  /// Apre Info app nelle impostazioni del telefono.
+  Future<void> apriInfoApp();
+
+  /// Butta la copia in memoria dei dati (database cambiato da fuori).
+  Future<void> dimenticaCache();
+
+  /// Accende/spegne la lettura in sottofondo (solo telefono).
+  Future<void> aggiornaSfondo({required int minuti, required bool acceso});
 }

@@ -18,6 +18,7 @@ import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/periodo.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/previsione.dart' as prev;
+import 'package:traker_ia/domain/sfondo.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/domain/tray.dart';
@@ -58,6 +59,8 @@ class StatoApp extends ChangeNotifier {
   bool _pronto = false;
   bool _cookie = false;
   bool _avvio = false;
+  bool? _batteria;
+  bool _loginScaduto = false;
   String _trayInviato = '';
   String _cartella = '';
   String _stato = Testi.avvio;
@@ -110,6 +113,12 @@ class StatoApp extends ChangeNotifier {
 
   /// C'è un cookie salvato.
   bool get cookie => _cookie;
+
+  /// Telefono: batteria "senza limiti" (null = non so).
+  bool? get batteriaLibera => _batteria;
+
+  /// Telefono: il sito ha rifiutato il login, va rifatto.
+  bool get loginScaduto => _loginScaduto;
 
   /// L'app parte con Windows.
   bool get avvioWindows => _avvio;
@@ -188,6 +197,14 @@ class StatoApp extends ChangeNotifier {
       _cartella = servizi.cartellaImportPredefinita;
     }
     _cookie = await servizi.cookieSalvato();
+    if (servizi.telefono) {
+      _loginScaduto = imp[Chiavi.loginScaduto] == '1';
+      if (_loginScaduto) {
+        _avvisoDaMostrare = Testi.rifaiLogin;
+      }
+      _batteria = await servizi.batteriaLibera();
+      await _aggiornaSfondo();
+    }
     await _avvioPrimaVolta(imp[Chiavi.avvioDeciso]);
     await _scriviEstensione();
     await _ricarica();
@@ -217,6 +234,65 @@ class StatoApp extends ChangeNotifier {
       _programma();
       _minuto = Timer.periodic(const Duration(minutes: 1), (_) => _ricalcola());
     }
+  }
+
+  /// Telefono: lettura in sottofondo accesa se c'è il login e non è
+  /// "solo manuale".
+  Future<void> _aggiornaSfondo() async {
+    if (!servizi.telefono) {
+      return;
+    }
+    await servizi.aggiornaSfondo(
+      minuti: _pref.minuti,
+      acceso: _cookie && _pref.metodo != metodoManuale,
+    );
+  }
+
+  /// Telefono: tornando nell'app rilegge i dati (la lettura in sottofondo
+  /// può averne aggiunti), batteria e login; legge se l'ultima è vecchia.
+  Future<void> riprendi() async {
+    if (!_pronto || _chiuso) {
+      return;
+    }
+    await servizi.dimenticaCache();
+    await _ricarica();
+    final Map<String, String?> imp = await servizi.impostazioni(<String>[
+      Chiavi.loginScaduto,
+    ]);
+    final bool scaduto = imp[Chiavi.loginScaduto] == '1';
+    if (scaduto && !_loginScaduto) {
+      _avvisoDaMostrare = Testi.rifaiLogin;
+    }
+    _loginScaduto = scaduto;
+    _batteria = await servizi.batteriaLibera();
+    _ricalcola();
+    if (giri && serveLetturaAlRitorno(_letture, adesso, _pref.minuti)) {
+      await leggi();
+    }
+  }
+
+  /// Rilegge lo stato della batteria (dopo Info app).
+  Future<void> aggiornaBatteria() async {
+    _batteria = await servizi.batteriaLibera();
+    _avvisa();
+  }
+
+  /// Login fatto nella pagina dell'app: salva il cookie di sessione in
+  /// cassaforte, accende il sottofondo e legge subito.
+  Future<void> salvaLoginWeb(String valore) async {
+    await servizi.salvaCookie(valore);
+    _cookie = await servizi.cookieSalvato();
+    await _togliLoginScaduto();
+    await _aggiornaSfondo();
+    await leggi();
+  }
+
+  Future<void> _togliLoginScaduto() async {
+    if (!_loginScaduto) {
+      return;
+    }
+    _loginScaduto = false;
+    await servizi.salvaImpostazioni(<String, String>{Chiavi.loginScaduto: '0'});
   }
 
   /// Avvio con Windows: acceso da solo la prima volta, poi decide l'utente.
@@ -318,6 +394,11 @@ class StatoApp extends ChangeNotifier {
       _avvisa();
       return;
     }
+    if (servizi.telefono && !_cookie) {
+      _scriviStato(Testi.serveLogin, errore: true);
+      _avvisa();
+      return;
+    }
     _inLettura = true;
     _scriviStato(Testi.leggo);
     _avvisa();
@@ -332,16 +413,10 @@ class StatoApp extends ChangeNotifier {
         _ultimaEstensione = ora;
       }
       await servizi.aggiungiLettura(
-        Lettura(
-          ora: ora,
-          sett: r.uso.sett,
-          sess: r.uso.sess,
-          lavoro: lavoro,
-          modelli: _pref.attiviTesto(Gruppo.modelli),
-          skill: _pref.attiviTesto(Gruppo.skill),
-        ),
+        letturaAutomatica(r.uso, ora, _pref, _eventi),
       );
       _avviso.ok();
+      await _togliLoginScaduto();
       _letture = await servizi.letture();
       _scriviStato(
         Testi.ultimaLettura(
@@ -350,9 +425,21 @@ class StatoApp extends ChangeNotifier {
         ),
       );
     } on ErroreLettura catch (e) {
-      _scriviStato(Testi.letturaFallita(e.messaggio), errore: true);
-      if (_avviso.ko()) {
-        _avvisoDaMostrare = e.messaggio;
+      if (e.loginScaduto && servizi.telefono) {
+        // 401/403 sul telefono: avviso subito, una volta.
+        _scriviStato(Testi.rifaiLogin, errore: true);
+        if (!_loginScaduto) {
+          _loginScaduto = true;
+          _avvisoDaMostrare = Testi.rifaiLogin;
+          await servizi.salvaImpostazioni(<String, String>{
+            Chiavi.loginScaduto: '1',
+          });
+        }
+      } else {
+        _scriviStato(Testi.letturaFallita(e.messaggio), errore: true);
+        if (_avviso.ko()) {
+          _avvisoDaMostrare = e.messaggio;
+        }
       }
     } finally {
       _inLettura = false;
@@ -458,12 +545,16 @@ class StatoApp extends ChangeNotifier {
     if (cookie != null) {
       await servizi.salvaCookie(cookie);
       _cookie = await servizi.cookieSalvato();
+      if (_cookie) {
+        await _togliLoginScaduto();
+      }
     }
     _cartella = cartella.trim();
     await servizi.salvaImpostazioni(<String, String>{
       Chiavi.cartellaImport: _cartella,
     });
     await _salvaPref(_pref.copia(minuti: minuti, metodo: metodo));
+    await _aggiornaSfondo();
     if (giri) {
       _programma();
     }

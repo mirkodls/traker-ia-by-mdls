@@ -139,7 +139,7 @@ class ServiziFinti implements Servizi {
   final List<String> collegamenti = <String>[];
 
   @override
-  bool get collegamentiDisponibili => true;
+  bool get collegamentiDisponibili => !tel;
 
   @override
   Future<String> preparaEstensione() async {
@@ -162,4 +162,43 @@ class ServiziFinti implements Servizi {
     collegamenti.add('claude_code');
     return true;
   }
+
+  /// Finge il telefono.
+  bool tel = false;
+
+  /// Cookie della pagina di login finta.
+  String cookieDellaPagina = '';
+
+  /// Batteria finta (null = non so).
+  bool? batteria;
+
+  /// Chiamate a sfondo: (minuti, acceso).
+  final List<(int, bool)> sfondo = <(int, bool)>[];
+
+  /// Volte che la cache è stata buttata.
+  int cacheButtate = 0;
+
+  /// Volte che si è aperto Info app.
+  int infoApp = 0;
+
+  @override
+  bool get telefono => tel;
+
+  @override
+  Future<String> cookieWeb(String sito) async => cookieDellaPagina;
+
+  @override
+  Future<bool?> batteriaLibera() async => batteria;
+
+  @override
+  Future<void> apriInfoApp() async => infoApp++;
+
+  @override
+  Future<void> dimenticaCache() async => cacheButtate++;
+
+  @override
+  Future<void> aggiornaSfondo({
+    required int minuti,
+    required bool acceso,
+  }) async => sfondo.add((minuti, acceso));
 }

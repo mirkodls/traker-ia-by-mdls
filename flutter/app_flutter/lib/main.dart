@@ -18,6 +18,7 @@ import 'package:traker_ia/data/import_file.dart';
 import 'package:traker_ia/data/lettori_anthropic.dart';
 import 'package:traker_ia/data/rete.dart';
 import 'package:traker_ia/data/ricevitore.dart';
+import 'package:traker_ia/data/sfondo_telefono.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/collegamenti.dart';
 import 'package:traker_ia/domain/modelli.dart';
@@ -86,11 +87,13 @@ class ServiziVeri implements Servizi {
 
   @override
   Future<RisultatoCatena> leggi(String metodo) async {
-    final List<LettoreUso> tutti = await lettoriAnthropic(
-      estensione: _estensione,
-      claudeCode: _claudeCode,
-      web: _web,
-    );
+    final List<LettoreUso> tutti = telefono
+        ? <LettoreUso>[if (await _web.disponibile()) _web]
+        : await lettoriAnthropic(
+            estensione: _estensione,
+            claudeCode: _claudeCode,
+            web: _web,
+          );
     return leggiCatena(scegliLettori(metodo, tutti));
   }
 
@@ -190,6 +193,41 @@ class ServiziVeri implements Servizi {
   @override
   Future<bool> accediClaudeCode() => _collegamenti.accediClaudeCode();
 
+  final Telefono _telefono = const Telefono();
+
+  @override
+  bool get telefono => Platform.isAndroid;
+
+  /// Prepara la lettura in sottofondo (solo telefono).
+  Future<void> preparaTelefono() async {
+    if (telefono) {
+      await _telefono.prepara();
+    }
+  }
+
+  @override
+  Future<String> cookieWeb(String sito) => _telefono.cookie(sito);
+
+  @override
+  Future<bool?> batteriaLibera() async =>
+      telefono ? _telefono.batteriaLibera() : null;
+
+  @override
+  Future<void> apriInfoApp() => _telefono.apriInfoApp();
+
+  @override
+  Future<void> dimenticaCache() async => _archivio.dimenticaCache();
+
+  @override
+  Future<void> aggiornaSfondo({
+    required int minuti,
+    required bool acceso,
+  }) async {
+    if (telefono) {
+      await _telefono.sfondo(minuti: minuti, acceso: acceso);
+    }
+  }
+
   /// Chiama la finestra Windows; errori = null (finestra non pronta, test).
   Future<T?> _finestra<T>(String metodo, [Object? argomenti]) async {
     try {
@@ -207,7 +245,27 @@ Future<void> main() async {
   final ServiziVeri servizi = ServiziVeri(minuti: () => 10);
   final StatoApp stato = StatoApp(servizi);
   servizi.minuti = () => stato.preferenze.minuti;
-  unawaited(servizi.avviaRicevitore());
+  if (servizi.telefono) {
+    await servizi.preparaTelefono();
+    WidgetsBinding.instance.addObserver(_Ritorno(stato));
+  } else {
+    unawaited(servizi.avviaRicevitore());
+  }
   runApp(TrakerApp(stato: stato));
   await stato.avvia();
+}
+
+/// Telefono: tornando nell'app rilegge i dati (la lettura in sottofondo
+/// può averne aggiunti) e legge se l'ultima è vecchia.
+class _Ritorno with WidgetsBindingObserver {
+  _Ritorno(this.stato);
+
+  final StatoApp stato;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (s == AppLifecycleState.resumed) {
+      unawaited(stato.riprendi());
+    }
+  }
 }

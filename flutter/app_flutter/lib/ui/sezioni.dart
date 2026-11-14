@@ -369,7 +369,7 @@ class _StatoRigaNota extends State<RigaNota> {
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
     );
-    final Widget nota = Row(
+    final Widget campo = Row(
       children: <Widget>[
         const Text('✎', style: TextStyle(color: Colori.nota, fontSize: 17)),
         const SizedBox(width: 8),
@@ -381,12 +381,18 @@ class _StatoRigaNota extends State<RigaNota> {
             onSubmitted: (_) => _aggiungi(),
           ),
         ),
+      ],
+    );
+    final Widget aggiungi = FilledButton(
+      onPressed: _aggiungi,
+      style: stileAccento(),
+      child: const Text(Testi.aggiungiNota),
+    );
+    final Widget nota = Row(
+      children: <Widget>[
+        Expanded(child: campo),
         const SizedBox(width: 8),
-        FilledButton(
-          onPressed: _aggiungi,
-          style: stileAccento(),
-          child: const Text(Testi.aggiungiNota),
-        ),
+        aggiungi,
       ],
     );
     return Carta(
@@ -401,11 +407,18 @@ class _StatoRigaNota extends State<RigaNota> {
                 ],
               )
             : Column(
+                // Stretto (telefono): campo nota intero, tasti sotto.
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  nota,
+                  campo,
                   const SizedBox(height: 6),
-                  tastoLavoro,
+                  Row(
+                    children: <Widget>[
+                      Expanded(child: aggiungi),
+                      const SizedBox(width: 8),
+                      Expanded(child: tastoLavoro),
+                    ],
+                  ),
                 ],
               ),
       ),

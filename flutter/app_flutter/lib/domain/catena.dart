@@ -7,10 +7,13 @@ import 'modelli.dart';
 /// Errore di un lettore (messaggio senza segreti).
 class ErroreLettura implements Exception {
   /// Crea l'errore.
-  const ErroreLettura(this.messaggio);
+  const ErroreLettura(this.messaggio, {this.loginScaduto = false});
 
   /// Messaggio da mostrare.
   final String messaggio;
+
+  /// Vero se il sito ha rifiutato l'accesso (401/403): rifare il login.
+  final bool loginScaduto;
 
   @override
   String toString() => messaggio;
@@ -65,6 +68,7 @@ class RisultatoCatena {
 /// vince. Se cadono tutti: un solo ErroreLettura con tutti i motivi.
 Future<RisultatoCatena> leggiCatena(List<LettoreUso> lettori) async {
   final List<String> errori = <String>[];
+  bool scaduto = false;
   for (final LettoreUso l in lettori) {
     try {
       final Uso uso = await l.leggi();
@@ -75,6 +79,7 @@ Future<RisultatoCatena> leggiCatena(List<LettoreUso> lettori) async {
       return RisultatoCatena(uso, l.id);
     } on ErroreLettura catch (e) {
       errori.add('${l.nome}: ${e.messaggio}');
+      scaduto = scaduto || e.loginScaduto;
     } on Object catch (e) {
       // Un lettore rotto non ferma la catena.
       errori.add('${l.nome}: errore ${e.runtimeType}');
@@ -82,6 +87,7 @@ Future<RisultatoCatena> leggiCatena(List<LettoreUso> lettori) async {
   }
   throw ErroreLettura(
     errori.isEmpty ? 'nessun metodo disponibile' : errori.join(' | '),
+    loginScaduto: scaduto,
   );
 }
 

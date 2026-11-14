@@ -47,8 +47,12 @@ abstract final class Chiavi {
   /// Avvio con Windows già deciso una volta ('1'): da lì decide l'utente.
   static const String avvioDeciso = 'avvio_windows_deciso';
 
+  /// '1' = una lettura in sottofondo ha trovato il login scaduto.
+  static const String loginScaduto = 'login_scaduto';
+
   /// Tutte le chiavi lette all'avvio.
   static const List<String> tutte = <String>[
+    loginScaduto,
     minuti,
     metodo,
     modelli,

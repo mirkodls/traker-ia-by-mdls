@@ -54,7 +54,10 @@ class ClientJsonIo implements ClientJson {
         }
       }
       if (r.statusCode != HttpStatus.ok) {
-        throw ErroreLettura(messaggioHttp(r.statusCode));
+        throw ErroreLettura(
+          messaggioHttp(r.statusCode),
+          loginScaduto: r.statusCode == 401 || r.statusCode == 403,
+        );
       }
       return jsonDecode(utf8.decode(byte));
     } on TimeoutException {

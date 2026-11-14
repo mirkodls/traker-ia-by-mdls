@@ -32,8 +32,7 @@ class Letture extends Table {
   BoolColumn get alPc => boolean().nullable()();
 
   /// Periodo di lavoro attivo.
-  BoolColumn get lavoro =>
-      boolean().withDefault(const Constant<bool>(false))();
+  BoolColumn get lavoro => boolean().withDefault(const Constant<bool>(false))();
 
   /// Modelli accesi, separati da '|'.
   TextColumn get modelli => text().withDefault(const Constant<String>(''))();
@@ -88,6 +87,8 @@ class DatabaseTraker extends _$DatabaseTraker {
       name: 'traker_ia',
       native: const DriftNativeOptions(
         databaseDirectory: getApplicationSupportDirectory,
+        // Telefono: la lettura in sottofondo usa lo stesso database.
+        shareAcrossIsolates: true,
       ),
     ),
   );
