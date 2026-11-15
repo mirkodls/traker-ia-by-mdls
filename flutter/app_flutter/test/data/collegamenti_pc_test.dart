@@ -19,7 +19,8 @@ void main() {
 
   CollegamentiPc nuovo({String? hklm}) => CollegamentiPc(
     cartellaBase: () async => tmp,
-    cartellaDocumenti: () async => Directory('${tmp.path}/Documenti'),
+    cartellaDocumenti: () async =>
+        Directory('${tmp.path}${Platform.pathSeparator}Documenti'),
     leggiAsset: (String k) async => 'contenuto di $k',
     esegui: (String exe, List<String> a) async {
       query.add(a[1]);
