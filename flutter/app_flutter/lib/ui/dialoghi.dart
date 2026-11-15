@@ -209,10 +209,6 @@ class _StatoImpostazioni extends State<_Impostazioni> {
     await st.salvaLoginWeb(valore);
   }
 
-  Future<void> _infoApp() async {
-    await widget.stato.servizi.apriInfoApp();
-  }
-
   Future<void> _importa() async {
     final String e = await widget.stato.importaOra(_cartella.text);
     if (mounted) {
@@ -246,30 +242,39 @@ class _StatoImpostazioni extends State<_Impostazioni> {
         ],
       ),
       const SizedBox(height: 10),
-      // Si aggiorna da sola tornando da Info app.
+      const Text(Testi.campoMinutiSfondo, style: stilePiccolo),
+      // Cambia subito (non serve Salva); si aggiorna da sola.
       ListenableBuilder(
         listenable: st,
-        builder: (BuildContext _, Widget? _) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              Testi.batteria(st.batteriaLibera),
-              style: TextStyle(
-                color: st.batteriaLibera == false
-                    ? Colori.errore
-                    : Colori.spento,
-                fontSize: Misure.piccolo,
+        builder: (BuildContext _, Widget? _) => DropdownButton<int>(
+          value: st.preferenze.minutiSfondo,
+          isExpanded: true,
+          dropdownColor: Colori.carta2,
+          style: stileNormale,
+          items: <DropdownMenuItem<int>>[
+            for (final int m in sceltaMinutiSfondo)
+              DropdownMenuItem<int>(
+                value: m,
+                child: Text(Testi.sceltaMinutiSfondo(m)),
               ),
-            ),
-            if (st.batteriaLibera != true) ...<Widget>[
-              const Text(Testi.passiBatteria, style: stilePiccolo),
-              OutlinedButton(
-                onPressed: () => unawaited(_infoApp()),
-                child: const Text(Testi.apriInfoApp),
-              ),
-            ],
           ],
+          onChanged: (int? v) =>
+              unawaited(st.cambiaMinutiSfondo(v ?? minutiSfondoPredefiniti)),
         ),
+      ),
+      ListenableBuilder(
+        listenable: st,
+        builder: (BuildContext _, Widget? _) => Text(
+          Testi.batteria(st.batteriaLibera),
+          style: TextStyle(
+            color: st.batteriaLibera == false ? Colori.errore : Colori.spento,
+            fontSize: Misure.piccolo,
+          ),
+        ),
+      ),
+      OutlinedButton(
+        onPressed: () => unawaited(apriPermessi(context, st)),
+        child: const Text(Testi.titoloPermessi),
       ),
       const Text(Testi.spiegaSfondo, style: stilePiccolo),
     ];
@@ -766,4 +771,117 @@ class _DialogoEstensioneStato extends State<DialogoEstensione> {
       ],
     );
   }
+}
+
+/// Telefono: pagina permessi (solo batteria). Ogni passo apre la pagina
+/// giusta di Android; tornando nell'app lo stato si aggiorna.
+Future<void> apriPermessi(BuildContext context, StatoApp stato) =>
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext c) => _Permessi(stato: stato),
+    );
+
+class _Permessi extends StatefulWidget {
+  const _Permessi({required this.stato});
+
+  final StatoApp stato;
+
+  @override
+  State<_Permessi> createState() => _StatoPermessi();
+}
+
+class _StatoPermessi extends State<_Permessi> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (s == AppLifecycleState.resumed) {
+      unawaited(widget.stato.aggiornaBatteria());
+    }
+  }
+
+  Widget _riga(String testo, String bottone, String voce, {bool? ok}) =>
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          children: <Widget>[
+            if (ok != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Icon(
+                  ok ? Icons.check_circle : Icons.error,
+                  color: ok ? Colori.ok : Colori.errore,
+                  size: 18,
+                ),
+              ),
+            Expanded(child: Text(testo, style: stilePiccolo)),
+            const SizedBox(width: 6),
+            OutlinedButton(
+              onPressed: () =>
+                  unawaited(widget.stato.servizi.apriPermesso(voce)),
+              child: Text(bottone),
+            ),
+          ],
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+    title: const Text(Testi.titoloPermessi),
+    content: SizedBox(
+      width: 460,
+      child: ListenableBuilder(
+        listenable: widget.stato,
+        builder: (BuildContext _, Widget? _) => SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text(Testi.spiegaPermessi, style: stilePiccolo),
+              _riga(
+                Testi.permessoBatteria,
+                Testi.consenti,
+                Permesso.batteria,
+                ok: widget.stato.batteriaLibera,
+              ),
+              _riga(
+                Testi.permessoPaginaBatteria,
+                Testi.apri,
+                Permesso.paginaBatteria,
+              ),
+              _riga(Testi.permessoSamsung, Testi.apri, Permesso.samsung),
+              const SizedBox(height: 8),
+              Text(
+                Testi.batteria(widget.stato.batteriaLibera),
+                style: TextStyle(
+                  color: widget.stato.batteriaLibera == false
+                      ? Colori.errore
+                      : Colori.spento,
+                  fontSize: Misure.piccolo,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+    actions: <Widget>[
+      FilledButton(
+        onPressed: () => Navigator.of(context).pop(),
+        style: stileAccento(),
+        child: const Text(Testi.fatto),
+      ),
+    ],
+  );
 }

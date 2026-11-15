@@ -134,4 +134,72 @@ void main() {
       ),
     );
   });
+
+  group('sottofondo e permessi', () {
+    test('minuti a app chiusa: solo 15/30/60, altrimenti 30', () {
+      expect(normalizzaMinutiSfondo(15), 15);
+      expect(normalizzaMinutiSfondo(60), 60);
+      expect(normalizzaMinutiSfondo(10), minutiSfondoPredefiniti);
+      expect(normalizzaMinutiSfondo(null), 30);
+      final Preferenze p = Preferenze.daMappa(<String, String?>{
+        Chiavi.minutiSfondo: '45',
+      });
+      expect(p.minutiSfondo, 30);
+      expect(p.sfondoAcceso, isTrue);
+      final Preferenze q = Preferenze.daMappa(
+        p.copia(sfondoAcceso: false, minutiSfondo: 60).aMappa(),
+      );
+      expect(q.sfondoAcceso, isFalse);
+      expect(q.minutiSfondo, 60);
+    });
+
+    test('sottofondo acceso solo con login, non manuale, interruttore', () {
+      final Preferenze p = Preferenze();
+      expect(sfondoDaAccendere(p, login: true), isTrue);
+      expect(sfondoDaAccendere(p, login: false), isFalse);
+      expect(
+        sfondoDaAccendere(p.copia(metodo: metodoManuale), login: true),
+        isFalse,
+      );
+      expect(
+        sfondoDaAccendere(p.copia(sfondoAcceso: false), login: true),
+        isFalse,
+      );
+    });
+
+    test('pagina permessi: primo avvio o acceso con batteria limitata', () {
+      expect(
+        chiediPermessi(
+          primaVolta: true,
+          sfondoAcceso: false,
+          batteriaLibera: true,
+        ),
+        isTrue,
+      );
+      expect(
+        chiediPermessi(
+          primaVolta: false,
+          sfondoAcceso: true,
+          batteriaLibera: false,
+        ),
+        isTrue,
+      );
+      expect(
+        chiediPermessi(
+          primaVolta: false,
+          sfondoAcceso: true,
+          batteriaLibera: null,
+        ),
+        isFalse,
+      );
+      expect(
+        chiediPermessi(
+          primaVolta: false,
+          sfondoAcceso: false,
+          batteriaLibera: false,
+        ),
+        isFalse,
+      );
+    });
+  });
 }

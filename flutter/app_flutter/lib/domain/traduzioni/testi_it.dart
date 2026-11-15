@@ -697,7 +697,69 @@ abstract final class Testi {
 
   /// Spiegazione letture a app chiusa.
   static const String spiegaSfondo =
-      'App chiusa: legge circa ogni 15 min (Android decide il momento).';
+      'App chiusa: Android decide il momento esatto. Batteria bassa = salta.';
+
+  /// Interruttore letture a app chiusa.
+  static const String sottofondo = 'Sottofondo';
+
+  /// Stima batteria in 24 ore per [minuti] (stima, da misurare).
+  static String stimaBatteria(int minuti) => switch (minuti) {
+    15 => '~0,5-2%/giorno',
+    30 => '~0,3-1%/giorno',
+    _ => '~0,2-0,5%/giorno',
+  };
+
+  /// Riga sotto l'interruttore.
+  static String rigaSottofondo({
+    required bool acceso,
+    required bool login,
+    required int minuti,
+  }) => !login
+      ? 'Serve il login'
+      : acceso
+      ? 'Ogni $minuti min · ${stimaBatteria(minuti)}'
+      : 'Spento: zero batteria';
+
+  /// Campo minuti a app chiusa.
+  static const String campoMinutiSfondo = 'App chiusa: legge ogni';
+
+  /// Voce menu minuti a app chiusa.
+  static String sceltaMinutiSfondo(int minuti) =>
+      '$minuti min  (${stimaBatteria(minuti)})';
+
+  /// Batteria limitata vista dalla schermata principale.
+  static const String batteriaLimitata = 'Batteria limitata: tocca';
+
+  /// Titolo pagina permessi.
+  static const String titoloPermessi = 'Permessi';
+
+  /// Spiegazione pagina permessi.
+  static const String spiegaPermessi =
+      'Per leggere a app chiusa Android deve lasciarla lavorare. '
+      'Fai i passi, poi torna qui.';
+
+  /// Voce permessi: popup batteria.
+  static const String permessoBatteria = '1. Batteria senza limiti';
+
+  /// Voce permessi: pagina batteria app.
+  static const String permessoPaginaBatteria =
+      '2. Se il popup non c\'è: Batteria > Senza limitazioni';
+
+  /// Voce permessi: Samsung.
+  static const String permessoSamsung =
+      '3. Samsung: Batteria > App mai in sospensione > + TraKer IA';
+
+  /// Tasto consenti.
+  static const String consenti = 'Consenti';
+
+  /// Tasto apri pagina.
+  static const String apri = 'Apri';
+
+  /// Tasto chiudi.
+  static const String fatto = 'Fatto';
+
+  /// Voce menu ⚙.
+  static const String menuPermessi = 'Permessi (batteria)';
 
   /// Telefono: aiuto sotto il grafico.
   static const String aiutoZoom = 'Due dita: zoom · Tieni premuto: dettagli';

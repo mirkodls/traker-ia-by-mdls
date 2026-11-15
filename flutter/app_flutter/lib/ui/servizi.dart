@@ -100,8 +100,8 @@ abstract interface class Servizi {
   /// Vero se la batteria è "senza limiti" per l'app (null = non so / PC).
   Future<bool?> batteriaLibera();
 
-  /// Apre Info app nelle impostazioni del telefono.
-  Future<void> apriInfoApp();
+  /// Apre la pagina del permesso [voce] (Permesso.*) sul telefono.
+  Future<void> apriPermesso(String voce);
 
   /// Butta la copia in memoria dei dati (database cambiato da fuori).
   Future<void> dimenticaCache();

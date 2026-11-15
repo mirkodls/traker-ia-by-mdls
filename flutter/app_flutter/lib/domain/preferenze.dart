@@ -50,6 +50,15 @@ abstract final class Chiavi {
   /// '1' = una lettura in sottofondo ha trovato il login scaduto.
   static const String loginScaduto = 'login_scaduto';
 
+  /// Telefono: letture a app chiusa accese ('1') o spente ('0').
+  static const String sfondoAcceso = 'sfondo_acceso';
+
+  /// Telefono: minuti tra due letture a app chiusa (15/30/60).
+  static const String minutiSfondo = 'minuti_sfondo';
+
+  /// Telefono: pagina permessi già mostrata al primo avvio ('1').
+  static const String permessiChiesti = 'permessi_chiesti';
+
   /// Tutte le chiavi lette all'avvio.
   static const List<String> tutte = <String>[
     loginScaduto,
@@ -65,6 +74,9 @@ abstract final class Chiavi {
     importFatto,
     cartellaImport,
     avvioDeciso,
+    sfondoAcceso,
+    minutiSfondo,
+    permessiChiesti,
   ];
 }
 
@@ -87,6 +99,17 @@ const List<String> modelliIniziali = <String>[
 
 /// Minuti predefiniti tra due letture.
 const int minutiPredefiniti = 10;
+
+/// Telefono: scelte di minuti per le letture a app chiusa (meno spesso =
+/// meno batteria). Android non va sotto 15.
+const List<int> sceltaMinutiSfondo = <int>[15, 30, 60];
+
+/// Telefono: minuti predefiniti a app chiusa (obiettivo ~1% batteria/24h).
+const int minutiSfondoPredefiniti = 30;
+
+/// [m] se è una scelta valida, altrimenti il predefinito.
+int normalizzaMinutiSfondo(int? m) =>
+    sceltaMinutiSfondo.contains(m) ? m! : minutiSfondoPredefiniti;
 
 /// Lunghezza massima di un nome tasto.
 const int maxNome = 20;
@@ -121,6 +144,8 @@ class Preferenze {
     List<String> skillAttive = const <String>[],
     this.periodo = scattoPredefinito,
     this.soloLavoro = false,
+    this.sfondoAcceso = true,
+    this.minutiSfondo = minutiSfondoPredefiniti,
   }) : modelli = List<String>.unmodifiable(modelli),
        skill = List<String>.unmodifiable(skill),
        modelliAttivi = List<String>.unmodifiable(modelliAttivi),
@@ -139,6 +164,10 @@ class Preferenze {
       skillAttive: _lista(m[Chiavi.skillAttive], const <String>[]),
       periodo: normalizzaScatto(int.tryParse(m[Chiavi.periodo] ?? '')),
       soloLavoro: m[Chiavi.soloLavoro] == '1',
+      sfondoAcceso: m[Chiavi.sfondoAcceso] != '0',
+      minutiSfondo: normalizzaMinutiSfondo(
+        int.tryParse(m[Chiavi.minutiSfondo] ?? ''),
+      ),
     );
   }
 
@@ -166,6 +195,12 @@ class Preferenze {
   /// Spunta "Conta solo lavoro".
   final bool soloLavoro;
 
+  /// Telefono: letture a app chiusa accese (interruttore).
+  final bool sfondoAcceso;
+
+  /// Telefono: minuti tra due letture a app chiusa (15/30/60).
+  final int minutiSfondo;
+
   /// Preferenze -> impostazioni da salvare.
   Map<String, String> aMappa() => <String, String>{
     Chiavi.minuti: '$minuti',
@@ -176,6 +211,8 @@ class Preferenze {
     Chiavi.skillAttive: jsonEncode(skillAttive),
     Chiavi.periodo: '$periodo',
     Chiavi.soloLavoro: soloLavoro ? '1' : '0',
+    Chiavi.sfondoAcceso: sfondoAcceso ? '1' : '0',
+    Chiavi.minutiSfondo: '$minutiSfondo',
   };
 
   /// Copia con alcuni valori cambiati.
@@ -188,6 +225,8 @@ class Preferenze {
     List<String>? skillAttive,
     int? periodo,
     bool? soloLavoro,
+    bool? sfondoAcceso,
+    int? minutiSfondo,
   }) => Preferenze(
     minuti: minuti ?? this.minuti,
     metodo: metodo ?? this.metodo,
@@ -197,6 +236,8 @@ class Preferenze {
     skillAttive: skillAttive ?? this.skillAttive,
     periodo: periodo ?? this.periodo,
     soloLavoro: soloLavoro ?? this.soloLavoro,
+    sfondoAcceso: sfondoAcceso ?? this.sfondoAcceso,
+    minutiSfondo: normalizzaMinutiSfondo(minutiSfondo ?? this.minutiSfondo),
   );
 
   /// Elenco del gruppo [g].

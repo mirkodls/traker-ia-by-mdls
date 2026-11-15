@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/preferenze.dart';
+import 'package:traker_ia/domain/sfondo.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/app.dart';
@@ -29,7 +30,7 @@ void main() {
     expect(f.metodi, isEmpty);
     expect(s.stato, Testi.serveLogin);
     expect(s.statoErrore, isTrue);
-    expect(f.sfondo.last, (10, false));
+    expect(f.sfondo.last, (30, false));
   });
 
   test('login nella pagina: cookie salvato, sfondo acceso, legge', () async {
@@ -39,7 +40,7 @@ void main() {
     await s.salvaLoginWeb('sk-ant-1');
     expect(f.cookie, 'sk-ant-1');
     expect(s.cookie, isTrue);
-    expect(f.sfondo.last, (10, true));
+    expect(f.sfondo.last, (30, true));
     expect(f.lett.single.sett, 30);
   });
 
@@ -91,6 +92,73 @@ void main() {
     expect(s.batteriaLibera, isTrue);
   });
 
+  test('primo avvio telefono: pagina permessi una volta sola', () async {
+    final StatoApp s = nuovo();
+    await s.avvia();
+    expect(s.permessiDaMostrare, isTrue);
+    expect(f.imp[Chiavi.permessiChiesti], '1');
+    s.permessiVisti();
+    final StatoApp s2 = nuovo();
+    await s2.avvia();
+    expect(s2.permessiDaMostrare, isFalse);
+  });
+
+  test('interruttore Sottofondo: spento = lavoro tolto, salvato', () async {
+    f
+      ..cookie = 'sk'
+      ..imp[Chiavi.permessiChiesti] = '1'
+      ..batteria = true;
+    final StatoApp s = nuovo();
+    await s.avvia();
+    expect(f.sfondo.last, (30, true));
+    await s.cambiaSfondo(acceso: false);
+    expect(f.sfondo.last, (30, false));
+    expect(f.imp[Chiavi.sfondoAcceso], '0');
+    expect(s.permessiDaMostrare, isFalse);
+    await s.cambiaMinutiSfondo(60);
+    expect(f.sfondo.last, (60, false));
+    await s.cambiaSfondo(acceso: true);
+    expect(f.sfondo.last, (60, true));
+  });
+
+  test('Sottofondo acceso con batteria limitata: apre i permessi', () async {
+    f
+      ..cookie = 'sk'
+      ..imp[Chiavi.permessiChiesti] = '1'
+      ..imp[Chiavi.sfondoAcceso] = '0'
+      ..batteria = false;
+    final StatoApp s = nuovo();
+    await s.avvia();
+    expect(s.permessiDaMostrare, isFalse);
+    await s.cambiaSfondo(acceso: true);
+    expect(s.permessiDaMostrare, isTrue);
+  });
+
+  testWidgets('telefono: riga Sottofondo con stima, tocco spegne', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    f
+      ..cookie = 'sk'
+      ..imp[Chiavi.permessiChiesti] = '1'
+      ..batteria = true;
+    final StatoApp s = nuovo();
+    await tester.runAsync(s.avvia);
+    await tester.pumpWidget(TrakerApp(stato: s));
+    await tester.pump();
+    expect(
+      find.text(Testi.rigaSottofondo(acceso: true, login: true, minuti: 30)),
+      findsOneWidget,
+    );
+    await tester.tap(find.byType(Switch));
+    await tester.pump();
+    await tester.pump();
+    expect(f.sfondo.last, (30, false));
+    expect(tester.takeException(), isNull);
+  });
+
   test('PC: niente sfondo, niente batteria', () async {
     f.tel = false;
     await nuovo().avvia();
@@ -120,13 +188,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(Testi.accedi('Claude')), findsOneWidget);
     expect(find.text(Testi.batteria(false)), findsOneWidget);
-    expect(find.text(Testi.apriInfoApp), findsOneWidget);
+    expect(find.text(Testi.sceltaMinutiSfondo(30)), findsOneWidget);
     expect(find.text(Testi.campoCartella), findsNothing);
     expect(find.text(Testi.installaEstensione), findsNothing);
-    await tester.ensureVisible(find.text(Testi.apriInfoApp));
-    await tester.tap(find.text(Testi.apriInfoApp));
+    await tester.ensureVisible(find.text(Testi.titoloPermessi));
+    await tester.tap(find.text(Testi.titoloPermessi));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(Testi.consenti));
     await tester.pump();
-    expect(f.infoApp, 1);
+    expect(f.permessi, <String>[Permesso.batteria]);
     expect(tester.takeException(), isNull);
   });
 

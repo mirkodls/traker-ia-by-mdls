@@ -2,7 +2,7 @@
 //
 // Strato data (solo telefono): lettura in sottofondo con WorkManager di
 // Android (pacchetto workmanager, MIT) e canale "traker_ia/telefono"
-// (MainActivity.kt) per cookie della pagina di login, batteria, Info app.
+// (MainActivity.kt) per cookie della pagina di login, batteria, permessi.
 // Cookie: solo dalla pagina di login alla cassaforte, mai nei log.
 import 'package:flutter/services.dart';
 
@@ -51,7 +51,8 @@ void avvioSfondo() {
     } finally {
       await a.chiudi();
     }
-    // Sempre "riuscito": il prossimo giro arriva comunque tra 15 minuti.
+    // Sempre "riuscito": niente nuovi tentativi (= batteria); il prossimo
+    // giro arriva comunque.
     return true;
   });
 }
@@ -66,7 +67,9 @@ Future<EsitoSfondo> letturaSfondo(
     for (final String k in Chiavi.tutte) k: await a.impostazione(k),
   };
   final Preferenze pref = Preferenze.daMappa(imp);
-  if (pref.metodo == metodoManuale || !await web.disponibile()) {
+  // Interruttore spento: niente rete, niente batteria (anche se Android
+  // non ha ancora tolto il lavoro).
+  if (!sfondoDaAccendere(pref, login: true) || !await web.disponibile()) {
     return EsitoSfondo.saltata;
   }
   try {
@@ -101,6 +104,7 @@ class Telefono {
   Future<void> prepara() => Workmanager().initialize(avvioSfondo);
 
   /// Accende (ogni [minuti], mai sotto 15) o spegne la lettura in sottofondo.
+  /// Leggerezza: solo con internet e batteria non bassa.
   Future<void> sfondo({required int minuti, required bool acceso}) async {
     if (!acceso) {
       await Workmanager().cancelByUniqueName(lavoroLetture);
@@ -110,7 +114,10 @@ class Telefono {
       lavoroLetture,
       lavoroLetture,
       frequency: Duration(minutes: minutiSfondo(minuti)),
-      constraints: Constraints(networkType: NetworkType.connected),
+      constraints: Constraints(
+        networkType: NetworkType.connected,
+        requiresBatteryNotLow: true,
+      ),
       existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
     );
   }
@@ -126,8 +133,10 @@ class Telefono {
   /// Vero se la batteria è "senza limiti" per l'app (null = non so).
   Future<bool?> batteriaLibera() => _chiama<bool>('batteriaLibera');
 
-  /// Apre Info app nelle impostazioni di Android.
-  Future<void> apriInfoApp() => _chiama<bool>('apriInfoApp');
+  /// Apre la pagina del permesso [voce] (vedi Permesso); se manca su
+  /// questo telefono apre Info app.
+  Future<void> apriPermesso(String voce) =>
+      _chiama<bool>('apriPermesso', <String, String>{'voce': voce});
 
   Future<T?> _chiama<T>(String metodo, [Object? argomenti]) async {
     try {

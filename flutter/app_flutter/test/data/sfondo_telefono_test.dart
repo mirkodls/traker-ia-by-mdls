@@ -67,6 +67,12 @@ void main() {
     expect(await a.letture(), isEmpty);
   });
 
+  test('interruttore Sottofondo spento: niente rete, niente lettura', () async {
+    await a.salvaImpostazione(Chiavi.sfondoAcceso, '0');
+    expect(await letturaSfondo(a, web(_uso)), EsitoSfondo.saltata);
+    expect(await a.letture(), isEmpty);
+  });
+
   test('401: segna login scaduto, poi lettura buona lo toglie', () async {
     const Object scaduto = ErroreLettura('401', loginScaduto: true);
     expect(await letturaSfondo(a, web(scaduto)), EsitoSfondo.loginScaduto);

@@ -2,9 +2,11 @@
 //
 // Canale "traker_ia/telefono": cookie della pagina di login (anche HttpOnly,
 // solo letti e passati alla cassaforte, mai nei log), stato batteria,
-// apertura di Info app.
+// pagine dei permessi batteria (popup, pagina app, Samsung, Info app).
 package mdls.traker_ia
 
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
@@ -42,17 +44,45 @@ class MainActivity : FlutterActivity() {
                         val pm = getSystemService(POWER_SERVICE) as PowerManager
                         result.success(pm.isIgnoringBatteryOptimizations(packageName))
                     }
-                    "apriInfoApp" -> {
-                        val i = Intent(
-                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.fromParts("package", packageName, null),
-                        )
-                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        startActivity(i)
+                    "apriPermesso" -> {
+                        apriPermesso(call.argument<String>("voce") ?: "infoApp")
                         result.success(true)
                     }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    /** Apre la pagina del permesso; se manca su questo telefono, Info app. */
+    private fun apriPermesso(voce: String) {
+        val pkg = Uri.parse("package:$packageName")
+        val i = when (voce) {
+            // Popup di Android "Consenti senza limiti di batteria".
+            "batteria" -> Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, pkg)
+            // Pagina batteria di questa app (non su tutti i telefoni).
+            "paginaBatteria" -> Intent("android.settings.VIEW_ADVANCED_POWER_USAGE_DETAIL", pkg)
+            // Samsung: Batteria (da li' "App mai in sospensione").
+            "samsung" -> Intent().setComponent(
+                ComponentName(
+                    "com.samsung.android.lool",
+                    "com.samsung.android.sm.battery.ui.BatteryActivity",
+                ),
+            )
+            else -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkg)
+        }
+        try {
+            startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (_: ActivityNotFoundException) {
+            infoApp(pkg)
+        } catch (_: SecurityException) {
+            infoApp(pkg)
+        }
+    }
+
+    private fun infoApp(pkg: Uri) {
+        startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkg)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
     }
 }
