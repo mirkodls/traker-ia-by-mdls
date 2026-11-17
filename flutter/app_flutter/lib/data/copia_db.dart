@@ -29,7 +29,7 @@ Future<int?> versioneFileDb(File f) async {
 }
 
 /// Se [f] ha versione tra 1 e [nuova]-1, copia il file in
-/// '<f>.bak-v<versione>' (e '-wal' se c'è). Copia già presente = non
+/// `<f>.bak-v<versione>` (e '-wal' se c'è). Copia già presente = non
 /// la riscrive. Ritorna la copia fatta, oppure null.
 Future<File?> copiaPrimaDiMigrare(File f, int nuova) async {
   final int? v = await versioneFileDb(f);

@@ -42,12 +42,15 @@ class SchermoTelefono extends StatelessWidget {
           Expanded(child: d == null ? const SizedBox.shrink() : _grafico(d)),
           const SizedBox(height: 6),
           RigaNota(stato: stato),
-          const SizedBox(height: 6),
-          BarraTasti(
-            stato: stato,
-            compatta: true,
-            modifica: (Gruppo g) => apriModifica(context, stato, g),
-          ),
+          // V2: tasti modelli/skill solo se accesi.
+          if (stato.preferenze.modelliSkill) ...<Widget>[
+            const SizedBox(height: 6),
+            BarraTasti(
+              stato: stato,
+              compatta: true,
+              modifica: (Gruppo g) => apriModifica(context, stato, g),
+            ),
+          ],
           const SizedBox(height: 4),
           _tastiSezioni(context, d),
         ],
@@ -102,18 +105,20 @@ class SchermoTelefono extends StatelessWidget {
           children: <Widget>[
             _voce(c, Icons.settings, Testi.impostazioni, 'imp'),
             _voce(c, Icons.edit_note, Testi.letturaManuale, 'man'),
-            _voce(
-              c,
-              Icons.smart_toy_outlined,
-              Testi.titoloModifica(Testi.gruppoModelli.toLowerCase()),
-              'mod',
-            ),
-            _voce(
-              c,
-              Icons.bolt,
-              Testi.titoloModifica(Testi.gruppoSkill.toLowerCase()),
-              'skill',
-            ),
+            if (stato.preferenze.modelliSkill) ...<Widget>[
+              _voce(
+                c,
+                Icons.smart_toy_outlined,
+                Testi.titoloModifica(Testi.gruppoModelli.toLowerCase()),
+                'mod',
+              ),
+              _voce(
+                c,
+                Icons.bolt,
+                Testi.titoloModifica(Testi.gruppoSkill.toLowerCase()),
+                'skill',
+              ),
+            ],
           ],
         ),
       ),
@@ -176,6 +181,7 @@ class SchermoTelefono extends StatelessWidget {
                 dati: d,
                 letture: stato.letture,
                 mouse: mouse,
+                modelliSkill: stato.preferenze.modelliSkill,
               ),
             ),
           ),
@@ -205,6 +211,7 @@ class SchermoTelefono extends StatelessWidget {
                           dati: d,
                           letture: stato.letture,
                           mouse: mouse,
+                          modelliSkill: stato.preferenze.modelliSkill,
                         ),
                       ),
                     ),

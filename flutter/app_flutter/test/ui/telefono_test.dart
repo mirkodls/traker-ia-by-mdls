@@ -136,7 +136,9 @@ void main() {
     tester.view.physicalSize = const Size(360, 780);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    f.cookie = 'sk';
+    f
+      ..cookie = 'sk'
+      ..imp[Chiavi.v2ModelliSkill] = '1';
     final StatoApp s = nuovo();
     await tester.runAsync(s.avvia);
     await tester.pumpWidget(TrakerApp(stato: s));

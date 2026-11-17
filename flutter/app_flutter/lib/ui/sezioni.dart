@@ -731,19 +731,22 @@ class CartaConfronti extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: _rigaNota(),
         ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 6,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: _rigaCombo(),
-        ),
-        const SizedBox(height: 8),
-        _Spiegato(
-          stato.classifica,
-          spiega: '${Testi.pth}\n${Testi.sett}\n${Testi.spiegaClassifica}',
-          stile: stilePiccolo,
-        ),
+        // V2: combinazioni A/B e classifica solo con modelli/skill accesi.
+        if (stato.preferenze.modelliSkill) ...<Widget>[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: _rigaCombo(),
+          ),
+          const SizedBox(height: 8),
+          _Spiegato(
+            stato.classifica,
+            spiega: '${Testi.pth}\n${Testi.sett}\n${Testi.spiegaClassifica}',
+            stile: stilePiccolo,
+          ),
+        ],
       ],
     ),
   );

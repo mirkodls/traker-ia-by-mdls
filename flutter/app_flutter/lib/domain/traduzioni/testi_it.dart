@@ -227,6 +227,15 @@ abstract final class Testi {
     'confronti': 'Confronti',
   };
 
+  /// Titolo della sezione [nome]; senza modelli/skill (V2) la barra è
+  /// solo 'NOTA'.
+  static String titoloSezione(String nome, {required bool modelliSkill}) =>
+      nome == 'barra' && !modelliSkill ? 'NOTA' : titoliSezioni[nome] ?? nome;
+
+  /// Voce del menu Vista per la sezione [nome] (come [titoloSezione]).
+  static String voceSezione(String nome, {required bool modelliSkill}) =>
+      nome == 'barra' && !modelliSkill ? 'Nota' : vociSezioni[nome] ?? nome;
+
   /// Carta sessione.
   static const String cartaSess = 'SESSIONE 5 ORE';
 

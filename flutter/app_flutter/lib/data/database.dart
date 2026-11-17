@@ -166,7 +166,7 @@ class DatabaseTraker extends _$DatabaseTraker {
 
   /// Database nel file 'traker_ia.sqlite' della cartella dati dell'app
   /// (Windows: %APPDATA%\mdls\...). Mai nella cartella del progetto.
-  /// Prima di aggiornare lo schema copia il file in '<db>.bak-v<N>'.
+  /// Prima di aggiornare lo schema copia il file in `<db>.bak-v<N>`.
   factory DatabaseTraker.suDisco() => DatabaseTraker(
     driftDatabase(
       name: nomeDb,

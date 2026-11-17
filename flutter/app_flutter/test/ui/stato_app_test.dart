@@ -156,7 +156,22 @@ void main() {
     expect(s.cookie, isFalse);
   });
 
+  test('V2 base: combinazioni e classifica non calcolate', () async {
+    final StatoApp s = nuovo();
+    await s.avvia();
+    f.lett.addAll(<Lettura>[
+      Lettura(ora: _t('2026-11-13 06:00'), sett: 10, modelli: 'Opus'),
+      Lettura(ora: _t('2026-11-13 08:00'), sett: 14, modelli: 'Opus'),
+    ]);
+    await s.aggiungiManuale(_t('2026-11-13 09:00'), 15, null);
+    expect(s.letture.length, 3);
+    expect(s.combinazioni, isEmpty);
+    expect(s.confrontoCombo, isNull);
+    expect(s.classifica, '');
+  });
+
   test('combinazioni: A e B, classifica', () async {
+    f.imp[Chiavi.v2ModelliSkill] = '1';
     final StatoApp s = nuovo();
     await s.avvia();
     f.lett.addAll(<Lettura>[

@@ -105,7 +105,12 @@ class _StatoFinestra extends State<Finestra> {
           CheckedPopupMenuItem<String>(
             value: 's:${s.name}',
             checked: v.spuntata(s),
-            child: Text(Testi.vociSezioni[s.name] ?? s.name),
+            child: Text(
+              Testi.voceSezione(
+                s.name,
+                modelliSkill: _s.preferenze.modelliSkill,
+              ),
+            ),
           ),
         const PopupMenuDivider(),
         const PopupMenuItem<String>(
@@ -159,7 +164,8 @@ class _StatoFinestra extends State<Finestra> {
     child: Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 4, left: 2),
       child: Text(
-        '${aperta ? '▾' : '▸'}  ${Testi.titoliSezioni[s.name] ?? s.name}',
+        '${aperta ? '▾' : '▸'}  '
+        '${Testi.titoloSezione(s.name, modelliSkill: _s.preferenze.modelliSkill)}',
         style: stilePiccolo.copyWith(fontWeight: FontWeight.bold),
       ),
     ),
@@ -264,6 +270,7 @@ class _StatoFinestra extends State<Finestra> {
       dati: d,
       letture: _s.letture,
       mouse: _mouse,
+      modelliSkill: _s.preferenze.modelliSkill,
     );
     return Carta(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
@@ -286,6 +293,7 @@ class _StatoFinestra extends State<Finestra> {
       dati: d,
       letture: _s.letture,
       mouse: _mouse,
+      modelliSkill: _s.preferenze.modelliSkill,
     );
     return Carta(
       padding: const EdgeInsets.all(6),
@@ -303,11 +311,14 @@ class _StatoFinestra extends State<Finestra> {
         d == null ? const SizedBox.shrink() : _intensita(d, altInt),
       Sezione.barra => Column(
         children: <Widget>[
-          BarraTasti(
-            stato: _s,
-            modifica: (Gruppo g) => apriModifica(context, _s, g),
-          ),
-          const SizedBox(height: 6),
+          // V2: tasti modelli/skill solo se accesi; note sempre.
+          if (_s.preferenze.modelliSkill) ...<Widget>[
+            BarraTasti(
+              stato: _s,
+              modifica: (Gruppo g) => apriModifica(context, _s, g),
+            ),
+            const SizedBox(height: 6),
+          ],
           RigaNota(stato: _s),
         ],
       ),

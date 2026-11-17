@@ -131,8 +131,13 @@ class RiquadroGrafici {
   }
 }
 
-/// Testo del riquadro all'ora [t].
-String testoMouse(List<Lettura> letture, DateTime t) {
+/// Testo del riquadro all'ora [t]. [modelliSkill] = righe modelli/skill
+/// (V2: spente di base).
+String testoMouse(
+  List<Lettura> letture,
+  DateTime t, {
+  bool modelliSkill = false,
+}) {
   String riga(String nome, ValoreA v, String unita) => Testi.rigaValore(
     nome,
     v.valore == null
@@ -148,7 +153,7 @@ String testoMouse(List<Lettura> letture, DateTime t) {
     riga(Testi.rqSess, sess, '%'),
     riga(Testi.rqIntensita, ValoreA(inte, esatto: sess.esatto), ' pt/h'),
   ];
-  final Combo? c = statoA(letture, t);
+  final Combo? c = modelliSkill ? statoA(letture, t) : null;
   if (c != null) {
     String nomi(String s) =>
         s.isEmpty ? Testi.trattino : s.replaceAll('|', ', ');
@@ -178,8 +183,12 @@ class Grafico extends StatefulWidget {
     required this.dati,
     required this.letture,
     required this.mouse,
+    this.modelliSkill = false,
     super.key,
   });
+
+  /// V2: righe modelli/skill nel riquadro del mouse (base: spente).
+  final bool modelliSkill;
 
   /// Quale grafico.
   final TipoGrafico tipo;
@@ -245,7 +254,7 @@ class _StatoGrafico extends State<Grafico> {
     widget.mouse.riquadro.mostra(
       context,
       globale,
-      testoMouse(widget.letture, t),
+      testoMouse(widget.letture, t, modelliSkill: widget.modelliSkill),
     );
   }
 

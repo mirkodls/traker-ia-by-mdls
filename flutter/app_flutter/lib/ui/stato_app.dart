@@ -686,6 +686,21 @@ class StatoApp extends ChangeNotifier {
         ? null
         : cf.confrontoNota(_letture, n.ora, periodi: periodi);
 
+    _aggiornaCombo(periodi);
+    _aggiornaTray(ora);
+    _avvisa();
+  }
+
+  /// Combinazioni A/B e classifica: calcolate solo con modelli/skill
+  /// accesi (V2: spenti di base = niente calcolo, più leggero).
+  void _aggiornaCombo(List<Periodo>? periodi) {
+    if (!_pref.modelliSkill) {
+      _combo = <Combo>[];
+      _tabUsata = <Combo, RitmoCombo>{};
+      _confCombo = null;
+      _classifica = '';
+      return;
+    }
     final Map<Combo, RitmoCombo> tab = ritmoPerCombinazione(_letture);
     final Map<Combo, RitmoCombo>? tabLav = periodi == null
         ? null
@@ -709,8 +724,6 @@ class StatoApp extends ChangeNotifier {
       }
     }
     _classifica = testoClassifica(classificaModelli(_letture));
-    _aggiornaTray(ora);
-    _avvisa();
   }
 
   /// Testo dell'icona vicino all'orologio: mandato solo se cambia.
