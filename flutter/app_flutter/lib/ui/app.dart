@@ -282,6 +282,7 @@ class _StatoFinestra extends State<Finestra> {
       modelliSkill: _s.preferenze.modelliSkill,
       mostraIdeale: _s.preferenze.lavoroV2 && _s.preferenze.lineaIdeale,
       mostraAdattiva: _s.preferenze.lavoroV2 && _s.preferenze.lineaAdattiva,
+      stile: _s.preferenze.stileLinee,
     );
     return Carta(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
@@ -306,6 +307,7 @@ class _StatoFinestra extends State<Finestra> {
       letture: _s.letture,
       mouse: _mouse,
       modelliSkill: _s.preferenze.modelliSkill,
+      stile: _s.preferenze.stileLinee,
     );
     final bool v2 = d.intensitaV2 != null;
     return Carta(

@@ -11,6 +11,7 @@ import 'package:traker_ia/domain/collegamenti.dart';
 import 'package:traker_ia/domain/fornitori.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/sfondo.dart';
+import 'package:traker_ia/domain/stile_linee.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/pagina_login.dart';
@@ -130,6 +131,49 @@ Future<void> apriImpostazioni(
       _Impostazioni(stato: stato, claudeCode: claudeCode),
 );
 
+/// Linee regolabili: id, nome e colore (il colore serve solo al segno).
+const List<(LineaGrafico, String, Color)> _lineeImpostazioni =
+    <(LineaGrafico, String, Color)>[
+      (LineaGrafico.settimana, Testi.lineaSettimana, Colori.sett),
+      (LineaGrafico.sessione, Testi.lineaSessione, Colori.sess),
+      (LineaGrafico.ideale, Testi.lineaIdeale, Colori.ideale),
+      (LineaGrafico.adattiva, Testi.lineaAdattiva, Colori.adattiva),
+      (LineaGrafico.int5h, Testi.lineaInt5h, Colori.sess),
+      (LineaGrafico.int7gg, Testi.lineaInt7gg, Colori.sett),
+    ];
+
+/// Riga: etichetta + cursore + valore (stretta: sta in 340 px).
+Widget _cursore({
+  required Key chiave,
+  required String etichetta,
+  required double valore,
+  required double min,
+  required double max,
+  required int divisioni,
+  required String testoValore,
+  required ValueChanged<double>? alCambio,
+  required ValueChanged<double>? allaFine,
+}) => Row(
+  children: <Widget>[
+    SizedBox(width: 84, child: Text(etichetta, style: stilePiccolo)),
+    Expanded(
+      child: Slider(
+        key: chiave,
+        value: valore.clamp(min, max).toDouble(),
+        min: min,
+        max: max,
+        divisions: divisioni,
+        onChanged: alCambio,
+        onChangeEnd: allaFine,
+      ),
+    ),
+    SizedBox(
+      width: 64,
+      child: Text(testoValore, style: stilePiccolo, textAlign: TextAlign.end),
+    ),
+  ],
+);
+
 class _Impostazioni extends StatefulWidget {
   const _Impostazioni({required this.stato, required this.claudeCode});
 
@@ -159,6 +203,7 @@ class _StatoImpostazioni extends State<_Impostazioni> {
   String? _esitoClaudeCode;
   String? _errore;
   String? _esitoImport;
+  int? _sogliaProva; // soglia rossa mentre si trascina il cursore
 
   @override
   void dispose() {
@@ -207,6 +252,115 @@ class _StatoImpostazioni extends State<_Impostazioni> {
       setState(() => _esitoLogin = Testi.loginFatto);
     }
     await st.salvaLoginWeb(valore);
+  }
+
+  /// Linea [l]: cursori trasparenza e spessore. Il cambio ridisegna subito
+  /// (nessun ricalcolo), il salvataggio avviene al rilascio.
+  Widget _bloccoLinea(LineaGrafico l, String nome, Color col) {
+    final StatoApp st = widget.stato;
+    final StileLinea v = st.preferenze.stileLinee.di(l);
+    void cambia(StileLinee n, {required bool salva}) =>
+        unawaited(st.cambiaStileLinee(n, salva: salva));
+    StileLinee con({int? alfa, double? spessore}) =>
+        st.preferenze.stileLinee.con(l, alfa: alfa, spessore: spessore);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(width: 18, height: 4, color: col),
+              const SizedBox(width: 8),
+              Expanded(child: Text(nome, style: stileNormale)),
+            ],
+          ),
+          _cursore(
+            chiave: Key('linea-${l.nome}-trasparenza'),
+            etichetta: Testi.trasparenza,
+            valore: (100 - v.alfa).toDouble(),
+            min: 0,
+            max: 100,
+            divisioni: 20,
+            testoValore: Testi.trasparenzaN(100 - v.alfa),
+            alCambio: (double x) =>
+                cambia(con(alfa: 100 - x.round()), salva: false),
+            allaFine: (double x) =>
+                cambia(con(alfa: 100 - x.round()), salva: true),
+          ),
+          _cursore(
+            chiave: Key('linea-${l.nome}-spessore'),
+            etichetta: Testi.spessore,
+            valore: v.spessore,
+            min: spessoreMin,
+            max: spessoreMax,
+            divisioni: 11,
+            testoValore: Testi.spessoreN(v.spessore),
+            alCambio: (double x) => cambia(con(spessore: x), salva: false),
+            allaFine: (double x) => cambia(con(spessore: x), salva: true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Sezione "Linee grafico": linee regolabili + settimana rossa.
+  Widget _linee() {
+    final StatoApp st = widget.stato;
+    return ListenableBuilder(
+      listenable: st,
+      builder: (BuildContext _, Widget? _) {
+        final Preferenze p = st.preferenze;
+        final int soglia = _sogliaProva ?? p.sogliaRosso;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text(Testi.titoloLinee, style: stileNormale),
+            const Text(Testi.spiegaLinee, style: stilePiccolo),
+            for (final (LineaGrafico, String, Color) r in _lineeImpostazioni)
+              _bloccoLinea(r.$1, r.$2, r.$3),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              key: const Key('rosso-acceso'),
+              contentPadding: EdgeInsets.zero,
+              value: p.rossoAcceso,
+              onChanged: (bool v) => unawaited(st.cambiaRossoAcceso(acceso: v)),
+              title: const Text(Testi.rossoAcceso, style: stileNormale),
+            ),
+            _cursore(
+              chiave: const Key('rosso-soglia'),
+              etichetta: Testi.sogliaRosso,
+              valore: soglia.toDouble(),
+              min: sogliaRossoMin.toDouble(),
+              max: sogliaRossoMax.toDouble(),
+              divisioni: sogliaRossoMax - sogliaRossoMin,
+              testoValore: Testi.sogliaRossoN(soglia),
+              alCambio: p.rossoAcceso
+                  ? (double x) => setState(() => _sogliaProva = x.round())
+                  : null,
+              allaFine: p.rossoAcceso
+                  ? (double x) {
+                      setState(() => _sogliaProva = null);
+                      unawaited(st.cambiaSogliaRosso(x.round()));
+                    }
+                  : null,
+            ),
+            const Text(Testi.spiegaRosso, style: stilePiccolo),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton(
+                key: const Key('ripristina-linee'),
+                onPressed: () {
+                  setState(() => _sogliaProva = null);
+                  unawaited(st.ripristinaLinee());
+                },
+                child: const Text(Testi.ripristinaLinee),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _infoApp() async {
@@ -384,6 +538,8 @@ class _StatoImpostazioni extends State<_Impostazioni> {
               if (_esitoClaudeCode != null)
                 Text(_esitoClaudeCode!, style: stilePiccolo),
             ],
+            const SizedBox(height: 14),
+            _linee(),
             if (_errore != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),

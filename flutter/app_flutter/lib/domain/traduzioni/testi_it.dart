@@ -320,6 +320,63 @@ abstract final class Testi {
       'Linea adattiva: parte da dove sei adesso e divide quello che manca '
       'sui giorni di lavoro rimasti. Va a scalini.';
 
+  /// Impostazioni: titolo sezione linee.
+  static const String titoloLinee = 'Linee grafico';
+
+  /// Impostazioni: spiegazione sezione linee.
+  static const String spiegaLinee =
+      'Ogni linea: trasparenza (0% = piena, 100% = invisibile) e spessore. '
+      'Si vede subito sul grafico e si salva da solo.';
+
+  /// Impostazioni: nome di ogni linea.
+  static const String lineaSettimana = 'Settimana (blu)';
+
+  /// Impostazioni: nome linea.
+  static const String lineaSessione = 'Sessione 5 ore (arancione)';
+
+  /// Impostazioni: nome linea.
+  static const String lineaIdeale = 'Ideale (verde tratteggiata)';
+
+  /// Impostazioni: nome linea.
+  static const String lineaAdattiva = 'Adattiva (gialla a puntini)';
+
+  /// Impostazioni: nome linea del grafico intensità.
+  static const String lineaInt5h = 'Intensità 5 ore';
+
+  /// Impostazioni: nome linea del grafico intensità.
+  static const String lineaInt7gg = 'Intensità 7 giorni';
+
+  /// Impostazioni: etichetta cursore trasparenza.
+  static const String trasparenza = 'Trasparenza';
+
+  /// Impostazioni: etichetta cursore spessore.
+  static const String spessore = 'Spessore';
+
+  /// Impostazioni: valore trasparenza (0-100).
+  static String trasparenzaN(int pct) => '$pct%';
+
+  /// Impostazioni: valore spessore (px), virgola italiana.
+  static String spessoreN(double px) =>
+      '${px.toStringAsFixed(px == px.roundToDouble() ? 0 : 1).replaceAll('.', ',')} px';
+
+  /// Impostazioni: interruttore settimana rossa.
+  static const String rossoAcceso = 'Settimana rossa vicino alla soglia';
+
+  /// Impostazioni: cursore soglia rossa.
+  static const String sogliaRosso = 'Rossa da';
+
+  /// Impostazioni: valore soglia rossa.
+  static String sogliaRossoN(int pct) => '$pct% della soglia';
+
+  /// Impostazioni: spiegazione rosso (1 riga).
+  static const String spiegaRosso =
+      'Soglia del giorno = limite della linea adattiva a inizio giorno. '
+      'Quando la settimana arriva a questa quota, la linea blu diventa rossa. '
+      'Serve il piano acceso.';
+
+  /// Impostazioni: tasto ripristina linee e rosso.
+  static const String ripristinaLinee = 'Ripristina';
+
   /// Aiuto sopra il grafico.
   static const String aiutoNote =
       'passa il mouse sui numeri viola per leggere la nota';

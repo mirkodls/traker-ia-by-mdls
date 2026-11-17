@@ -1,5 +1,6 @@
 // TraKer IA by mdls — Copyright (C) 2026 Mirko Del Sette. Tutti i diritti riservati.
 import 'package:flutter_test/flutter_test.dart';
+import 'package:traker_ia/domain/coppie.dart' show Periodo;
 import 'package:traker_ia/domain/linee_piano.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
@@ -239,6 +240,162 @@ void main() {
       expect(settNota(lett, g2), 40);
       final List<PuntoLinea> a = lineaAdattiva(_fette(_marMerGio), lett);
       expect(a.first, PuntoLinea(DateTime(2026, 11, 18, 12), 40));
+    });
+  });
+  group('soglie giorno e rosso', () {
+    test('esempio ordine: g1 33, g2 74,5 (g1 chiude 50), g3 99', () {
+      final List<Lettura> lett = <Lettura>[_l(reset, 0), _l(g2, 50)];
+      final List<SogliaGiorno> s = sogliaGiorni(_fette(_marMerGio), lett);
+      expect(s.length, 7);
+      expect(s[0], SogliaGiorno(inizio: reset, fine: g2, limite: 33));
+      expect(s[1].limite, 74.5);
+      expect(s[2].limite, 99);
+      // giorni non lavoro dopo l'ultimo: piatta all'ultimo limite
+      for (final SogliaGiorno x in s.skip(3)) {
+        expect(x.limite, 99);
+      }
+      // 95% di 74,5 = 70,775 (il "70,8" dell'ordine)
+      expect(s[1].limite! * 0.95, closeTo(70.775, 1e-9));
+    });
+
+    test(
+      'la soglia di un giorno non cambia con letture dopo inizio giorno',
+      () {
+        final List<Lettura> a = <Lettura>[_l(reset, 0), _l(g2, 50)];
+        final List<Lettura> b = <Lettura>[
+          ...a,
+          _l(DateTime(2026, 11, 18, 23), 60),
+          _l(DateTime(2026, 11, 19, 3), 70),
+        ];
+        expect(
+          sogliaGiorni(_fette(_marMerGio), a)[1],
+          sogliaGiorni(_fette(_marMerGio), b)[1],
+        );
+        // g3 invece vede la lettura nuova: (99-70?) no, a inizio g3 vale 70
+        expect(sogliaGiorni(_fette(_marMerGio), b)[2].limite, 99);
+      },
+    );
+
+    test('giorni non lavoro prima del primo: nessuna soglia; poi piatta', () {
+      final List<SogliaGiorno> s = sogliaGiorni(
+        _fette(<int>[DateTime.thursday]),
+        <Lettura>[],
+      );
+      expect(s[0].limite, isNull); // mar
+      expect(s[1].limite, isNull); // mer
+      expect(s[2].limite, 99); // gio = ultimo giorno = target
+      expect(s[3].limite, 99); // ven non lavoro: piatta
+    });
+
+    test('piano senza lavoro: nessuna soglia', () {
+      final List<SogliaGiorno> s = sogliaGiorni(_fette(<int>[]), <Lettura>[]);
+      expect(s.length, 7);
+      expect(s.every((SogliaGiorno x) => x.limite == null), isTrue);
+    });
+
+    test('sett gia sopra il target a inizio giorno: soglia = sett', () {
+      final List<Lettura> lett = <Lettura>[_l(reset, 0), _l(g3, 99.5)];
+      final List<SogliaGiorno> s = sogliaGiorni(_fette(_marMerGio), lett);
+      expect(s[2].limite, 99.5);
+    });
+
+    test('rosso: attraversa la soglia dentro il giorno', () {
+      final List<Lettura> lett = <Lettura>[_l(reset, 0), _l(g2, 50)];
+      final List<SogliaGiorno> sg = sogliaGiorni(_fette(_marMerGio), lett);
+      final List<Periodo> r = trattiRossi(sg, lett);
+      // g1: soglia 33 * 0,95 = 31,35; segmento 0 -> 50 in 24 h
+      expect(r.length, 1);
+      const double h = 24 * 31.35 / 50;
+      expect(
+        r.single.inizio.difference(reset).inMicroseconds / 3.6e9,
+        closeTo(h, 1e-6),
+      );
+      expect(r.single.fine, g2);
+    });
+
+    test('rosso g2: da 70,8 in poi (esempio ordine)', () {
+      final DateTime fine2 = DateTime(2026, 11, 19, 6);
+      final List<Lettura> lett = <Lettura>[
+        _l(reset, 0),
+        _l(g2, 50),
+        _l(fine2, 75),
+      ];
+      final List<SogliaGiorno> sg = sogliaGiorni(_fette(_marMerGio), lett);
+      final List<Periodo> r = trattiRossi(sg, lett);
+      expect(r.length, 2);
+      // g1 rosso fino a g2; poi g2 rosso da (70,775-50)/25 di 10 h
+      expect(r[0].fine, g2);
+      expect(r[1].fine, fine2);
+      final double ore = r[1].inizio.difference(g2).inMicroseconds / 3.6e9;
+      expect(ore, closeTo(10 * (70.775 - 50) / 25, 1e-6));
+    });
+
+    test(
+      'rosso: soglia piu alta -> meno rosso; 100 = solo da soglia piena',
+      () {
+        final List<Lettura> lett = <Lettura>[_l(reset, 0), _l(g2, 50)];
+        final List<SogliaGiorno> sg = sogliaGiorni(_fette(_marMerGio), lett);
+        final List<Periodo> a = trattiRossi(sg, lett, percento: 50);
+        final List<Periodo> b = trattiRossi(sg, lett, percento: 100);
+        expect(
+          a.single.fine.difference(a.single.inizio) >
+              b.single.fine.difference(b.single.inizio),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'rosso: tutto sotto soglia, un solo punto, nessuna lettura = vuoto',
+      () {
+        final List<SogliaGiorno> sg = sogliaGiorni(
+          _fette(_marMerGio),
+          <Lettura>[],
+        );
+        expect(trattiRossi(sg, <Lettura>[]), isEmpty);
+        expect(trattiRossi(sg, <Lettura>[_l(reset, 99)]), isEmpty);
+        final List<Lettura> basse = <Lettura>[
+          _l(reset, 0),
+          _l(DateTime(2026, 11, 18, 8), 10),
+        ];
+        expect(
+          trattiRossi(sogliaGiorni(_fette(_marMerGio), basse), basse),
+          isEmpty,
+        );
+      },
+    );
+
+    test('rosso: segmento a cavallo di due giorni si spezza al confine', () {
+      final DateTime fine2 = DateTime(2026, 11, 19, 2);
+      final List<Lettura> lett = <Lettura>[
+        _l(reset, 0),
+        _l(DateTime(2026, 11, 18, 14), 40),
+        _l(fine2, 80),
+      ];
+      final List<SogliaGiorno> sg = sogliaGiorni(_fette(_marMerGio), lett);
+      expect(sg[0].limite, 33);
+      expect(sg[1].limite, closeTo(69.5, 1e-9)); // sett a inizio g2 = 40
+      final List<Periodo> r = trattiRossi(sg, lett);
+      expect(r.length, 2);
+      double ore(DateTime a, DateTime b) =>
+          a.difference(b).inMicroseconds / 3.6e9;
+      // g1: soglia 31,35 su 0 -> 40 in 18 h, poi rosso fino al confine g2
+      expect(ore(r[0].inizio, reset), closeTo(18 * 31.35 / 40, 1e-6));
+      expect(r[0].fine, g2); // spezzato al confine (tratti uniti prima)
+      // g2: valore al confine 60, soglia 69,5 * 0,95 = 66,025, 60 -> 80 in 6 h
+      expect(ore(r[1].inizio, g2), closeTo(6 * (66.025 - 60) / 20, 1e-6));
+      expect(r[1].fine, fine2);
+    });
+
+    test('O(n): 5000 letture in tempo breve', () {
+      final List<Lettura> lett = <Lettura>[
+        for (int i = 0; i < 5000; i++)
+          _l(reset.add(Duration(minutes: i)), i * 99 / 5000),
+      ];
+      final Stopwatch w = Stopwatch()..start();
+      final List<SogliaGiorno> sg = sogliaGiorni(_fette(_marMerGio), lett);
+      trattiRossi(sg, lett);
+      expect(w.elapsedMilliseconds, lessThan(1500));
     });
   });
 }

@@ -41,6 +41,9 @@ abstract final class Colori {
   /// Fascia lavoro.
   static const Color lavoro = Color(0xFF10291C);
 
+  /// Linea settimana oltre la soglia del giorno (rosso).
+  static const Color settRossa = Color(0xFFEF4444);
+
   /// Linea ideale del piano (verde, tratteggio lungo).
   static const Color ideale = Color(0xFF4ADE80);
 

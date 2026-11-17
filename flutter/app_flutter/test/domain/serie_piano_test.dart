@@ -99,6 +99,49 @@ void main() {
   group('CachePiano', () {
     final List<Lettura> ls = <Lettura>[_l(DateTime(2026, 11, 17, 22), 4)];
 
+    test('rosso: P diverso ricalcola, stesso P no; spento = nessun tratto', () {
+      final List<Lettura> forti = <Lettura>[
+        _l(reset, 0),
+        _l(DateTime(2026, 11, 18, 20), 60),
+      ];
+      final CachePiano c = CachePiano();
+      final SeriePiano spento = c.serie(
+        _piano(tuttiIGiorni),
+        forti,
+        da: reset,
+        reset: reset,
+      );
+      expect(spento.rosso, isEmpty);
+      expect(spento.soglie, isEmpty);
+      final SeriePiano a = c.serie(
+        _piano(tuttiIGiorni),
+        forti,
+        da: reset,
+        reset: reset,
+        rossoPct: 95,
+      );
+      expect(c.calcoli, 2);
+      expect(a.soglie.length, 7);
+      expect(a.rosso, isNotEmpty);
+      final SeriePiano b = c.serie(
+        _piano(tuttiIGiorni),
+        forti,
+        da: reset,
+        reset: reset,
+        rossoPct: 95,
+      );
+      expect(identical(a, b), isTrue);
+      expect(c.calcoli, 2);
+      c.serie(
+        _piano(tuttiIGiorni),
+        forti,
+        da: reset,
+        reset: reset,
+        rossoPct: 80,
+      );
+      expect(c.calcoli, 3);
+    });
+
     test('stessi dati = stesso oggetto, un solo calcolo', () {
       final CachePiano c = CachePiano();
       final SeriePiano a = c.serie(

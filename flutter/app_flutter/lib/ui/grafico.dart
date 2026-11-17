@@ -19,6 +19,7 @@ import 'package:traker_ia/domain/piano_giorni.dart';
 import 'package:traker_ia/domain/riordino.dart';
 import 'package:traker_ia/domain/serie_intensita.dart';
 import 'package:traker_ia/domain/serie_piano.dart';
+import 'package:traker_ia/domain/stile_linee.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/grafico_dati.dart';
@@ -215,6 +216,7 @@ class Grafico extends StatefulWidget {
     this.modelliSkill = false,
     this.mostraIdeale = false,
     this.mostraAdattiva = false,
+    this.stile = const StileLinee(),
     super.key,
   });
 
@@ -226,6 +228,9 @@ class Grafico extends StatefulWidget {
 
   /// V2: disegna la linea adattiva del piano.
   final bool mostraAdattiva;
+
+  /// V2: trasparenza e spessore delle linee (solo ridisegno).
+  final StileLinee stile;
 
   /// Quale grafico.
   final TipoGrafico tipo;
@@ -317,8 +322,9 @@ class _StatoGrafico extends State<Grafico> {
                 mostraIdeale: widget.mostraIdeale,
                 mostraAdattiva: widget.mostraAdattiva,
                 dpr: dpr,
+                stile: widget.stile,
               )
-            : PittoreIntensita(widget.dati, dpr: dpr);
+            : PittoreIntensita(widget.dati, dpr: dpr, stile: widget.stile);
         return MouseRegion(
           onHover: (PointerHoverEvent e) => _muovi(e.localPosition, e.position),
           onExit: (_) => _esci(),
@@ -443,10 +449,14 @@ class PittorePrincipale extends CustomPainter {
     this.mostraIdeale = false,
     this.mostraAdattiva = false,
     this.dpr = 1,
+    this.stile = const StileLinee(),
   });
 
   /// Dati.
   final DatiGrafico dati;
+
+  /// Trasparenza e spessore delle linee (le serie non cambiano mai).
+  final StileLinee stile;
 
   /// Disegna la linea ideale (se i dati hanno il piano).
   final bool mostraIdeale;
@@ -565,7 +575,12 @@ class PittorePrincipale extends CustomPainter {
         ..save()
         ..clipRect(Rect.fromLTRB(g.l, y0, xr, y1));
       if (mostraIdeale) {
-        _lineaPiano(c, _percorsoPiano(g, pi.ideale), Colori.ideale);
+        _lineaPiano(
+          c,
+          _percorsoPiano(g, pi.ideale),
+          Colori.ideale,
+          stile: stile.di(LineaGrafico.ideale),
+        );
       }
       if (mostraAdattiva) {
         _lineaPiano(
@@ -573,14 +588,23 @@ class PittorePrincipale extends CustomPainter {
           _percorsoPiano(g, pi.adattiva),
           Colori.adattiva,
           adattiva: true,
+          stile: stile.di(LineaGrafico.adattiva),
         );
       }
       c.restore();
     }
 
     // linee
-    _serie(c, g, dati.sett, Colori.sett, area: true);
-    _serie(c, g, dati.sess, Colori.sess);
+    _serie(
+      c,
+      g,
+      dati.sett,
+      Colori.sett,
+      stile.di(LineaGrafico.settimana),
+      area: true,
+      rosso: pi?.rosso ?? const <Periodo>[],
+    );
+    _serie(c, g, dati.sess, Colori.sess, stile.di(LineaGrafico.sessione));
 
     // note
     final Paint pn = Paint()
@@ -646,17 +670,21 @@ class PittorePrincipale extends CustomPainter {
   }
 
   /// Ideale = tratteggio lungo; adattiva = puntini (non solo il colore).
+  /// [stile] null (legenda) = aspetto di base; spessore/trasparenza scelti
+  /// dall'utente solo qui sul grafico.
   void _lineaPiano(
     Canvas c,
     Path percorso,
     Color colore, {
     bool adattiva = false,
+    StileLinea? stile,
   }) {
+    final double w = stile?.spessore ?? (adattiva ? 2.4 : 2);
     final Paint p = Paint()
-      ..color = colore
+      ..color = stile == null ? colore : colore.withValues(alpha: stile.opacita)
       ..style = PaintingStyle.stroke
       ..isAntiAlias = true
-      ..strokeWidth = adattiva ? 2.4 : 2
+      ..strokeWidth = w
       ..strokeCap = adattiva ? StrokeCap.round : StrokeCap.butt
       ..strokeJoin = StrokeJoin.miter;
     _tratteggioPercorso(
@@ -664,7 +692,8 @@ class PittorePrincipale extends CustomPainter {
       percorso,
       p,
       pieno: adattiva ? 0.1 : 9,
-      vuoto: adattiva ? 5 : 5,
+      // puntini: se la linea è più spessa i puntini restano separati
+      vuoto: adattiva && w > 2.4 ? 5 + (w - 2.4) * 2 : 5,
     );
   }
 
@@ -728,8 +757,10 @@ class PittorePrincipale extends CustomPainter {
     Canvas c,
     Geometria g,
     List<PuntoG> pts,
-    Color col, {
+    Color col,
+    StileLinea st, {
     bool area = false,
+    List<Periodo> rosso = const <Periodo>[],
   }) {
     if (pts.isEmpty) {
       return;
@@ -749,15 +780,51 @@ class PittorePrincipale extends CustomPainter {
           ..close();
         c.drawPath(a, Paint()..color = Colori.settArea);
       }
-      c.drawPath(
-        linea,
-        Paint()
-          ..color = col
+      final Paint pl = Paint()
+        ..color = col.withValues(alpha: st.opacita)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = st.spessore
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      final List<Periodo> rs = <Periodo>[
+        for (final Periodo r in rosso)
+          if (r.fine.isAfter(dati.da) && r.inizio.isBefore(dati.a)) r,
+      ];
+      if (rs.isEmpty) {
+        c.drawPath(linea, pl);
+      } else {
+        // Tratti rossi già calcolati (dominio): qui si taglia e si colora.
+        // Tagli allineati ai pixel fisici: nessuna cucitura tra i colori.
+        final Paint pr = Paint()
+          ..color = Colori.settRossa.withValues(alpha: st.opacita)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
+          ..strokeWidth = st.spessore
           ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round,
-      );
+          ..strokeJoin = StrokeJoin.round;
+        double x = 0;
+        void tratto(double a, double b, Paint p) {
+          if (b <= a) {
+            return;
+          }
+          c
+            ..save()
+            ..clipRect(Rect.fromLTRB(a, 0, b, g.alt))
+            ..drawPath(linea, p)
+            ..restore();
+        }
+
+        for (final Periodo r in rs) {
+          final double xa = math.max(x, _px(cx(r.inizio), dpr));
+          final double xb = _px(cx(r.fine), dpr);
+          if (xb <= xa) {
+            continue;
+          }
+          tratto(x, xa, pl);
+          tratto(xa, xb, pr);
+          x = xb;
+        }
+        tratto(x, g.larg, pl);
+      }
     }
     bool dentro(DateTime t) => !t.isBefore(dati.da) && !t.isAfter(dati.a);
     final Paint vuoto = Paint()..color = Colori.carta;
@@ -800,7 +867,8 @@ class PittorePrincipale extends CustomPainter {
       !identical(old.dati, dati) ||
       old.mostraIdeale != mostraIdeale ||
       old.mostraAdattiva != mostraAdattiva ||
-      old.dpr != dpr;
+      old.dpr != dpr ||
+      old.stile != stile;
 }
 
 /// Disegna il grafico intensità.
@@ -811,10 +879,13 @@ class PittorePrincipale extends CustomPainter {
 /// grafico (pt sett/h). Fasce Lavoro = banda verde dietro.
 class PittoreIntensita extends CustomPainter {
   /// Crea il pittore.
-  PittoreIntensita(this.dati, {this.dpr = 1});
+  PittoreIntensita(this.dati, {this.dpr = 1, this.stile = const StileLinee()});
 
   /// Dati.
   final DatiGrafico dati;
+
+  /// Trasparenza e spessore delle linee (solo ridisegno).
+  final StileLinee stile;
 
   /// Pixel fisici per pixel logico.
   final double dpr;
@@ -838,10 +909,11 @@ class PittoreIntensita extends CustomPainter {
       c.drawLine(Offset(g.l, y), Offset(xr, y), gr);
       _testo(c, v.toStringAsFixed(0), Offset(g.l - 8, y), ancoraX: 1, dpr: dpr);
     }
+    final StileLinea s5 = stile.di(LineaGrafico.int5h);
     final Paint p = Paint()
-      ..color = Colori.sess
+      ..color = Colori.sess.withValues(alpha: s5.opacita)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
+      ..strokeWidth = s5.spessore
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     Path? seg;
@@ -959,16 +1031,18 @@ class PittoreIntensita extends CustomPainter {
     );
 
     // linee: 5h piena, 7gg tratteggiata; un tratto per fonte, buchi vuoti
+    final StileLinea s5 = stile.di(LineaGrafico.int5h);
+    final StileLinea s7 = stile.di(LineaGrafico.int7gg);
     final Paint p5 = Paint()
-      ..color = Colori.sess
+      ..color = Colori.sess.withValues(alpha: s5.opacita)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
+      ..strokeWidth = s5.spessore
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     final Paint p7 = Paint()
-      ..color = Colori.sett
+      ..color = Colori.sett.withValues(alpha: s7.opacita)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
+      ..strokeWidth = s7.spessore
       ..strokeJoin = StrokeJoin.round;
     Path? seg;
     FonteIntensita? fonte;
@@ -1023,7 +1097,7 @@ class PittoreIntensita extends CustomPainter {
 
   @override
   bool shouldRepaint(PittoreIntensita old) =>
-      !identical(old.dati, dati) || old.dpr != dpr;
+      !identical(old.dati, dati) || old.dpr != dpr || old.stile != stile;
 }
 
 /// Riga verticale del mouse (si ridisegna solo lei quando il mouse si muove).

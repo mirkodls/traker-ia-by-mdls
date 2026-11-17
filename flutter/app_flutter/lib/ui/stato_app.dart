@@ -26,6 +26,7 @@ import 'package:traker_ia/domain/progetti.dart';
 import 'package:traker_ia/domain/serie_intensita.dart';
 import 'package:traker_ia/domain/serie_piano.dart';
 import 'package:traker_ia/domain/sfondo.dart';
+import 'package:traker_ia/domain/stile_linee.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/domain/tray.dart';
@@ -813,6 +814,35 @@ class StatoApp extends ChangeNotifier {
   Future<void> cambiaFinestraPostuma(int minuti) =>
       _salvaPref(_pref.copia(finestraPostuma: finestraPostumaValida(minuti)));
 
+  /// V2: cambia trasparenza/spessore delle linee. SOLO ridisegno: nessun
+  /// ricalcolo delle serie. [salva] = false durante il trascinamento (si
+  /// salva al rilascio).
+  Future<void> cambiaStileLinee(StileLinee stile, {bool salva = true}) async {
+    _pref = _pref.copia(stileLinee: stile);
+    _avvisa();
+    if (salva) {
+      await servizi.salvaImpostazioni(_pref.aMappa());
+    }
+  }
+
+  /// V2: linea Settimana rossa vicino alla soglia: acceso/spento.
+  Future<void> cambiaRossoAcceso({required bool acceso}) =>
+      _salvaPref(_pref.copia(rossoAcceso: acceso));
+
+  /// V2: % della soglia del giorno da cui la linea Settimana è rossa
+  /// (50-100; fuori limiti -> 95).
+  Future<void> cambiaSogliaRosso(int percento) =>
+      _salvaPref(_pref.copia(sogliaRosso: sogliaRossoValida(percento)));
+
+  /// V2: linee e rosso tornano come all'inizio.
+  Future<void> ripristinaLinee() => _salvaPref(
+    _pref.copia(
+      stileLinee: const StileLinee(),
+      rossoAcceso: true,
+      sogliaRosso: sogliaRossoPredefinita,
+    ),
+  );
+
   /// Spunta "Conta solo lavoro".
   Future<void> cambiaSoloLavoro({required bool acceso}) =>
       _salvaPref(_pref.copia(soloLavoro: acceso));
@@ -952,6 +982,7 @@ class StatoApp extends ChangeNotifier {
         _letture,
         da: iv.da,
         reset: iniSett,
+        rossoPct: _pref.rossoAcceso ? _pref.sogliaRosso.toDouble() : null,
       );
       inten2 = _cacheIntensita.serie(
         _letture,

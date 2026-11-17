@@ -10,6 +10,7 @@ import 'intensita.dart';
 import 'modelli.dart';
 import 'periodo.dart';
 import 'piani_progetti.dart';
+import 'stile_linee.dart';
 
 /// Chiavi delle impostazioni (mai segreti: quelli vanno in cassaforte).
 abstract final class Chiavi {
@@ -71,8 +72,22 @@ abstract final class Chiavi {
   /// V2: finestra (minuti: 30/60/120) dell'intensità postuma settimanale.
   static const String v2FinestraPostuma = 'v2_finestra_postuma';
 
+  /// V2: '1' = la linea Settimana diventa rossa vicino alla soglia del
+  /// giorno. Acceso di base.
+  static const String v2RossoAcceso = 'v2_rosso_acceso';
+
+  /// V2: % della soglia del giorno oltre cui la linea Settimana è rossa
+  /// (50-100, base 95).
+  static const String v2SogliaRosso = 'v2_soglia_rosso';
+
   /// Tutte le chiavi lette all'avvio.
-  static const List<String> tutte = <String>[
+  static final List<String> tutte = <String>[
+    for (final LineaGrafico l in LineaGrafico.values) ...<String>[
+      l.chiaveAlfa,
+      l.chiaveSpessore,
+    ],
+    v2RossoAcceso,
+    v2SogliaRosso,
     loginScaduto,
     v2ModelliSkill,
     v2Lavoro,
@@ -160,7 +175,11 @@ class Preferenze {
     this.lineaIdeale = true,
     this.lineaAdattiva = true,
     int finestraPostuma = finestraPostumaPredefinita,
-  }) : finestraPostuma = finestraPostumaValida(finestraPostuma),
+    this.stileLinee = const StileLinee(),
+    this.rossoAcceso = true,
+    int sogliaRosso = sogliaRossoPredefinita,
+  }) : sogliaRosso = sogliaRossoValida(sogliaRosso),
+       finestraPostuma = finestraPostumaValida(finestraPostuma),
        giorniPiano = _maschera(giorniPiano),
        modelli = List<String>.unmodifiable(modelli),
        skill = List<String>.unmodifiable(skill),
@@ -187,6 +206,11 @@ class Preferenze {
       lineaAdattiva: m[Chiavi.v2LineaAdattiva] != '0',
       finestraPostuma: finestraPostumaValida(
         int.tryParse(m[Chiavi.v2FinestraPostuma] ?? ''),
+      ),
+      stileLinee: StileLinee.daMappa(m),
+      rossoAcceso: m[Chiavi.v2RossoAcceso] != '0',
+      sogliaRosso: sogliaRossoValida(
+        int.tryParse((m[Chiavi.v2SogliaRosso] ?? '').trim()),
       ),
     );
   }
@@ -233,8 +257,21 @@ class Preferenze {
   /// V2: finestra (minuti) dell'intensità postuma settimanale (30/60/120).
   final int finestraPostuma;
 
+  /// V2: trasparenza e spessore di ogni linea dei grafici.
+  final StileLinee stileLinee;
+
+  /// V2: linea Settimana rossa vicino alla soglia del giorno. Base: acceso.
+  final bool rossoAcceso;
+
+  /// V2: % della soglia del giorno da cui la linea Settimana è rossa
+  /// (50-100). Base 95.
+  final int sogliaRosso;
+
   /// Preferenze -> impostazioni da salvare.
   Map<String, String> aMappa() => <String, String>{
+    ...stileLinee.aMappa(),
+    Chiavi.v2RossoAcceso: rossoAcceso ? '1' : '0',
+    Chiavi.v2SogliaRosso: '$sogliaRosso',
     Chiavi.minuti: '$minuti',
     Chiavi.metodo: metodo,
     Chiavi.modelli: jsonEncode(modelli),
@@ -267,6 +304,9 @@ class Preferenze {
     bool? lineaIdeale,
     bool? lineaAdattiva,
     int? finestraPostuma,
+    StileLinee? stileLinee,
+    bool? rossoAcceso,
+    int? sogliaRosso,
   }) => Preferenze(
     minuti: minuti ?? this.minuti,
     metodo: metodo ?? this.metodo,
@@ -282,6 +322,9 @@ class Preferenze {
     lineaIdeale: lineaIdeale ?? this.lineaIdeale,
     lineaAdattiva: lineaAdattiva ?? this.lineaAdattiva,
     finestraPostuma: finestraPostuma ?? this.finestraPostuma,
+    stileLinee: stileLinee ?? this.stileLinee,
+    rossoAcceso: rossoAcceso ?? this.rossoAcceso,
+    sogliaRosso: sogliaRosso ?? this.sogliaRosso,
   );
 
   /// Accende/spegne il giorno [g] (1 = lunedì ... 7 = domenica) del piano.
