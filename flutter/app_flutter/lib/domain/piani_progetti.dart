@@ -12,7 +12,11 @@ const int tuttiIGiorni = 0x7F;
 /// Dove finisce un "giorno" del piano.
 enum ConfinePiano {
   /// 24 ore a partire dall'ora del reset settimanale.
-  reset24h;
+  reset24h,
+
+  /// Mezzanotte locale (giorni di calendario; i pezzi tra reset e
+  /// mezzanotte sono giorni corti).
+  mezzanotte;
 
   /// Testo salvato ('reset24h').
   String get testo => name;
