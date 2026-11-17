@@ -8,6 +8,7 @@ import 'package:traker_ia/domain/analisi.dart';
 import 'package:traker_ia/domain/coppie.dart';
 import 'package:traker_ia/domain/lavoro.dart';
 import 'package:traker_ia/domain/modelli.dart';
+import 'package:traker_ia/domain/serie_intensita.dart';
 import 'package:traker_ia/domain/serie_piano.dart';
 
 /// Punto di una linea del grafico.
@@ -54,6 +55,7 @@ class DatiGrafico {
     required this.intensita,
     required this.maxIntensita,
     this.piano,
+    this.intensitaV2,
   });
 
   /// Inizio asse tempo.
@@ -85,6 +87,10 @@ class DatiGrafico {
 
   /// V2: fette-giorno e linee del piano, già calcolate (null = piano spento).
   final SeriePiano? piano;
+
+  /// V2: serie intensità per fonte 5h/7gg già calcolata in cache (null =
+  /// intensità vecchia [intensita]).
+  final IntensitaV2? intensitaV2;
 
   /// Vero se non c'è nessuna lettura da disegnare.
   bool get vuoto => sett.isEmpty && sess.isEmpty;
@@ -135,6 +141,7 @@ DatiGrafico calcolaDatiGrafico(
   DateTime a,
   DateTime adesso, {
   SeriePiano? piano,
+  IntensitaV2? intensitaV2,
 }) {
   final List<Lettura> ls = ordinaLetture(letture);
   final Set<DateTime> rs = <DateTime>{
@@ -165,12 +172,15 @@ DatiGrafico calcolaDatiGrafico(
     }
   }
   // Niente punti nel futuro (asse esteso a fine settimana): solo fino ad ora.
-  final List<PuntoSerie> inten = serieIntensita(
-    ls,
-    da,
-    a.isAfter(adesso) && adesso.isAfter(da) ? adesso : a,
-    passoMin: passoIntensita(da, a),
-  );
+  // V2: la serie vera arriva già pronta (cache): qui niente doppio calcolo.
+  final List<PuntoSerie> inten = intensitaV2 != null
+      ? const <PuntoSerie>[]
+      : serieIntensita(
+          ls,
+          da,
+          a.isAfter(adesso) && adesso.isAfter(da) ? adesso : a,
+          passoMin: passoIntensita(da, a),
+        );
   double top = 1;
   for (final PuntoSerie p in inten) {
     final double? v = p.valore;
@@ -189,6 +199,7 @@ DatiGrafico calcolaDatiGrafico(
     intensita: inten,
     maxIntensita: top,
     piano: piano,
+    intensitaV2: intensitaV2,
   );
 }
 

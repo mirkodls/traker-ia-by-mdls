@@ -328,6 +328,55 @@ abstract final class Testi {
   static const String titoloIntensita =
       'Intensità (pt%/h, barra 5h, media 30 min)';
 
+  /// Titolo grafico intensità V2 (due barre, due scale).
+  static const String titoloIntensitaV2 = 'Intensità';
+
+  /// Legenda intensità V2: barra 5 ore (scala a sinistra).
+  static const String legInt5h = '5h · pt sess/h';
+
+  /// Legenda intensità V2: barra settimanale postuma (scala a destra).
+  static const String legInt7gg = '7gg · pt sett/h';
+
+  /// Unità nel riquadro del mouse: barra 5 ore.
+  static const String unita5h = ' pt sess/h';
+
+  /// Unità nel riquadro del mouse: barra settimanale.
+  static const String unita7gg = ' pt sett/h';
+
+  /// Barra intensità: titolo scelta finestra postuma.
+  static const String postumaMedia = 'Postuma 7gg, media su';
+
+  /// Barra intensità: finestra [n] minuti.
+  static String minutiN(int n) => '$n min';
+
+  /// Barra intensità: spiegazione scelta finestra.
+  static String spiegaPostuma(int n) =>
+      'Intensità dalla barra settimanale (quando la 5h non c\'è): media '
+      'degli ultimi $n minuti. Poco tempo = reagisce subito ma è molto '
+      'incerta (le letture sono intere). Tanto tempo = più sicura ma lenta.';
+
+  /// Barra intensità: nessuna media.
+  static const String nessunaMedia = 'Media: pochi dati';
+
+  /// Barra intensità: media per barra. Stima, sempre con "~" e "±".
+  static String mediaBarra(String valore, String err, String unita) =>
+      '~$valore ±$err$unita';
+
+  /// Barra intensità: etichetta davanti alle medie.
+  static const String mediaPrefisso = 'Media:';
+
+  /// Barra intensità: media calcolata solo con la fascia Lavoro.
+  static const String soloLavoroSuffisso = '(solo Lavoro)';
+
+  /// Barra intensità: casella solo Lavoro.
+  static const String contaSoloLavoroInt = 'Solo Lavoro';
+
+  /// Spiegazione breve del tasto Lavoro.
+  static const String spiegaLavoro =
+      'Lavoro = quando lavori davvero. Premi ▶ all\'inizio e ■ alla fine, '
+      'oppure scrivi la nota "lavoro" o "fine lavoro" (solo quella parola). '
+      'La fascia verde nei grafici è Lavoro. "Solo Lavoro" conta solo quelle ore.';
+
   /// Nessuna lettura nel grafico.
   static const String graficoVuoto = 'Nessuna lettura in questo periodo.';
 

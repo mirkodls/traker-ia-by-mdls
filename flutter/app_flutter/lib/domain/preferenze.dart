@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'catena.dart';
 import 'combinazioni.dart';
+import 'intensita.dart';
 import 'modelli.dart';
 import 'periodo.dart';
 import 'piani_progetti.dart';
@@ -67,6 +68,9 @@ abstract final class Chiavi {
   /// V2: '1' = linea adattiva del piano visibile nel grafico.
   static const String v2LineaAdattiva = 'v2_linea_adattiva';
 
+  /// V2: finestra (minuti: 30/60/120) dell'intensità postuma settimanale.
+  static const String v2FinestraPostuma = 'v2_finestra_postuma';
+
   /// Tutte le chiavi lette all'avvio.
   static const List<String> tutte = <String>[
     loginScaduto,
@@ -75,6 +79,7 @@ abstract final class Chiavi {
     v2PianoGiorni,
     v2LineaIdeale,
     v2LineaAdattiva,
+    v2FinestraPostuma,
     minuti,
     metodo,
     modelli,
@@ -154,7 +159,9 @@ class Preferenze {
     int giorniPiano = tuttiIGiorni,
     this.lineaIdeale = true,
     this.lineaAdattiva = true,
-  }) : giorniPiano = _maschera(giorniPiano),
+    int finestraPostuma = finestraPostumaPredefinita,
+  }) : finestraPostuma = finestraPostumaValida(finestraPostuma),
+       giorniPiano = _maschera(giorniPiano),
        modelli = List<String>.unmodifiable(modelli),
        skill = List<String>.unmodifiable(skill),
        modelliAttivi = List<String>.unmodifiable(modelliAttivi),
@@ -178,6 +185,9 @@ class Preferenze {
       giorniPiano: int.tryParse(m[Chiavi.v2PianoGiorni] ?? '') ?? tuttiIGiorni,
       lineaIdeale: m[Chiavi.v2LineaIdeale] != '0',
       lineaAdattiva: m[Chiavi.v2LineaAdattiva] != '0',
+      finestraPostuma: finestraPostumaValida(
+        int.tryParse(m[Chiavi.v2FinestraPostuma] ?? ''),
+      ),
     );
   }
 
@@ -220,6 +230,9 @@ class Preferenze {
   /// V2: linea adattiva visibile. Base: acceso.
   final bool lineaAdattiva;
 
+  /// V2: finestra (minuti) dell'intensità postuma settimanale (30/60/120).
+  final int finestraPostuma;
+
   /// Preferenze -> impostazioni da salvare.
   Map<String, String> aMappa() => <String, String>{
     Chiavi.minuti: '$minuti',
@@ -235,6 +248,7 @@ class Preferenze {
     Chiavi.v2PianoGiorni: '$giorniPiano',
     Chiavi.v2LineaIdeale: lineaIdeale ? '1' : '0',
     Chiavi.v2LineaAdattiva: lineaAdattiva ? '1' : '0',
+    Chiavi.v2FinestraPostuma: '$finestraPostuma',
   };
 
   /// Copia con alcuni valori cambiati.
@@ -252,6 +266,7 @@ class Preferenze {
     int? giorniPiano,
     bool? lineaIdeale,
     bool? lineaAdattiva,
+    int? finestraPostuma,
   }) => Preferenze(
     minuti: minuti ?? this.minuti,
     metodo: metodo ?? this.metodo,
@@ -266,6 +281,7 @@ class Preferenze {
     giorniPiano: giorniPiano ?? this.giorniPiano,
     lineaIdeale: lineaIdeale ?? this.lineaIdeale,
     lineaAdattiva: lineaAdattiva ?? this.lineaAdattiva,
+    finestraPostuma: finestraPostuma ?? this.finestraPostuma,
   );
 
   /// Accende/spegne il giorno [g] (1 = lunedì ... 7 = domenica) del piano.

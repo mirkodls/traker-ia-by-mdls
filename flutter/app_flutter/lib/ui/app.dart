@@ -11,6 +11,7 @@ import 'package:traker_ia/domain/periodo.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/domain/vista.dart';
+import 'package:traker_ia/ui/barra_intensita.dart';
 import 'package:traker_ia/ui/barra_piano.dart';
 import 'package:traker_ia/ui/dialoghi.dart';
 import 'package:traker_ia/ui/grafico.dart';
@@ -299,9 +300,20 @@ class _StatoFinestra extends State<Finestra> {
       mouse: _mouse,
       modelliSkill: _s.preferenze.modelliSkill,
     );
+    final bool v2 = d.intensitaV2 != null;
     return Carta(
       padding: const EdgeInsets.all(6),
-      child: alt == null ? g : SizedBox(height: alt, child: g),
+      child: Column(
+        mainAxisSize: alt == null ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (v2) BarraIntensita(stato: _s, serie: d.intensitaV2!),
+          if (alt == null)
+            Expanded(child: g)
+          else
+            SizedBox(height: alt, child: g),
+        ],
+      ),
     );
   }
 

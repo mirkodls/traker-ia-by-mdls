@@ -13,6 +13,7 @@ import 'package:traker_ia/domain/combinazioni.dart';
 import 'package:traker_ia/domain/confronti.dart' hide confrontoNota;
 import 'package:traker_ia/domain/confronti.dart' as cf show confrontoNota;
 import 'package:traker_ia/domain/coppie.dart';
+import 'package:traker_ia/domain/intensita.dart' show finestraPostumaValida;
 import 'package:traker_ia/domain/lavoro.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/periodo.dart';
@@ -20,6 +21,7 @@ import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/piano_giorni.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/previsione.dart' as prev;
+import 'package:traker_ia/domain/serie_intensita.dart';
 import 'package:traker_ia/domain/serie_piano.dart';
 import 'package:traker_ia/domain/sfondo.dart';
 import 'package:traker_ia/domain/tempo.dart';
@@ -80,6 +82,7 @@ class StatoApp extends ChangeNotifier {
   ValoreCarta _cartaSett = (valore: null, sotto: Testi.resetInAttesa);
   DatiGrafico? _grafico;
   final CachePiano _cachePiano = CachePiano();
+  final CacheIntensita _cacheIntensita = CacheIntensita();
   List<String> _frasi = <String>[];
   List<Evento> _note = <Evento>[];
   ConfrontoNota? _confNota;
@@ -141,6 +144,9 @@ class StatoApp extends ChangeNotifier {
 
   /// Quante volte le serie del piano sono state ricalcolate davvero.
   int get calcoliPiano => _cachePiano.calcoli;
+
+  /// Quante volte la serie intensità è stata ricalcolata davvero.
+  int get calcoliIntensita => _cacheIntensita.calcoli;
 
   /// Frasi "Cosa dicono i dati".
   List<String> get frasi => _frasi;
@@ -499,6 +505,15 @@ class StatoApp extends ChangeNotifier {
     if (t.isEmpty) {
       return;
     }
+    // Nota-comando: "lavoro" / "fine lavoro" = come il tasto Lavoro
+    // (nessuna nota; se Lavoro è già nello stato chiesto, non fa niente).
+    final TipoEvento? comando = comandoLavoroDaNota(t);
+    if (comando != null) {
+      if ((comando == TipoEvento.inizio) != lavoro) {
+        await cambiaLavoro();
+      }
+      return;
+    }
     final DateTime ora = adesso;
     await servizi.aggiungiEvento(
       Evento(ora: ora, tipo: TipoEvento.nota, testo: t),
@@ -565,6 +580,10 @@ class StatoApp extends ChangeNotifier {
   /// V2: mostra/nasconde la linea adattiva.
   Future<void> cambiaLineaAdattiva({required bool acceso}) =>
       _salvaPref(_pref.copia(lineaAdattiva: acceso));
+
+  /// V2: finestra (30/60/120 minuti) dell'intensità postuma settimanale.
+  Future<void> cambiaFinestraPostuma(int minuti) =>
+      _salvaPref(_pref.copia(finestraPostuma: finestraPostumaValida(minuti)));
 
   /// Spunta "Conta solo lavoro".
   Future<void> cambiaSoloLavoro({required bool acceso}) =>
@@ -694,6 +713,7 @@ class StatoApp extends ChangeNotifier {
       _letture.isEmpty ? null : _letture.first.ora,
     );
     SeriePiano? piano;
+    IntensitaV2? inten2;
     if (_pref.lavoroV2) {
       if (_pref.periodo == scattoSettimana) {
         // V2: "Settimana" mostra tutta la settimana, anche i giorni da fare.
@@ -705,6 +725,16 @@ class StatoApp extends ChangeNotifier {
         da: iv.da,
         reset: iniSett,
       );
+      inten2 = _cacheIntensita.serie(
+        _letture,
+        _eventi,
+        iv.da,
+        iv.a,
+        ora,
+        passoMin: passoIntensita(iv.da, iv.a),
+        finestraPostumaMin: _pref.finestraPostuma,
+        soloLavoro: _pref.soloLavoro,
+      );
     }
     _grafico = calcolaDatiGrafico(
       _letture,
@@ -713,6 +743,7 @@ class StatoApp extends ChangeNotifier {
       iv.a,
       ora,
       piano: piano,
+      intensitaV2: inten2,
     );
 
     final DateTime resetSett =

@@ -405,15 +405,18 @@ class _StatoRigaNota extends State<RigaNota> {
   @override
   Widget build(BuildContext context) {
     final bool lav = widget.stato.lavoro;
-    final Widget tastoLavoro = FilledButton(
-      onPressed: widget.stato.cambiaLavoro,
-      style: FilledButton.styleFrom(
-        backgroundColor: lav ? Colori.fineSfondo : Colori.inizioSfondo,
-        foregroundColor: lav ? Colori.errore : Colori.ok,
-      ),
-      child: Text(
-        lav ? Testi.fineLavoro : Testi.inizioLavoro,
-        style: const TextStyle(fontWeight: FontWeight.bold),
+    final Widget tastoLavoro = Tooltip(
+      message: Testi.spiegaLavoro,
+      child: FilledButton(
+        onPressed: widget.stato.cambiaLavoro,
+        style: FilledButton.styleFrom(
+          backgroundColor: lav ? Colori.fineSfondo : Colori.inizioSfondo,
+          foregroundColor: lav ? Colori.errore : Colori.ok,
+        ),
+        child: Text(
+          lav ? Testi.fineLavoro : Testi.inizioLavoro,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
     final Widget campo = Row(

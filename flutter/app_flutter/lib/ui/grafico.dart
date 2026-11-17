@@ -11,10 +11,13 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:traker_ia/domain/analisi.dart';
 import 'package:traker_ia/domain/combinazioni.dart';
+import 'package:traker_ia/domain/coppie.dart';
+import 'package:traker_ia/domain/intensita.dart';
 import 'package:traker_ia/domain/linee_piano.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piano_giorni.dart';
 import 'package:traker_ia/domain/riordino.dart';
+import 'package:traker_ia/domain/serie_intensita.dart';
 import 'package:traker_ia/domain/serie_piano.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
@@ -135,12 +138,31 @@ class RiquadroGrafici {
   }
 }
 
+/// Intensità V2 all'ora [t]: stima "~v ±e unità" (mai un valore secco).
+String _testoIntensita(IntensitaV2 v2, DateTime t) {
+  final PuntoIntensita? p = puntoIntensitaA(v2.punti, t);
+  final double? v = p?.valore;
+  if (p == null || v == null) {
+    return Testi.trattino;
+  }
+  final double e = p.errore ?? 0;
+  final String unita = p.fonte == FonteIntensita.cinqueOre
+      ? Testi.unita5h
+      : Testi.unita7gg;
+  return Testi.mediaBarra(
+    numero(arrotondaStima(v, e), dec: e >= 1 ? 0 : (e >= 0.1 ? 1 : 2)),
+    numero(e, dec: e >= 1 ? 0 : (e >= 0.1 ? 1 : 2)),
+    unita,
+  );
+}
+
 /// Testo del riquadro all'ora [t]. [modelliSkill] = righe modelli/skill
 /// (V2: spente di base).
 String testoMouse(
   List<Lettura> letture,
   DateTime t, {
   bool modelliSkill = false,
+  IntensitaV2? v2,
 }) {
   String riga(String nome, ValoreA v, String unita) => Testi.rigaValore(
     nome,
@@ -155,7 +177,10 @@ String testoMouse(
     quandoData(t),
     riga(Testi.rqSett, sett, '%'),
     riga(Testi.rqSess, sess, '%'),
-    riga(Testi.rqIntensita, ValoreA(inte, esatto: sess.esatto), ' pt/h'),
+    if (v2 == null)
+      riga(Testi.rqIntensita, ValoreA(inte, esatto: sess.esatto), ' pt/h')
+    else
+      Testi.rigaValore(Testi.rqIntensita, _testoIntensita(v2, t)),
   ];
   final Combo? c = modelliSkill ? statoA(letture, t) : null;
   if (c != null) {
@@ -266,7 +291,12 @@ class _StatoGrafico extends State<Grafico> {
     widget.mouse.riquadro.mostra(
       context,
       globale,
-      testoMouse(widget.letture, t, modelliSkill: widget.modelliSkill),
+      testoMouse(
+        widget.letture,
+        t,
+        modelliSkill: widget.modelliSkill,
+        v2: widget.dati.intensitaV2,
+      ),
     );
   }
 
@@ -774,6 +804,11 @@ class PittorePrincipale extends CustomPainter {
 }
 
 /// Disegna il grafico intensità.
+///
+/// V2 ([DatiGrafico.intensitaV2]): due barre, due scale mai mescolate. Barra
+/// 5 ore = linea piena arancione, scala a sinistra (pt sess/h). Barra
+/// settimanale postuma = linea tratteggiata blu, scala a destra dentro il
+/// grafico (pt sett/h). Fasce Lavoro = banda verde dietro.
 class PittoreIntensita extends CustomPainter {
   /// Crea il pittore.
   PittoreIntensita(this.dati, {this.dpr = 1});
@@ -786,6 +821,11 @@ class PittoreIntensita extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
+    final IntensitaV2? v2 = dati.intensitaV2;
+    if (v2 != null) {
+      _paintV2(c, s, v2);
+      return;
+    }
     final Geometria g = geometriaIntensita(s, dati);
     if (!g.disegnabile) {
       return;
@@ -823,6 +863,156 @@ class PittoreIntensita extends CustomPainter {
       final Offset o = Offset(g.x(ps.ora), g.y(v));
       if (seg == null) {
         seg = Path()..moveTo(o.dx, o.dy);
+      } else {
+        seg!.lineTo(o.dx, o.dy);
+      }
+      punti++;
+    }
+    chiudi();
+  }
+
+  static String _scala(double v) => v.toStringAsFixed(v < 10 ? 1 : 0);
+
+  void _paintV2(Canvas c, Size s, IntensitaV2 v2) {
+    final Geometria g5 = Geometria(
+      larg: s.width,
+      alt: s.height,
+      da: dati.da,
+      a: dati.a,
+      t: 20,
+      b: 8,
+      max: v2.max5h,
+    );
+    final Geometria g7 = Geometria(
+      larg: s.width,
+      alt: s.height,
+      da: dati.da,
+      a: dati.a,
+      t: 20,
+      b: 8,
+      max: v2.max7gg,
+    );
+    if (!g5.disegnabile) {
+      return;
+    }
+    final double y0 = g5.t;
+    final double y1 = s.height - g5.b;
+    final double xr = s.width - g5.r;
+
+    // fasce Lavoro (banda dietro a tutto)
+    final Paint fl = Paint()..color = Colori.lavoro;
+    for (final Periodo p in dati.fasce) {
+      c.drawRect(Rect.fromLTRB(g5.x(p.inizio), y0, g5.x(p.fine), y1), fl);
+    }
+
+    // titolo + legenda (si ferma se la finestra è stretta)
+    _testo(c, Testi.titoloIntensitaV2, Offset(g5.l, 9), dpr: dpr);
+    double lx = g5.l + _larghezzaTesto(Testi.titoloIntensitaV2) + 16;
+    for (final (String, Color, int) v in <(String, Color, int)>[
+      (Testi.legInt5h, Colori.sess, 1),
+      (Testi.legInt7gg, Colori.sett, 2),
+      if (dati.fasce.isNotEmpty) (Testi.legLavoro, Colori.lavoroLegenda, 0),
+    ]) {
+      final double w = (v.$3 == 0 ? 26 : 38) + _larghezzaTesto(v.$1);
+      if (lx + w - 12 > xr) {
+        break;
+      }
+      if (v.$3 == 0) {
+        c.drawCircle(Offset(lx + 5, 9), 5, Paint()..color = v.$2);
+        _testo(c, v.$1, Offset(lx + 14, 9), dpr: dpr);
+      } else {
+        final Paint pl = Paint()
+          ..color = v.$2
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke;
+        if (v.$3 == 1) {
+          c.drawLine(Offset(lx, 9), Offset(lx + 22, 9), pl);
+        } else {
+          _tratteggio(c, Offset(lx, 9), Offset(lx + 22, 9), pl);
+        }
+        _testo(c, v.$1, Offset(lx + 28, 9), dpr: dpr);
+      }
+      lx += w;
+    }
+
+    // griglia + scale: 5h a sinistra, 7gg a destra (dentro, sopra la banda)
+    final Paint gr = Paint()..color = Colori.griglia;
+    for (final double v in <double>[0, g5.max]) {
+      final double y = g5.y(v);
+      c.drawLine(Offset(g5.l, y), Offset(xr, y), gr);
+      _testo(
+        c,
+        _scala(v),
+        Offset(g5.l - 8, y),
+        ancoraX: 1,
+        colore: Colori.sess,
+        dpr: dpr,
+      );
+    }
+    _testo(
+      c,
+      _scala(g7.max),
+      Offset(xr - 4, y0 + 7),
+      ancoraX: 1,
+      colore: Colori.sett,
+      dpr: dpr,
+    );
+
+    // linee: 5h piena, 7gg tratteggiata; un tratto per fonte, buchi vuoti
+    final Paint p5 = Paint()
+      ..color = Colori.sess
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final Paint p7 = Paint()
+      ..color = Colori.sett
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeJoin = StrokeJoin.round;
+    Path? seg;
+    FonteIntensita? fonte;
+    Offset? primo;
+    int punti = 0;
+    void chiudi() {
+      final FonteIntensita? f = fonte;
+      if (seg != null && f != null) {
+        if (punti >= 2) {
+          if (f == FonteIntensita.cinqueOre) {
+            c.drawPath(seg!, p5);
+          } else {
+            _tratteggioPercorso(c, seg!, p7, pieno: 5, vuoto: 4);
+          }
+        } else if (primo != null) {
+          c.drawCircle(
+            primo!,
+            2,
+            Paint()
+              ..color = f == FonteIntensita.cinqueOre ? p5.color : p7.color,
+          );
+        }
+      }
+      seg = null;
+      fonte = null;
+      primo = null;
+      punti = 0;
+    }
+
+    for (final PuntoIntensita pi in v2.punti) {
+      final double? v = pi.valore;
+      if (v == null) {
+        chiudi();
+        continue;
+      }
+      if (fonte != pi.fonte) {
+        chiudi();
+        fonte = pi.fonte;
+      }
+      final Geometria g = pi.fonte == FonteIntensita.cinqueOre ? g5 : g7;
+      final Offset o = Offset(g.x(pi.ora), g.y(v));
+      if (seg == null) {
+        seg = Path()..moveTo(o.dx, o.dy);
+        primo = o;
       } else {
         seg!.lineTo(o.dx, o.dy);
       }
