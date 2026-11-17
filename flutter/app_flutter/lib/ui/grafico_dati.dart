@@ -8,6 +8,7 @@ import 'package:traker_ia/domain/analisi.dart';
 import 'package:traker_ia/domain/coppie.dart';
 import 'package:traker_ia/domain/lavoro.dart';
 import 'package:traker_ia/domain/modelli.dart';
+import 'package:traker_ia/domain/serie_piano.dart';
 
 /// Punto di una linea del grafico.
 class PuntoG {
@@ -52,6 +53,7 @@ class DatiGrafico {
     required this.note,
     required this.intensita,
     required this.maxIntensita,
+    this.piano,
   });
 
   /// Inizio asse tempo.
@@ -80,6 +82,9 @@ class DatiGrafico {
 
   /// Valore massimo dell'asse intensità (almeno 1).
   final double maxIntensita;
+
+  /// V2: fette-giorno e linee del piano, già calcolate (null = piano spento).
+  final SeriePiano? piano;
 
   /// Vero se non c'è nessuna lettura da disegnare.
   bool get vuoto => sett.isEmpty && sess.isEmpty;
@@ -113,9 +118,14 @@ List<PuntoG> _linea(List<Lettura> ls, Campo campo, DateTime da, DateTime a) {
   return out;
 }
 
-/// Passo (minuti) della serie intensità: max ~240 punti, almeno 5 minuti.
+/// Punti massimi della serie intensità: quanti pixel di un grande schermo
+/// (nessun downsample sotto lo schermo).
+const int maxPuntiIntensita = 1500;
+
+/// Passo (minuti) della serie intensità: max [maxPuntiIntensita] punti,
+/// almeno 5 minuti (le letture vere sono più rade).
 int passoIntensita(DateTime da, DateTime a) =>
-    math.max(5, a.difference(da).inMinutes ~/ 240);
+    math.max(5, a.difference(da).inMinutes ~/ maxPuntiIntensita);
 
 /// Calcola i dati del grafico per l'intervallo [da, a].
 DatiGrafico calcolaDatiGrafico(
@@ -123,8 +133,9 @@ DatiGrafico calcolaDatiGrafico(
   List<Evento> eventi,
   DateTime da,
   DateTime a,
-  DateTime adesso,
-) {
+  DateTime adesso, {
+  SeriePiano? piano,
+}) {
   final List<Lettura> ls = ordinaLetture(letture);
   final Set<DateTime> rs = <DateTime>{
     ...trovaReset(ls, Campo.sett),
@@ -153,10 +164,11 @@ DatiGrafico calcolaDatiGrafico(
       note.add(NotaG(n, e.ora, e.testo));
     }
   }
+  // Niente punti nel futuro (asse esteso a fine settimana): solo fino ad ora.
   final List<PuntoSerie> inten = serieIntensita(
     ls,
     da,
-    a,
+    a.isAfter(adesso) && adesso.isAfter(da) ? adesso : a,
     passoMin: passoIntensita(da, a),
   );
   double top = 1;
@@ -176,6 +188,7 @@ DatiGrafico calcolaDatiGrafico(
     note: note,
     intensita: inten,
     maxIntensita: top,
+    piano: piano,
   );
 }
 

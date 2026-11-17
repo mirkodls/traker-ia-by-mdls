@@ -8,6 +8,7 @@ import 'catena.dart';
 import 'combinazioni.dart';
 import 'modelli.dart';
 import 'periodo.dart';
+import 'piani_progetti.dart';
 
 /// Chiavi delle impostazioni (mai segreti: quelli vanno in cassaforte).
 abstract final class Chiavi {
@@ -57,11 +58,23 @@ abstract final class Chiavi {
   /// V2: '1' = funzioni lavoro V2 accese (piani, linee). Acceso di base.
   static const String v2Lavoro = 'v2_lavoro';
 
+  /// V2: giorni di lavoro del piano (maschera 1-127, bit0 = lunedì).
+  static const String v2PianoGiorni = 'v2_piano_giorni';
+
+  /// V2: '1' = linea ideale del piano visibile nel grafico.
+  static const String v2LineaIdeale = 'v2_linea_ideale';
+
+  /// V2: '1' = linea adattiva del piano visibile nel grafico.
+  static const String v2LineaAdattiva = 'v2_linea_adattiva';
+
   /// Tutte le chiavi lette all'avvio.
   static const List<String> tutte = <String>[
     loginScaduto,
     v2ModelliSkill,
     v2Lavoro,
+    v2PianoGiorni,
+    v2LineaIdeale,
+    v2LineaAdattiva,
     minuti,
     metodo,
     modelli,
@@ -118,6 +131,12 @@ List<String> _lista(String? json, List<String> pred) {
   return pred;
 }
 
+/// Maschera giorni valida: ristretta ai 7 bit; 0 (nessun giorno) -> tutti.
+int _maschera(int m) {
+  final int v = m & tuttiIGiorni;
+  return v == 0 ? tuttiIGiorni : v;
+}
+
 /// Preferenze (immutabili).
 class Preferenze {
   /// Crea le preferenze.
@@ -132,7 +151,11 @@ class Preferenze {
     this.soloLavoro = false,
     this.modelliSkill = false,
     this.lavoroV2 = true,
-  }) : modelli = List<String>.unmodifiable(modelli),
+    int giorniPiano = tuttiIGiorni,
+    this.lineaIdeale = true,
+    this.lineaAdattiva = true,
+  }) : giorniPiano = _maschera(giorniPiano),
+       modelli = List<String>.unmodifiable(modelli),
        skill = List<String>.unmodifiable(skill),
        modelliAttivi = List<String>.unmodifiable(modelliAttivi),
        skillAttive = List<String>.unmodifiable(skillAttive);
@@ -152,6 +175,9 @@ class Preferenze {
       soloLavoro: m[Chiavi.soloLavoro] == '1',
       modelliSkill: m[Chiavi.v2ModelliSkill] == '1',
       lavoroV2: m[Chiavi.v2Lavoro] != '0',
+      giorniPiano: int.tryParse(m[Chiavi.v2PianoGiorni] ?? '') ?? tuttiIGiorni,
+      lineaIdeale: m[Chiavi.v2LineaIdeale] != '0',
+      lineaAdattiva: m[Chiavi.v2LineaAdattiva] != '0',
     );
   }
 
@@ -185,6 +211,15 @@ class Preferenze {
   /// V2: funzioni lavoro V2 accese. Base: acceso.
   final bool lavoroV2;
 
+  /// V2: giorni di lavoro del piano (maschera, mai 0: almeno 1 giorno).
+  final int giorniPiano;
+
+  /// V2: linea ideale visibile. Base: acceso.
+  final bool lineaIdeale;
+
+  /// V2: linea adattiva visibile. Base: acceso.
+  final bool lineaAdattiva;
+
   /// Preferenze -> impostazioni da salvare.
   Map<String, String> aMappa() => <String, String>{
     Chiavi.minuti: '$minuti',
@@ -197,6 +232,9 @@ class Preferenze {
     Chiavi.soloLavoro: soloLavoro ? '1' : '0',
     Chiavi.v2ModelliSkill: modelliSkill ? '1' : '0',
     Chiavi.v2Lavoro: lavoroV2 ? '1' : '0',
+    Chiavi.v2PianoGiorni: '$giorniPiano',
+    Chiavi.v2LineaIdeale: lineaIdeale ? '1' : '0',
+    Chiavi.v2LineaAdattiva: lineaAdattiva ? '1' : '0',
   };
 
   /// Copia con alcuni valori cambiati.
@@ -211,6 +249,9 @@ class Preferenze {
     bool? soloLavoro,
     bool? modelliSkill,
     bool? lavoroV2,
+    int? giorniPiano,
+    bool? lineaIdeale,
+    bool? lineaAdattiva,
   }) => Preferenze(
     minuti: minuti ?? this.minuti,
     metodo: metodo ?? this.metodo,
@@ -222,7 +263,20 @@ class Preferenze {
     soloLavoro: soloLavoro ?? this.soloLavoro,
     modelliSkill: modelliSkill ?? this.modelliSkill,
     lavoroV2: lavoroV2 ?? this.lavoroV2,
+    giorniPiano: giorniPiano ?? this.giorniPiano,
+    lineaIdeale: lineaIdeale ?? this.lineaIdeale,
+    lineaAdattiva: lineaAdattiva ?? this.lineaAdattiva,
   );
+
+  /// Accende/spegne il giorno [g] (1 = lunedì ... 7 = domenica) del piano.
+  /// L'ultimo giorno acceso non si spegne (serve almeno 1 giorno).
+  Preferenze toccaGiorno(int g) {
+    if (g < DateTime.monday || g > DateTime.sunday) {
+      return this;
+    }
+    final int m = giorniPiano ^ (1 << (g - 1));
+    return m == 0 ? this : copia(giorniPiano: m);
+  }
 
   /// Elenco del gruppo [g].
   List<String> elenco(Gruppo g) => g == Gruppo.modelli ? modelli : skill;

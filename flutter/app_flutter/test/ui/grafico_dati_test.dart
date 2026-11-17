@@ -57,7 +57,9 @@ void main() {
   test('vuoto senza letture; passo intensità', () {
     expect(calcolaDatiGrafico(<Lettura>[], <Evento>[], da, a, a).vuoto, isTrue);
     expect(passoIntensita(da, a), 5);
-    expect(passoIntensita(da, da.add(const Duration(days: 7))), 42);
+    expect(passoIntensita(da, da.add(const Duration(days: 7))), 6);
+    // mai meno di un punto ogni 5 minuti, mai più di ~1500 punti
+    expect(passoIntensita(da, da.add(const Duration(days: 60))), 57);
   });
 
   test('geometria: x e tempo uno il contrario dell\'altro', () {

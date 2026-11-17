@@ -4,14 +4,18 @@
 // pacchetti). Mouse/dito sulla linea: riga verticale su tutti e due + riquadro
 // che non viene mai tagliato (sta sopra tutta la finestra).
 import 'dart:math' as math;
+import 'dart:ui' show PathMetric;
 
 import 'package:flutter/gestures.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:traker_ia/domain/analisi.dart';
 import 'package:traker_ia/domain/combinazioni.dart';
+import 'package:traker_ia/domain/linee_piano.dart';
 import 'package:traker_ia/domain/modelli.dart';
+import 'package:traker_ia/domain/piano_giorni.dart';
 import 'package:traker_ia/domain/riordino.dart';
+import 'package:traker_ia/domain/serie_piano.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/grafico_dati.dart';
@@ -184,11 +188,19 @@ class Grafico extends StatefulWidget {
     required this.letture,
     required this.mouse,
     this.modelliSkill = false,
+    this.mostraIdeale = false,
+    this.mostraAdattiva = false,
     super.key,
   });
 
   /// V2: righe modelli/skill nel riquadro del mouse (base: spente).
   final bool modelliSkill;
+
+  /// V2: disegna la linea ideale del piano.
+  final bool mostraIdeale;
+
+  /// V2: disegna la linea adattiva del piano.
+  final bool mostraAdattiva;
 
   /// Quale grafico.
   final TipoGrafico tipo;
@@ -268,9 +280,15 @@ class _StatoGrafico extends State<Grafico> {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints c) {
         _taglia = Size(c.maxWidth, c.maxHeight);
+        final double dpr = MediaQuery.devicePixelRatioOf(context);
         final CustomPainter pittore = widget.tipo == TipoGrafico.principale
-            ? PittorePrincipale(widget.dati)
-            : PittoreIntensita(widget.dati);
+            ? PittorePrincipale(
+                widget.dati,
+                mostraIdeale: widget.mostraIdeale,
+                mostraAdattiva: widget.mostraAdattiva,
+                dpr: dpr,
+              )
+            : PittoreIntensita(widget.dati, dpr: dpr);
         return MouseRegion(
           onHover: (PointerHoverEvent e) => _muovi(e.localPosition, e.position),
           onExit: (_) => _esci(),
@@ -298,6 +316,12 @@ class _StatoGrafico extends State<Grafico> {
 
 // ------------------------------------------------------------------ pittori
 
+/// Allinea [v] ai pixel fisici (testo e righe nitidi con qualsiasi scala).
+double _px(double v, double dpr) => (v * dpr).roundToDouble() / dpr;
+
+/// Come [_px] per una riga larga 1 pixel fisico: centrata sul pixel.
+double _riga(double v, double dpr) => ((v * dpr).floorToDouble() + 0.5) / dpr;
+
 void _testo(
   Canvas c,
   String s,
@@ -307,6 +331,7 @@ void _testo(
   bool grassetto = false,
   double ancoraX = 0,
   double ancoraY = 0.5,
+  double dpr = 1,
 }) {
   final TextPainter tp = TextPainter(
     text: TextSpan(
@@ -319,7 +344,8 @@ void _testo(
     ),
     textDirection: TextDirection.ltr,
   )..layout();
-  tp.paint(c, p - Offset(tp.width * ancoraX, tp.height * ancoraY));
+  final Offset o = p - Offset(tp.width * ancoraX, tp.height * ancoraY);
+  tp.paint(c, Offset(_px(o.dx, dpr), _px(o.dy, dpr)));
   tp.dispose();
 }
 
@@ -354,6 +380,24 @@ void _tratteggio(
   }
 }
 
+/// Disegna [percorso] tratteggiato (continua il tratteggio sulle curve).
+void _tratteggioPercorso(
+  Canvas c,
+  Path percorso,
+  Paint p, {
+  required double pieno,
+  required double vuoto,
+}) {
+  for (final PathMetric m in percorso.computeMetrics()) {
+    double d = 0;
+    while (d < m.length) {
+      final double e = math.min(d + pieno, m.length);
+      c.drawPath(m.extractPath(d, e), p);
+      d = e + vuoto;
+    }
+  }
+}
+
 String _etichettaTempo(DateTime d, bool corto) {
   final String hm = formatta(d).substring(11);
   return corto
@@ -363,11 +407,25 @@ String _etichettaTempo(DateTime d, bool corto) {
 
 /// Disegna il grafico principale.
 class PittorePrincipale extends CustomPainter {
-  /// Crea il pittore.
-  PittorePrincipale(this.dati);
+  /// Crea il pittore. [dpr] = pixel fisici per pixel logico.
+  PittorePrincipale(
+    this.dati, {
+    this.mostraIdeale = false,
+    this.mostraAdattiva = false,
+    this.dpr = 1,
+  });
 
   /// Dati.
   final DatiGrafico dati;
+
+  /// Disegna la linea ideale (se i dati hanno il piano).
+  final bool mostraIdeale;
+
+  /// Disegna la linea adattiva (se i dati hanno il piano).
+  final bool mostraAdattiva;
+
+  /// Pixel fisici per pixel logico.
+  final double dpr;
 
   @override
   void paint(Canvas c, Size s) {
@@ -380,30 +438,45 @@ class PittorePrincipale extends CustomPainter {
     final double xr = s.width - g.r;
 
     // legenda
+    final SeriePiano? pi = dati.piano;
     double lx = g.l;
-    for (final (String, Color) v in <(String, Color)>[
-      (Testi.legSett, Colori.sett),
-      (Testi.legSess, Colori.sess),
-      (Testi.legNota, Colori.nota),
-      (Testi.legReset, Colori.reset),
-      (Testi.legLavoro, Colori.lavoroLegenda),
+    for (final (String, Color, int) v in <(String, Color, int)>[
+      (Testi.legSett, Colori.sett, 0),
+      (Testi.legSess, Colori.sess, 0),
+      if (pi != null && mostraIdeale) (Testi.legIdeale, Colori.ideale, 1),
+      if (pi != null && mostraAdattiva) (Testi.legAdattiva, Colori.adattiva, 2),
+      (Testi.legNota, Colori.nota, 0),
+      (Testi.legReset, Colori.reset, 0),
+      (Testi.legLavoro, Colori.lavoroLegenda, 0),
     ]) {
-      final double w = 26 + _larghezzaTesto(v.$1);
+      final bool linea = v.$3 != 0;
+      final double w = (linea ? 38 : 26) + _larghezzaTesto(v.$1);
       if (lx + w - 12 > xr) {
         break; // finestra stretta: la legenda si ferma, niente testo tagliato
       }
-      c.drawCircle(Offset(lx + 5, 15), 5, Paint()..color = v.$2);
-      _testo(c, v.$1, Offset(lx + 14, 15));
+      if (linea) {
+        _lineaPiano(
+          c,
+          Path()
+            ..moveTo(lx, 15)
+            ..lineTo(lx + 22, 15),
+          v.$2,
+          adattiva: v.$3 == 2,
+        );
+        _t(c, v.$1, Offset(lx + 28, 15));
+      } else {
+        c.drawCircle(Offset(lx + 5, 15), 5, Paint()..color = v.$2);
+        _t(c, v.$1, Offset(lx + 14, 15));
+      }
       lx += w;
     }
     if (xr - lx > 300) {
-      _testo(
-        c,
-        Testi.aiutoNote,
-        Offset(xr, 15),
-        colore: Colori.reset,
-        ancoraX: 1,
-      );
+      _t(c, Testi.aiutoNote, Offset(xr, 15), colore: Colori.reset, ancoraX: 1);
+    }
+
+    // giorni del piano: non lavoro in grigio tenue, righe tra i giorni
+    if (pi != null) {
+      _giorni(c, g, pi, y0, y1);
     }
 
     // fasce lavoro
@@ -417,21 +490,25 @@ class PittorePrincipale extends CustomPainter {
     for (int v = 0; v <= 100; v += 25) {
       final double y = g.y(v.toDouble());
       c.drawLine(Offset(g.l, y), Offset(xr, y), gr);
-      _testo(c, '$v%', Offset(g.l - 8, y), ancoraX: 1);
+      _t(c, '$v%', Offset(g.l - 8, y), ancoraX: 1);
     }
     final int spanMin = dati.a.difference(dati.da).inMinutes;
     final bool corto = spanMin <= 26 * 60;
-    final int n = math.max(2, math.min(7, g.utile ~/ 110));
-    for (int i = 0; i <= n; i++) {
-      final DateTime d = dati.da.add(
-        Duration(minutes: (spanMin * i / n).round()),
-      );
-      _testo(
-        c,
-        _etichettaTempo(d, corto),
-        Offset(g.x(d), y1 + 15),
-        ancoraX: i == 0 ? 0 : (i == n ? 1 : 0.5),
-      );
+    if (pi != null && !corto) {
+      _etichetteGiorni(c, g, pi, y1);
+    } else {
+      final int n = math.max(2, math.min(7, g.utile ~/ 110));
+      for (int i = 0; i <= n; i++) {
+        final DateTime d = dati.da.add(
+          Duration(minutes: (spanMin * i / n).round()),
+        );
+        _t(
+          c,
+          _etichettaTempo(d, corto),
+          Offset(g.x(d), y1 + 15),
+          ancoraX: i == 0 ? 0 : (i == n ? 1 : 0.5),
+        );
+      }
     }
 
     // reset
@@ -444,12 +521,31 @@ class PittorePrincipale extends CustomPainter {
     }
 
     if (dati.vuoto) {
-      _testo(
+      _t(
         c,
         Testi.graficoVuoto,
         Offset(g.l + g.utile / 2, (y0 + y1) / 2),
         ancoraX: 0.5,
       );
+    }
+
+    // linee del piano (a gradini: punti uniti in ordine, mai smussati)
+    if (pi != null && (mostraIdeale || mostraAdattiva)) {
+      c
+        ..save()
+        ..clipRect(Rect.fromLTRB(g.l, y0, xr, y1));
+      if (mostraIdeale) {
+        _lineaPiano(c, _percorsoPiano(g, pi.ideale), Colori.ideale);
+      }
+      if (mostraAdattiva) {
+        _lineaPiano(
+          c,
+          _percorsoPiano(g, pi.adattiva),
+          Colori.adattiva,
+          adattiva: true,
+        );
+      }
+      c.restore();
     }
 
     // linee
@@ -471,13 +567,128 @@ class PittorePrincipale extends CustomPainter {
       );
       c.drawCircle(Offset(p.x, p.cy), 10, Paint()..color = Colori.carta);
       c.drawCircle(Offset(p.x, p.cy), 8.5, Paint()..color = Colori.nota);
-      _testo(
+      _t(
         c,
         '${p.nota.numero}',
         Offset(p.x, p.cy),
         colore: Colors.white,
         misura: 10.5,
         grassetto: true,
+        ancoraX: 0.5,
+      );
+    }
+  }
+
+  void _t(
+    Canvas c,
+    String s,
+    Offset p, {
+    Color colore = Colori.spento,
+    double misura = Misure.piccolo,
+    bool grassetto = false,
+    double ancoraX = 0,
+    double ancoraY = 0.5,
+  }) => _testo(
+    c,
+    s,
+    p,
+    colore: colore,
+    misura: misura,
+    grassetto: grassetto,
+    ancoraX: ancoraX,
+    ancoraY: ancoraY,
+    dpr: dpr,
+  );
+
+  /// Percorso a scala dai punti già calcolati (nessun calcolo qui).
+  Path _percorsoPiano(Geometria g, List<PuntoLinea> pts) {
+    final Path p = Path();
+    for (int i = 0; i < pts.length; i++) {
+      final double x = g.x(pts[i].ora);
+      final double y = g.y(pts[i].valore);
+      if (i == 0) {
+        p.moveTo(x, y);
+      } else {
+        p.lineTo(x, y);
+      }
+    }
+    return p;
+  }
+
+  /// Ideale = tratteggio lungo; adattiva = puntini (non solo il colore).
+  void _lineaPiano(
+    Canvas c,
+    Path percorso,
+    Color colore, {
+    bool adattiva = false,
+  }) {
+    final Paint p = Paint()
+      ..color = colore
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true
+      ..strokeWidth = adattiva ? 2.4 : 2
+      ..strokeCap = adattiva ? StrokeCap.round : StrokeCap.butt
+      ..strokeJoin = StrokeJoin.miter;
+    _tratteggioPercorso(
+      c,
+      percorso,
+      p,
+      pieno: adattiva ? 0.1 : 9,
+      vuoto: adattiva ? 5 : 5,
+    );
+  }
+
+  /// Giorni non lavoro in grigio tenue e righe verticali ai confini.
+  void _giorni(Canvas c, Geometria g, SeriePiano pi, double y0, double y1) {
+    final double xr = g.larg - g.r;
+    final Paint spento = Paint()..color = Colori.giornoSpento;
+    final Paint riga = Paint()
+      ..color = Colori.confineGiorno
+      ..strokeWidth = 1 / dpr;
+    for (final FetteGiorno f in pi.fette) {
+      if (!f.fine.isAfter(dati.da) || !f.inizio.isBefore(dati.a)) {
+        continue;
+      }
+      if (!f.lavoro) {
+        final double xa = math.max(g.l, g.x(f.inizio));
+        final double xb = math.min(xr, g.x(f.fine));
+        if (xb > xa) {
+          c.drawRect(Rect.fromLTRB(xa, y0, xb, y1), spento);
+        }
+      }
+      if (f.inizio.isAfter(dati.da)) {
+        final double x = _riga(g.x(f.inizio), dpr);
+        c.drawLine(Offset(x, y0), Offset(x, y1), riga);
+      }
+    }
+  }
+
+  /// Etichette giorno+data sotto l'asse (centrate nella parte visibile).
+  void _etichetteGiorni(Canvas c, Geometria g, SeriePiano pi, double y1) {
+    final double xr = g.larg - g.r;
+    for (final FetteGiorno f in pi.fette) {
+      if (!f.fine.isAfter(dati.da) || !f.inizio.isBefore(dati.a)) {
+        continue;
+      }
+      final double xa = math.max(g.l, g.x(f.inizio));
+      final double xb = math.min(xr, g.x(f.fine));
+      final double larg = xb - xa;
+      if (larg < 22) {
+        continue;
+      }
+      final String nome = giorniBrevi[f.giorno - 1];
+      final String lungo = '$nome ${f.inizio.day}/${f.inizio.month}';
+      final String testo = _larghezzaTesto(lungo) + 6 <= larg
+          ? lungo
+          : (_larghezzaTesto(nome) + 4 <= larg ? nome : '');
+      if (testo.isEmpty) {
+        continue;
+      }
+      _t(
+        c,
+        testo,
+        Offset((xa + xb) / 2, y1 + 15),
+        colore: f.lavoro ? Colori.testo : Colori.spento,
         ancoraX: 0.5,
       );
     }
@@ -542,7 +753,7 @@ class PittorePrincipale extends CustomPainter {
       c
         ..drawCircle(o, 7, bordo..strokeWidth = 1)
         ..drawCircle(o, 4, Paint()..color = col);
-      _testo(
+      _t(
         c,
         percento(ult.valore),
         o + const Offset(-10, -12),
@@ -555,16 +766,23 @@ class PittorePrincipale extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(PittorePrincipale old) => !identical(old.dati, dati);
+  bool shouldRepaint(PittorePrincipale old) =>
+      !identical(old.dati, dati) ||
+      old.mostraIdeale != mostraIdeale ||
+      old.mostraAdattiva != mostraAdattiva ||
+      old.dpr != dpr;
 }
 
 /// Disegna il grafico intensità.
 class PittoreIntensita extends CustomPainter {
   /// Crea il pittore.
-  PittoreIntensita(this.dati);
+  PittoreIntensita(this.dati, {this.dpr = 1});
 
   /// Dati.
   final DatiGrafico dati;
+
+  /// Pixel fisici per pixel logico.
+  final double dpr;
 
   @override
   void paint(Canvas c, Size s) {
@@ -573,12 +791,12 @@ class PittoreIntensita extends CustomPainter {
       return;
     }
     final double xr = s.width - g.r;
-    _testo(c, Testi.titoloIntensita, Offset(g.l, 9));
+    _testo(c, Testi.titoloIntensita, Offset(g.l, 9), dpr: dpr);
     final Paint gr = Paint()..color = Colori.griglia;
     for (final double v in <double>[0, g.max]) {
       final double y = g.y(v);
       c.drawLine(Offset(g.l, y), Offset(xr, y), gr);
-      _testo(c, v.toStringAsFixed(0), Offset(g.l - 8, y), ancoraX: 1);
+      _testo(c, v.toStringAsFixed(0), Offset(g.l - 8, y), ancoraX: 1, dpr: dpr);
     }
     final Paint p = Paint()
       ..color = Colori.sess
@@ -614,7 +832,8 @@ class PittoreIntensita extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(PittoreIntensita old) => !identical(old.dati, dati);
+  bool shouldRepaint(PittoreIntensita old) =>
+      !identical(old.dati, dati) || old.dpr != dpr;
 }
 
 /// Riga verticale del mouse (si ridisegna solo lei quando il mouse si muove).

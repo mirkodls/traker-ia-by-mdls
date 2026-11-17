@@ -11,6 +11,7 @@ import 'package:traker_ia/domain/periodo.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/domain/vista.dart';
+import 'package:traker_ia/ui/barra_piano.dart';
 import 'package:traker_ia/ui/dialoghi.dart';
 import 'package:traker_ia/ui/grafico.dart';
 import 'package:traker_ia/ui/grafico_dati.dart';
@@ -271,6 +272,8 @@ class _StatoFinestra extends State<Finestra> {
       letture: _s.letture,
       mouse: _mouse,
       modelliSkill: _s.preferenze.modelliSkill,
+      mostraIdeale: _s.preferenze.lavoroV2 && _s.preferenze.lineaIdeale,
+      mostraAdattiva: _s.preferenze.lavoroV2 && _s.preferenze.lineaAdattiva,
     );
     return Carta(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
@@ -278,6 +281,7 @@ class _StatoFinestra extends State<Finestra> {
         mainAxisSize: alt == null ? MainAxisSize.max : MainAxisSize.min,
         children: <Widget>[
           _periodo(),
+          if (_s.preferenze.lavoroV2) BarraPiano(stato: _s),
           if (alt == null)
             Expanded(child: g)
           else

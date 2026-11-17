@@ -41,6 +41,18 @@ abstract final class Colori {
   /// Fascia lavoro.
   static const Color lavoro = Color(0xFF10291C);
 
+  /// Linea ideale del piano (verde, tratteggio lungo).
+  static const Color ideale = Color(0xFF4ADE80);
+
+  /// Linea adattiva del piano (giallo, puntini).
+  static const Color adattiva = Color(0xFFFACC15);
+
+  /// Giorno senza lavoro nel piano (grigio tenue).
+  static const Color giornoSpento = Color(0x0FFFFFFF);
+
+  /// Riga verticale tra due giorni del piano.
+  static const Color confineGiorno = Color(0xFF42527A);
+
   /// Pallino legenda lavoro.
   static const Color lavoroLegenda = Color(0xFF1F5E3B);
 

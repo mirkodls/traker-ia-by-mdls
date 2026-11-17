@@ -297,6 +297,29 @@ abstract final class Testi {
   /// Legenda grafico.
   static const String legLavoro = 'Lavoro';
 
+  /// Legenda grafico: linea ideale del piano.
+  static const String legIdeale = 'Ideale';
+
+  /// Legenda grafico: linea adattiva del piano.
+  static const String legAdattiva = 'Adattiva';
+
+  /// Barra piano: titolo selettore giorni.
+  static const String giorniLavoro = 'Giorni lavoro';
+
+  /// Barra piano: scorciatoia "primi N giorni".
+  static String primiGiorni(int n) =>
+      n == 1 ? 'Solo il 1° giorno dal reset' : 'I primi $n giorni dal reset';
+
+  /// Barra piano: spiegazione linea ideale.
+  static const String spiegaIdeale =
+      'Linea ideale: ogni giorno di lavoro aggiunge la stessa quota di % '
+      'settimana, fino al 99% a fine ultimo giorno. Va a scalini.';
+
+  /// Barra piano: spiegazione linea adattiva.
+  static const String spiegaAdattiva =
+      'Linea adattiva: parte da dove sei adesso e divide quello che manca '
+      'sui giorni di lavoro rimasti. Va a scalini.';
+
   /// Aiuto sopra il grafico.
   static const String aiutoNote =
       'passa il mouse sui numeri viola per leggere la nota';

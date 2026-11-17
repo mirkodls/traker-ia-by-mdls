@@ -124,7 +124,9 @@ void main() {
           )
           .first,
     );
-    await m.moveTo(Offset(r.left + r.width * 0.6, r.top + r.height * 0.7));
+    // V2: asse = settimana intera, le letture sono nel primo 40%, la nota al 36%; la barra
+    // del piano spinge il grafico in basso: si resta nella parte visibile.
+    await m.moveTo(Offset(r.left + r.width * 0.5, r.top + r.height * 0.3));
     await tester.pump();
     expect(find.textContaining('Sett:'), findsOneWidget);
     await m.moveTo(Offset.zero);

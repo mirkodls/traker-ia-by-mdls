@@ -16,8 +16,11 @@ import 'package:traker_ia/domain/coppie.dart';
 import 'package:traker_ia/domain/lavoro.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/periodo.dart';
+import 'package:traker_ia/domain/piani_progetti.dart';
+import 'package:traker_ia/domain/piano_giorni.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/previsione.dart' as prev;
+import 'package:traker_ia/domain/serie_piano.dart';
 import 'package:traker_ia/domain/sfondo.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
@@ -76,6 +79,7 @@ class StatoApp extends ChangeNotifier {
   ValoreCarta _cartaSess = (valore: null, sotto: Testi.resetInAttesa);
   ValoreCarta _cartaSett = (valore: null, sotto: Testi.resetInAttesa);
   DatiGrafico? _grafico;
+  final CachePiano _cachePiano = CachePiano();
   List<String> _frasi = <String>[];
   List<Evento> _note = <Evento>[];
   ConfrontoNota? _confNota;
@@ -134,6 +138,9 @@ class StatoApp extends ChangeNotifier {
 
   /// Dati del grafico (null prima del caricamento).
   DatiGrafico? get grafico => _grafico;
+
+  /// Quante volte le serie del piano sono state ricalcolate davvero.
+  int get calcoliPiano => _cachePiano.calcoli;
 
   /// Frasi "Cosa dicono i dati".
   List<String> get frasi => _frasi;
@@ -541,6 +548,24 @@ class StatoApp extends ChangeNotifier {
   Future<void> cambiaPeriodo(int scatto) =>
       _salvaPref(_pref.copia(periodo: normalizzaScatto(scatto)));
 
+  /// V2: accende/spegne il giorno [g] (1 = lunedì ... 7 = domenica) di
+  /// lavoro del piano. Almeno 1 giorno resta acceso.
+  Future<void> cambiaGiornoPiano(int g) => _salvaPref(_pref.toccaGiorno(g));
+
+  /// V2: sceglie i giorni di lavoro del piano con una [maschera]
+  /// (bit0 = lunedì; 0 = ignorata).
+  Future<void> scegliGiorniPiano(int maschera) => maschera & tuttiIGiorni == 0
+      ? Future<void>.value()
+      : _salvaPref(_pref.copia(giorniPiano: maschera));
+
+  /// V2: mostra/nasconde la linea ideale.
+  Future<void> cambiaLineaIdeale({required bool acceso}) =>
+      _salvaPref(_pref.copia(lineaIdeale: acceso));
+
+  /// V2: mostra/nasconde la linea adattiva.
+  Future<void> cambiaLineaAdattiva({required bool acceso}) =>
+      _salvaPref(_pref.copia(lineaAdattiva: acceso));
+
   /// Spunta "Conta solo lavoro".
   Future<void> cambiaSoloLavoro({required bool acceso}) =>
       _salvaPref(_pref.copia(soloLavoro: acceso));
@@ -662,13 +687,33 @@ class StatoApp extends ChangeNotifier {
     _cartaSett = _carta(Campo.sett, _ultimoUso?.resetSett, ora);
 
     final DateTime iniSett = inizioSettimana(ora);
-    final ({DateTime da, DateTime a}) iv = intervallo(
+    ({DateTime da, DateTime a}) iv = intervallo(
       _pref.periodo,
       ora,
       iniSett,
       _letture.isEmpty ? null : _letture.first.ora,
     );
-    _grafico = calcolaDatiGrafico(_letture, _eventi, iv.da, iv.a, ora);
+    SeriePiano? piano;
+    if (_pref.lavoroV2) {
+      if (_pref.periodo == scattoSettimana) {
+        // V2: "Settimana" mostra tutta la settimana, anche i giorni da fare.
+        iv = (da: iv.da, a: fineSettimanaPiano(iniSett));
+      }
+      piano = _cachePiano.serie(
+        Piano(nome: 'Piano', giorniMask: _pref.giorniPiano, inizio: iniSett),
+        _letture,
+        da: iv.da,
+        reset: iniSett,
+      );
+    }
+    _grafico = calcolaDatiGrafico(
+      _letture,
+      _eventi,
+      iv.da,
+      iv.a,
+      ora,
+      piano: piano,
+    );
 
     final DateTime resetSett =
         arrotondaReset(_ultimoUso?.resetSett) ?? prossimoReset(ora);
