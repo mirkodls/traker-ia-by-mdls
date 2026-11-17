@@ -942,4 +942,42 @@ abstract final class Testi {
 
   /// Etichetta ore attive nelle righe corte.
   static String oreAttiveCorto(String d) => 'attivo $d';
+
+  // ---------------------------------------------------------- V2 export IA
+
+  /// Tasto che apre l'export per l'IA.
+  static const String tastoEsportaIA = 'Esporta per IA';
+
+  /// Titolo del dialogo export.
+  static const String titoloEsportaIA = 'Esporta per IA';
+
+  /// Spiegazione del dialogo export.
+  static const String spiegaEsportaIA =
+      "Testo pronto da incollare in Claude. L'app non chiama nessuna IA e "
+      'non mette mai cookie o chiavi nel testo.';
+
+  /// Tasto copia negli appunti.
+  static const String tastoCopiaEsporta = 'Copia';
+
+  /// Conferma copia.
+  static const String copiatoEsporta = 'Copiato. Incollalo in Claude.';
+
+  /// Campo cartella dove salvare il file .md.
+  static const String campoCartellaEsporta = 'Cartella dove salvare';
+
+  /// Tasto salva file .md.
+  static const String tastoSalvaMd = 'Salva .md';
+
+  /// Tasto chiudi dialogo.
+  static const String tastoChiudi = 'Chiudi';
+
+  /// Cartella non scritta.
+  static const String cartellaEsportaVuota = 'Scrivi una cartella.';
+
+  /// File salvato in [percorso].
+  static String salvatoEsporta(String percorso) => 'Salvato: $percorso';
+
+  /// Salvataggio fallito.
+  static String erroreSalvaEsporta(String motivo) =>
+      'Non riesco a salvare: $motivo';
 }

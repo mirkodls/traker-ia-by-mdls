@@ -89,6 +89,29 @@ class ServiziFinti implements Servizi {
   @override
   String get cartellaImportPredefinita => 'vecchi';
 
+  /// Export per IA: file "salvati" (nome -> testo) e cartelle usate.
+  final Map<String, String> fileSalvati = <String, String>{};
+
+  /// Se non null, il salvataggio fallisce con questo motivo.
+  String? erroreSalva;
+
+  @override
+  String get cartellaEsportaPredefinita => 'esporta';
+
+  @override
+  Future<String> salvaTestoInCartella({
+    required String cartella,
+    required String nome,
+    required String testo,
+  }) async {
+    if (erroreSalva != null) {
+      throw Exception(erroreSalva);
+    }
+    final String p = '$cartella/$nome';
+    fileSalvati[p] = testo;
+    return p;
+  }
+
   @override
   Future<EsitoImportUi> importaVecchi(String cartella) async {
     importate.add(cartella);

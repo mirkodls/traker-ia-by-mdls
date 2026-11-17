@@ -134,4 +134,15 @@ abstract interface class Servizi {
     required DateTime adesso,
     Piano? piano,
   });
+
+  /// V2: cartella proposta per salvare i file .md dell'export per IA.
+  String get cartellaEsportaPredefinita;
+
+  /// V2: salva [testo] come [nome] nella [cartella] (la crea se manca).
+  /// Ritorna il percorso del file. Errore -> eccezione col motivo.
+  Future<String> salvaTestoInCartella({
+    required String cartella,
+    required String nome,
+    required String testo,
+  });
 }

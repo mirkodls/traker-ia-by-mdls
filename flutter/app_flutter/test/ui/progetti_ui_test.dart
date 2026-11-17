@@ -1,7 +1,9 @@
 // TraKer IA by mdls — Copyright (C) 2026 Mirko Del Sette. Tutti i diritti riservati.
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:traker_ia/domain/archivio_settimane.dart';
+import 'package:traker_ia/domain/export_ia.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
@@ -318,4 +320,131 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('esporta per IA: scheda copia e salva .md, errore mostrato', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 500);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    String? negliAppunti;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (MethodCall c) async {
+        if (c.method == 'Clipboard.setData') {
+          negliAppunti =
+              (c.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final ({StatoApp stato, ServiziFinti f}) a = await _apri(
+      tester,
+      const Size(420, 500),
+    );
+    await _apriPagina(tester);
+    final int idRiga = a.f.sett
+        .firstWhere((SettimanaProgetto s) => s.progettoId == 1)
+        .id!;
+    final Finder riga = find.byKey(ValueKey<String>('riga-$idRiga'));
+    await tester.ensureVisible(riga);
+    await tester.pump();
+    await tester.tap(riga);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+    await _tocca(tester, find.byKey(const ValueKey<String>('scheda-esporta')));
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('esporta-anteprima')),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('esporta-copia')),
+    );
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const ValueKey<String>('esporta-copia')));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pump();
+    expect(find.text(Testi.copiatoEsporta), findsOneWidget);
+    expect(negliAppunti, startsWith('RICHIESTA: '));
+    expect(negliAppunti, contains('## PROGETTO "Alfa"'));
+    expect(parolaVietataEsportazione.hasMatch(negliAppunti!), isFalse);
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('esporta-salva')),
+    );
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const ValueKey<String>('esporta-salva')));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pump();
+    expect(a.f.fileSalvati.keys.single, startsWith('esporta/traker-ia_2026-'));
+    expect(a.f.fileSalvati.keys.single, endsWith('_alfa.md'));
+    expect(a.f.fileSalvati.values.single, negliAppunti);
+    // Errore di salvataggio mostrato, nessuna eccezione.
+    a.f.erroreSalva = 'disco pieno';
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('esporta-salva')),
+    );
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const ValueKey<String>('esporta-salva')));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pump();
+    expect(find.textContaining('disco pieno'), findsOneWidget);
+    // Cartella vuota rifiutata.
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('esporta-cartella')),
+      '  ',
+    );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('esporta-salva')),
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('esporta-salva')));
+    await tester.pump();
+    expect(find.text(Testi.cartellaEsportaVuota), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'esporta per IA: tasto della settimana esporta tutti i progetti',
+    (WidgetTester tester) async {
+      final ({StatoApp stato, ServiziFinti f}) a = await _apri(
+        tester,
+        const Size(420, 500),
+      );
+      await _apriPagina(tester);
+      final Finder tasto = find.byKey(
+        ValueKey<String>(
+          'esporta-sett-${a.f.sett.first.inizio.toIso8601String()}',
+        ),
+      );
+      await _tocca(tester, tasto);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('esporta-salva')),
+      );
+      await tester.pump();
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const ValueKey<String>('esporta-salva')));
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+      });
+      await tester.pump();
+      final String testo = a.f.fileSalvati.values.single;
+      final int n = a.f.sett
+          .where((SettimanaProgetto s) => s.inizio == a.f.sett.first.inizio)
+          .length;
+      expect('## PROGETTO'.allMatches(testo).length, n);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

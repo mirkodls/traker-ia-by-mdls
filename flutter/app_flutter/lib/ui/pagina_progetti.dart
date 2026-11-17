@@ -7,11 +7,13 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 
+import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/progetti.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/barre_settimane.dart';
+import 'package:traker_ia/ui/dialogo_esporta.dart';
 import 'package:traker_ia/ui/grafico.dart';
 import 'package:traker_ia/ui/progetti_dati.dart';
 import 'package:traker_ia/ui/scheda_settimana.dart';
@@ -451,12 +453,28 @@ class _StatoPagina extends State<PaginaProgetti> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            Testi.intervalloSettimana(
-              quandoData(g.inizio),
-              fine == null ? '…' : quandoData(fine),
-            ),
-            style: stileTitolo.copyWith(color: Colori.testo),
+          Wrap(
+            spacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Text(
+                Testi.intervalloSettimana(
+                  quandoData(g.inizio),
+                  fine == null ? '…' : quandoData(fine),
+                ),
+                style: stileTitolo.copyWith(color: Colori.testo),
+              ),
+              OutlinedButton(
+                key: ValueKey<String>(
+                  'esporta-sett-${g.inizio.toIso8601String()}',
+                ),
+                onPressed: () =>
+                    apriDialogoEsporta(context, _s, <SettimanaProgetto>[
+                      for (final RigaArchivio r in g.righe) r.riga,
+                    ]),
+                child: const Text(Testi.tastoEsportaIA),
+              ),
+            ],
           ),
           for (final RigaArchivio r in g.righe)
             InkWell(

@@ -5,9 +5,11 @@
 // letture vive), log, costo energia con STIMA, token scritti a mano.
 import 'package:material_ui/material_ui.dart';
 
+import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/progetti.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
+import 'package:traker_ia/ui/dialogo_esporta.dart';
 import 'package:traker_ia/ui/grafico.dart';
 import 'package:traker_ia/ui/grafico_dati.dart';
 import 'package:traker_ia/ui/progetti_dati.dart';
@@ -75,6 +77,15 @@ class SchedaSettimanaView extends StatelessWidget {
               width: 12,
               height: 12,
               decoration: BoxDecoration(color: colore, shape: BoxShape.circle),
+            ),
+            OutlinedButton(
+              key: const ValueKey<String>('scheda-esporta'),
+              onPressed: () => apriDialogoEsporta(
+                context,
+                stato,
+                <SettimanaProgetto>[r.riga],
+              ),
+              child: const Text(Testi.tastoEsportaIA),
             ),
             Text(nome, style: stileTitolo.copyWith(color: Colori.testo)),
             Text(

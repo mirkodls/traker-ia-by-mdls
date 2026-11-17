@@ -179,6 +179,31 @@ class ServiziVeri implements Servizi {
   );
 
   @override
+  String get cartellaEsportaPredefinita {
+    final String casa =
+        Platform.environment['USERPROFILE'] ??
+        Platform.environment['HOME'] ??
+        '';
+    return casa.isEmpty
+        ? ''
+        : '$casa${Platform.pathSeparator}Documents${Platform.pathSeparator}'
+              'TraKer IA export';
+  }
+
+  @override
+  Future<String> salvaTestoInCartella({
+    required String cartella,
+    required String nome,
+    required String testo,
+  }) async {
+    final Directory d = Directory(cartella);
+    await d.create(recursive: true);
+    final File f = File('${d.path}${Platform.pathSeparator}$nome');
+    await f.writeAsString(testo, flush: true);
+    return f.path;
+  }
+
+  @override
   bool get collegamentiDisponibili => Platform.isWindows;
 
   @override
