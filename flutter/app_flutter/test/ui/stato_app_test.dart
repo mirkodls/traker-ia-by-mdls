@@ -41,8 +41,25 @@ void main() {
     expect(f.importate, isEmpty);
   });
 
+  test('V2 base: lettura senza modelli/skill, lavoro sì', () async {
+    f.risposte.add(const Uso(sett: 40, sess: 12));
+    final StatoApp s = nuovo();
+    await s.avvia();
+    expect(s.preferenze.modelliSkill, isFalse);
+    await s.tocca(Gruppo.modelli, 'Opus');
+    await s.cambiaLavoro();
+    await s.leggi();
+    await s.aggiungiManuale(DateTime(2026, 11, 17, 10), 50, 5);
+    for (final Lettura l in f.lett) {
+      expect(l.modelli, '');
+      expect(l.skill, '');
+    }
+    expect(f.lett.first.lavoro, isTrue);
+  });
+
   test('lettura ok: salva con modelli/skill accesi e lavoro', () async {
     f.risposte.add(const Uso(sett: 40, sess: 12));
+    f.imp[Chiavi.v2ModelliSkill] = '1';
     final StatoApp s = nuovo();
     await s.avvia();
     await s.tocca(Gruppo.modelli, 'Opus');

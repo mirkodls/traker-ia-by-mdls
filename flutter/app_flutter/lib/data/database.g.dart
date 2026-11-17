@@ -1109,12 +1109,1178 @@ class ImpostazioniCompanion extends UpdateCompanion<RigaImpostazione> {
   }
 }
 
+class $PianiTable extends Piani with TableInfo<$PianiTable, RigaPiano> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PianiTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _giorniMaskMeta = const VerificationMeta(
+    'giorniMask',
+  );
+  @override
+  late final GeneratedColumn<int> giorniMask = GeneratedColumn<int>(
+    'giorni_mask',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetPctMeta = const VerificationMeta(
+    'targetPct',
+  );
+  @override
+  late final GeneratedColumn<double> targetPct = GeneratedColumn<double>(
+    'target_pct',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant<double>(99),
+  );
+  static const VerificationMeta _confineMeta = const VerificationMeta(
+    'confine',
+  );
+  @override
+  late final GeneratedColumn<String> confine = GeneratedColumn<String>(
+    'confine',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant<String>('reset24h'),
+  );
+  static const VerificationMeta _inizioMeta = const VerificationMeta('inizio');
+  @override
+  late final GeneratedColumn<String> inizio = GeneratedColumn<String>(
+    'inizio',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fineMeta = const VerificationMeta('fine');
+  @override
+  late final GeneratedColumn<String> fine = GeneratedColumn<String>(
+    'fine',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    nome,
+    giorniMask,
+    targetPct,
+    confine,
+    inizio,
+    fine,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'piani';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RigaPiano> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('giorni_mask')) {
+      context.handle(
+        _giorniMaskMeta,
+        giorniMask.isAcceptableOrUnknown(data['giorni_mask']!, _giorniMaskMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_giorniMaskMeta);
+    }
+    if (data.containsKey('target_pct')) {
+      context.handle(
+        _targetPctMeta,
+        targetPct.isAcceptableOrUnknown(data['target_pct']!, _targetPctMeta),
+      );
+    }
+    if (data.containsKey('confine')) {
+      context.handle(
+        _confineMeta,
+        confine.isAcceptableOrUnknown(data['confine']!, _confineMeta),
+      );
+    }
+    if (data.containsKey('inizio')) {
+      context.handle(
+        _inizioMeta,
+        inizio.isAcceptableOrUnknown(data['inizio']!, _inizioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_inizioMeta);
+    }
+    if (data.containsKey('fine')) {
+      context.handle(
+        _fineMeta,
+        fine.isAcceptableOrUnknown(data['fine']!, _fineMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RigaPiano map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RigaPiano(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      giorniMask: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}giorni_mask'],
+      )!,
+      targetPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_pct'],
+      )!,
+      confine: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}confine'],
+      )!,
+      inizio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inizio'],
+      )!,
+      fine: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fine'],
+      ),
+    );
+  }
+
+  @override
+  $PianiTable createAlias(String alias) {
+    return $PianiTable(attachedDatabase, alias);
+  }
+}
+
+class RigaPiano extends DataClass implements Insertable<RigaPiano> {
+  /// Id automatico.
+  final int id;
+
+  /// Nome del piano.
+  final String nome;
+
+  /// Giorni di lavoro: bit 0 = lunedì ... bit 6 = domenica.
+  final int giorniMask;
+
+  /// % settimanale da raggiungere a fine piano.
+  final double targetPct;
+
+  /// Confine del giorno ('reset24h' = 24 h dal reset settimanale).
+  final String confine;
+
+  /// Inizio validità 'aaaa-mm-gg hh:mm'.
+  final String inizio;
+
+  /// Fine validità 'aaaa-mm-gg hh:mm' (null = ancora valido).
+  final String? fine;
+  const RigaPiano({
+    required this.id,
+    required this.nome,
+    required this.giorniMask,
+    required this.targetPct,
+    required this.confine,
+    required this.inizio,
+    this.fine,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['nome'] = Variable<String>(nome);
+    map['giorni_mask'] = Variable<int>(giorniMask);
+    map['target_pct'] = Variable<double>(targetPct);
+    map['confine'] = Variable<String>(confine);
+    map['inizio'] = Variable<String>(inizio);
+    if (!nullToAbsent || fine != null) {
+      map['fine'] = Variable<String>(fine);
+    }
+    return map;
+  }
+
+  PianiCompanion toCompanion(bool nullToAbsent) {
+    return PianiCompanion(
+      id: Value(id),
+      nome: Value(nome),
+      giorniMask: Value(giorniMask),
+      targetPct: Value(targetPct),
+      confine: Value(confine),
+      inizio: Value(inizio),
+      fine: fine == null && nullToAbsent ? const Value.absent() : Value(fine),
+    );
+  }
+
+  factory RigaPiano.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RigaPiano(
+      id: serializer.fromJson<int>(json['id']),
+      nome: serializer.fromJson<String>(json['nome']),
+      giorniMask: serializer.fromJson<int>(json['giorniMask']),
+      targetPct: serializer.fromJson<double>(json['targetPct']),
+      confine: serializer.fromJson<String>(json['confine']),
+      inizio: serializer.fromJson<String>(json['inizio']),
+      fine: serializer.fromJson<String?>(json['fine']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'nome': serializer.toJson<String>(nome),
+      'giorniMask': serializer.toJson<int>(giorniMask),
+      'targetPct': serializer.toJson<double>(targetPct),
+      'confine': serializer.toJson<String>(confine),
+      'inizio': serializer.toJson<String>(inizio),
+      'fine': serializer.toJson<String?>(fine),
+    };
+  }
+
+  RigaPiano copyWith({
+    int? id,
+    String? nome,
+    int? giorniMask,
+    double? targetPct,
+    String? confine,
+    String? inizio,
+    Value<String?> fine = const Value.absent(),
+  }) => RigaPiano(
+    id: id ?? this.id,
+    nome: nome ?? this.nome,
+    giorniMask: giorniMask ?? this.giorniMask,
+    targetPct: targetPct ?? this.targetPct,
+    confine: confine ?? this.confine,
+    inizio: inizio ?? this.inizio,
+    fine: fine.present ? fine.value : this.fine,
+  );
+  RigaPiano copyWithCompanion(PianiCompanion data) {
+    return RigaPiano(
+      id: data.id.present ? data.id.value : this.id,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      giorniMask: data.giorniMask.present
+          ? data.giorniMask.value
+          : this.giorniMask,
+      targetPct: data.targetPct.present ? data.targetPct.value : this.targetPct,
+      confine: data.confine.present ? data.confine.value : this.confine,
+      inizio: data.inizio.present ? data.inizio.value : this.inizio,
+      fine: data.fine.present ? data.fine.value : this.fine,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RigaPiano(')
+          ..write('id: $id, ')
+          ..write('nome: $nome, ')
+          ..write('giorniMask: $giorniMask, ')
+          ..write('targetPct: $targetPct, ')
+          ..write('confine: $confine, ')
+          ..write('inizio: $inizio, ')
+          ..write('fine: $fine')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, nome, giorniMask, targetPct, confine, inizio, fine);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RigaPiano &&
+          other.id == this.id &&
+          other.nome == this.nome &&
+          other.giorniMask == this.giorniMask &&
+          other.targetPct == this.targetPct &&
+          other.confine == this.confine &&
+          other.inizio == this.inizio &&
+          other.fine == this.fine);
+}
+
+class PianiCompanion extends UpdateCompanion<RigaPiano> {
+  final Value<int> id;
+  final Value<String> nome;
+  final Value<int> giorniMask;
+  final Value<double> targetPct;
+  final Value<String> confine;
+  final Value<String> inizio;
+  final Value<String?> fine;
+  const PianiCompanion({
+    this.id = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.giorniMask = const Value.absent(),
+    this.targetPct = const Value.absent(),
+    this.confine = const Value.absent(),
+    this.inizio = const Value.absent(),
+    this.fine = const Value.absent(),
+  });
+  PianiCompanion.insert({
+    this.id = const Value.absent(),
+    required String nome,
+    required int giorniMask,
+    this.targetPct = const Value.absent(),
+    this.confine = const Value.absent(),
+    required String inizio,
+    this.fine = const Value.absent(),
+  }) : nome = Value(nome),
+       giorniMask = Value(giorniMask),
+       inizio = Value(inizio);
+  static Insertable<RigaPiano> custom({
+    Expression<int>? id,
+    Expression<String>? nome,
+    Expression<int>? giorniMask,
+    Expression<double>? targetPct,
+    Expression<String>? confine,
+    Expression<String>? inizio,
+    Expression<String>? fine,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (nome != null) 'nome': nome,
+      if (giorniMask != null) 'giorni_mask': giorniMask,
+      if (targetPct != null) 'target_pct': targetPct,
+      if (confine != null) 'confine': confine,
+      if (inizio != null) 'inizio': inizio,
+      if (fine != null) 'fine': fine,
+    });
+  }
+
+  PianiCompanion copyWith({
+    Value<int>? id,
+    Value<String>? nome,
+    Value<int>? giorniMask,
+    Value<double>? targetPct,
+    Value<String>? confine,
+    Value<String>? inizio,
+    Value<String?>? fine,
+  }) {
+    return PianiCompanion(
+      id: id ?? this.id,
+      nome: nome ?? this.nome,
+      giorniMask: giorniMask ?? this.giorniMask,
+      targetPct: targetPct ?? this.targetPct,
+      confine: confine ?? this.confine,
+      inizio: inizio ?? this.inizio,
+      fine: fine ?? this.fine,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (giorniMask.present) {
+      map['giorni_mask'] = Variable<int>(giorniMask.value);
+    }
+    if (targetPct.present) {
+      map['target_pct'] = Variable<double>(targetPct.value);
+    }
+    if (confine.present) {
+      map['confine'] = Variable<String>(confine.value);
+    }
+    if (inizio.present) {
+      map['inizio'] = Variable<String>(inizio.value);
+    }
+    if (fine.present) {
+      map['fine'] = Variable<String>(fine.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PianiCompanion(')
+          ..write('id: $id, ')
+          ..write('nome: $nome, ')
+          ..write('giorniMask: $giorniMask, ')
+          ..write('targetPct: $targetPct, ')
+          ..write('confine: $confine, ')
+          ..write('inizio: $inizio, ')
+          ..write('fine: $fine')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProgettiTable extends Progetti
+    with TableInfo<$ProgettiTable, RigaProgetto> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgettiTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _coloreMeta = const VerificationMeta('colore');
+  @override
+  late final GeneratedColumn<int> colore = GeneratedColumn<int>(
+    'colore',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant<int>(0),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant<String>(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, nome, colore, note];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'progetti';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RigaProgetto> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('colore')) {
+      context.handle(
+        _coloreMeta,
+        colore.isAcceptableOrUnknown(data['colore']!, _coloreMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RigaProgetto map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RigaProgetto(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      colore: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}colore'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+    );
+  }
+
+  @override
+  $ProgettiTable createAlias(String alias) {
+    return $ProgettiTable(attachedDatabase, alias);
+  }
+}
+
+class RigaProgetto extends DataClass implements Insertable<RigaProgetto> {
+  /// Id automatico.
+  final int id;
+
+  /// Nome del progetto.
+  final String nome;
+
+  /// Colore ARGB (0xAARRGGBB).
+  final int colore;
+
+  /// Note libere.
+  final String note;
+  const RigaProgetto({
+    required this.id,
+    required this.nome,
+    required this.colore,
+    required this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['nome'] = Variable<String>(nome);
+    map['colore'] = Variable<int>(colore);
+    map['note'] = Variable<String>(note);
+    return map;
+  }
+
+  ProgettiCompanion toCompanion(bool nullToAbsent) {
+    return ProgettiCompanion(
+      id: Value(id),
+      nome: Value(nome),
+      colore: Value(colore),
+      note: Value(note),
+    );
+  }
+
+  factory RigaProgetto.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RigaProgetto(
+      id: serializer.fromJson<int>(json['id']),
+      nome: serializer.fromJson<String>(json['nome']),
+      colore: serializer.fromJson<int>(json['colore']),
+      note: serializer.fromJson<String>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'nome': serializer.toJson<String>(nome),
+      'colore': serializer.toJson<int>(colore),
+      'note': serializer.toJson<String>(note),
+    };
+  }
+
+  RigaProgetto copyWith({int? id, String? nome, int? colore, String? note}) =>
+      RigaProgetto(
+        id: id ?? this.id,
+        nome: nome ?? this.nome,
+        colore: colore ?? this.colore,
+        note: note ?? this.note,
+      );
+  RigaProgetto copyWithCompanion(ProgettiCompanion data) {
+    return RigaProgetto(
+      id: data.id.present ? data.id.value : this.id,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      colore: data.colore.present ? data.colore.value : this.colore,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RigaProgetto(')
+          ..write('id: $id, ')
+          ..write('nome: $nome, ')
+          ..write('colore: $colore, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, nome, colore, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RigaProgetto &&
+          other.id == this.id &&
+          other.nome == this.nome &&
+          other.colore == this.colore &&
+          other.note == this.note);
+}
+
+class ProgettiCompanion extends UpdateCompanion<RigaProgetto> {
+  final Value<int> id;
+  final Value<String> nome;
+  final Value<int> colore;
+  final Value<String> note;
+  const ProgettiCompanion({
+    this.id = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.colore = const Value.absent(),
+    this.note = const Value.absent(),
+  });
+  ProgettiCompanion.insert({
+    this.id = const Value.absent(),
+    required String nome,
+    this.colore = const Value.absent(),
+    this.note = const Value.absent(),
+  }) : nome = Value(nome);
+  static Insertable<RigaProgetto> custom({
+    Expression<int>? id,
+    Expression<String>? nome,
+    Expression<int>? colore,
+    Expression<String>? note,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (nome != null) 'nome': nome,
+      if (colore != null) 'colore': colore,
+      if (note != null) 'note': note,
+    });
+  }
+
+  ProgettiCompanion copyWith({
+    Value<int>? id,
+    Value<String>? nome,
+    Value<int>? colore,
+    Value<String>? note,
+  }) {
+    return ProgettiCompanion(
+      id: id ?? this.id,
+      nome: nome ?? this.nome,
+      colore: colore ?? this.colore,
+      note: note ?? this.note,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (colore.present) {
+      map['colore'] = Variable<int>(colore.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgettiCompanion(')
+          ..write('id: $id, ')
+          ..write('nome: $nome, ')
+          ..write('colore: $colore, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProgettoSettimaneTable extends ProgettoSettimane
+    with TableInfo<$ProgettoSettimaneTable, RigaProgettoSettimana> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgettoSettimaneTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _progettoIdMeta = const VerificationMeta(
+    'progettoId',
+  );
+  @override
+  late final GeneratedColumn<int> progettoId = GeneratedColumn<int>(
+    'progetto_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _settInizioMeta = const VerificationMeta(
+    'settInizio',
+  );
+  @override
+  late final GeneratedColumn<String> settInizio = GeneratedColumn<String>(
+    'sett_inizio',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _settFineMeta = const VerificationMeta(
+    'settFine',
+  );
+  @override
+  late final GeneratedColumn<String> settFine = GeneratedColumn<String>(
+    'sett_fine',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _snapshotJsonMeta = const VerificationMeta(
+    'snapshotJson',
+  );
+  @override
+  late final GeneratedColumn<String> snapshotJson = GeneratedColumn<String>(
+    'snapshot_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant<String>('{}'),
+  );
+  static const VerificationMeta _logTestoMeta = const VerificationMeta(
+    'logTesto',
+  );
+  @override
+  late final GeneratedColumn<String> logTesto = GeneratedColumn<String>(
+    'log_testo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant<String>(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    progettoId,
+    settInizio,
+    settFine,
+    snapshotJson,
+    logTesto,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'progetto_settimane';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RigaProgettoSettimana> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('progetto_id')) {
+      context.handle(
+        _progettoIdMeta,
+        progettoId.isAcceptableOrUnknown(data['progetto_id']!, _progettoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_progettoIdMeta);
+    }
+    if (data.containsKey('sett_inizio')) {
+      context.handle(
+        _settInizioMeta,
+        settInizio.isAcceptableOrUnknown(data['sett_inizio']!, _settInizioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_settInizioMeta);
+    }
+    if (data.containsKey('sett_fine')) {
+      context.handle(
+        _settFineMeta,
+        settFine.isAcceptableOrUnknown(data['sett_fine']!, _settFineMeta),
+      );
+    }
+    if (data.containsKey('snapshot_json')) {
+      context.handle(
+        _snapshotJsonMeta,
+        snapshotJson.isAcceptableOrUnknown(
+          data['snapshot_json']!,
+          _snapshotJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('log_testo')) {
+      context.handle(
+        _logTestoMeta,
+        logTesto.isAcceptableOrUnknown(data['log_testo']!, _logTestoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RigaProgettoSettimana map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RigaProgettoSettimana(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      progettoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}progetto_id'],
+      )!,
+      settInizio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sett_inizio'],
+      )!,
+      settFine: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sett_fine'],
+      ),
+      snapshotJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}snapshot_json'],
+      )!,
+      logTesto: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}log_testo'],
+      )!,
+    );
+  }
+
+  @override
+  $ProgettoSettimaneTable createAlias(String alias) {
+    return $ProgettoSettimaneTable(attachedDatabase, alias);
+  }
+}
+
+class RigaProgettoSettimana extends DataClass
+    implements Insertable<RigaProgettoSettimana> {
+  /// Id automatico.
+  final int id;
+
+  /// Id del progetto.
+  final int progettoId;
+
+  /// Inizio settimana 'aaaa-mm-gg hh:mm'.
+  final String settInizio;
+
+  /// Fine settimana 'aaaa-mm-gg hh:mm' (null = in corso).
+  final String? settFine;
+
+  /// Istantanea dei numeri (JSON).
+  final String snapshotJson;
+
+  /// Log testuale della settimana.
+  final String logTesto;
+  const RigaProgettoSettimana({
+    required this.id,
+    required this.progettoId,
+    required this.settInizio,
+    this.settFine,
+    required this.snapshotJson,
+    required this.logTesto,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['progetto_id'] = Variable<int>(progettoId);
+    map['sett_inizio'] = Variable<String>(settInizio);
+    if (!nullToAbsent || settFine != null) {
+      map['sett_fine'] = Variable<String>(settFine);
+    }
+    map['snapshot_json'] = Variable<String>(snapshotJson);
+    map['log_testo'] = Variable<String>(logTesto);
+    return map;
+  }
+
+  ProgettoSettimaneCompanion toCompanion(bool nullToAbsent) {
+    return ProgettoSettimaneCompanion(
+      id: Value(id),
+      progettoId: Value(progettoId),
+      settInizio: Value(settInizio),
+      settFine: settFine == null && nullToAbsent
+          ? const Value.absent()
+          : Value(settFine),
+      snapshotJson: Value(snapshotJson),
+      logTesto: Value(logTesto),
+    );
+  }
+
+  factory RigaProgettoSettimana.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RigaProgettoSettimana(
+      id: serializer.fromJson<int>(json['id']),
+      progettoId: serializer.fromJson<int>(json['progettoId']),
+      settInizio: serializer.fromJson<String>(json['settInizio']),
+      settFine: serializer.fromJson<String?>(json['settFine']),
+      snapshotJson: serializer.fromJson<String>(json['snapshotJson']),
+      logTesto: serializer.fromJson<String>(json['logTesto']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'progettoId': serializer.toJson<int>(progettoId),
+      'settInizio': serializer.toJson<String>(settInizio),
+      'settFine': serializer.toJson<String?>(settFine),
+      'snapshotJson': serializer.toJson<String>(snapshotJson),
+      'logTesto': serializer.toJson<String>(logTesto),
+    };
+  }
+
+  RigaProgettoSettimana copyWith({
+    int? id,
+    int? progettoId,
+    String? settInizio,
+    Value<String?> settFine = const Value.absent(),
+    String? snapshotJson,
+    String? logTesto,
+  }) => RigaProgettoSettimana(
+    id: id ?? this.id,
+    progettoId: progettoId ?? this.progettoId,
+    settInizio: settInizio ?? this.settInizio,
+    settFine: settFine.present ? settFine.value : this.settFine,
+    snapshotJson: snapshotJson ?? this.snapshotJson,
+    logTesto: logTesto ?? this.logTesto,
+  );
+  RigaProgettoSettimana copyWithCompanion(ProgettoSettimaneCompanion data) {
+    return RigaProgettoSettimana(
+      id: data.id.present ? data.id.value : this.id,
+      progettoId: data.progettoId.present
+          ? data.progettoId.value
+          : this.progettoId,
+      settInizio: data.settInizio.present
+          ? data.settInizio.value
+          : this.settInizio,
+      settFine: data.settFine.present ? data.settFine.value : this.settFine,
+      snapshotJson: data.snapshotJson.present
+          ? data.snapshotJson.value
+          : this.snapshotJson,
+      logTesto: data.logTesto.present ? data.logTesto.value : this.logTesto,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RigaProgettoSettimana(')
+          ..write('id: $id, ')
+          ..write('progettoId: $progettoId, ')
+          ..write('settInizio: $settInizio, ')
+          ..write('settFine: $settFine, ')
+          ..write('snapshotJson: $snapshotJson, ')
+          ..write('logTesto: $logTesto')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, progettoId, settInizio, settFine, snapshotJson, logTesto);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RigaProgettoSettimana &&
+          other.id == this.id &&
+          other.progettoId == this.progettoId &&
+          other.settInizio == this.settInizio &&
+          other.settFine == this.settFine &&
+          other.snapshotJson == this.snapshotJson &&
+          other.logTesto == this.logTesto);
+}
+
+class ProgettoSettimaneCompanion
+    extends UpdateCompanion<RigaProgettoSettimana> {
+  final Value<int> id;
+  final Value<int> progettoId;
+  final Value<String> settInizio;
+  final Value<String?> settFine;
+  final Value<String> snapshotJson;
+  final Value<String> logTesto;
+  const ProgettoSettimaneCompanion({
+    this.id = const Value.absent(),
+    this.progettoId = const Value.absent(),
+    this.settInizio = const Value.absent(),
+    this.settFine = const Value.absent(),
+    this.snapshotJson = const Value.absent(),
+    this.logTesto = const Value.absent(),
+  });
+  ProgettoSettimaneCompanion.insert({
+    this.id = const Value.absent(),
+    required int progettoId,
+    required String settInizio,
+    this.settFine = const Value.absent(),
+    this.snapshotJson = const Value.absent(),
+    this.logTesto = const Value.absent(),
+  }) : progettoId = Value(progettoId),
+       settInizio = Value(settInizio);
+  static Insertable<RigaProgettoSettimana> custom({
+    Expression<int>? id,
+    Expression<int>? progettoId,
+    Expression<String>? settInizio,
+    Expression<String>? settFine,
+    Expression<String>? snapshotJson,
+    Expression<String>? logTesto,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (progettoId != null) 'progetto_id': progettoId,
+      if (settInizio != null) 'sett_inizio': settInizio,
+      if (settFine != null) 'sett_fine': settFine,
+      if (snapshotJson != null) 'snapshot_json': snapshotJson,
+      if (logTesto != null) 'log_testo': logTesto,
+    });
+  }
+
+  ProgettoSettimaneCompanion copyWith({
+    Value<int>? id,
+    Value<int>? progettoId,
+    Value<String>? settInizio,
+    Value<String?>? settFine,
+    Value<String>? snapshotJson,
+    Value<String>? logTesto,
+  }) {
+    return ProgettoSettimaneCompanion(
+      id: id ?? this.id,
+      progettoId: progettoId ?? this.progettoId,
+      settInizio: settInizio ?? this.settInizio,
+      settFine: settFine ?? this.settFine,
+      snapshotJson: snapshotJson ?? this.snapshotJson,
+      logTesto: logTesto ?? this.logTesto,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (progettoId.present) {
+      map['progetto_id'] = Variable<int>(progettoId.value);
+    }
+    if (settInizio.present) {
+      map['sett_inizio'] = Variable<String>(settInizio.value);
+    }
+    if (settFine.present) {
+      map['sett_fine'] = Variable<String>(settFine.value);
+    }
+    if (snapshotJson.present) {
+      map['snapshot_json'] = Variable<String>(snapshotJson.value);
+    }
+    if (logTesto.present) {
+      map['log_testo'] = Variable<String>(logTesto.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgettoSettimaneCompanion(')
+          ..write('id: $id, ')
+          ..write('progettoId: $progettoId, ')
+          ..write('settInizio: $settInizio, ')
+          ..write('settFine: $settFine, ')
+          ..write('snapshotJson: $snapshotJson, ')
+          ..write('logTesto: $logTesto')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$DatabaseTraker extends GeneratedDatabase {
   _$DatabaseTraker(QueryExecutor e) : super(e);
   $DatabaseTrakerManager get managers => $DatabaseTrakerManager(this);
   late final $LettureTable letture = $LettureTable(this);
   late final $EventiTable eventi = $EventiTable(this);
   late final $ImpostazioniTable impostazioni = $ImpostazioniTable(this);
+  late final $PianiTable piani = $PianiTable(this);
+  late final $ProgettiTable progetti = $ProgettiTable(this);
+  late final $ProgettoSettimaneTable progettoSettimane =
+      $ProgettoSettimaneTable(this);
   late final Index lettureOra = Index(
     'letture_ora',
     'CREATE INDEX letture_ora ON letture (ora)',
@@ -1131,6 +2297,9 @@ abstract class _$DatabaseTraker extends GeneratedDatabase {
     letture,
     eventi,
     impostazioni,
+    piani,
+    progetti,
+    progettoSettimane,
     lettureOra,
     eventiOra,
   ];
@@ -1761,6 +2930,666 @@ typedef $$ImpostazioniTableProcessedTableManager =
       RigaImpostazione,
       PrefetchHooks Function()
     >;
+typedef $$PianiTableCreateCompanionBuilder = PianiCompanion Function({
+  Value<int> id,
+  required String nome,
+  required int giorniMask,
+  Value<double> targetPct,
+  Value<String> confine,
+  required String inizio,
+  Value<String?> fine,
+});
+typedef $$PianiTableUpdateCompanionBuilder = PianiCompanion Function({
+  Value<int> id,
+  Value<String> nome,
+  Value<int> giorniMask,
+  Value<double> targetPct,
+  Value<String> confine,
+  Value<String> inizio,
+  Value<String?> fine,
+});
+
+class $$PianiTableFilterComposer
+    extends Composer<_$DatabaseTraker, $PianiTable> {
+  $$PianiTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get giorniMask => $composableBuilder(
+    column: $table.giorniMask,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get targetPct => $composableBuilder(
+    column: $table.targetPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get confine => $composableBuilder(
+    column: $table.confine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inizio => $composableBuilder(
+    column: $table.inizio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fine => $composableBuilder(
+    column: $table.fine,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PianiTableOrderingComposer
+    extends Composer<_$DatabaseTraker, $PianiTable> {
+  $$PianiTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get giorniMask => $composableBuilder(
+    column: $table.giorniMask,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get targetPct => $composableBuilder(
+    column: $table.targetPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get confine => $composableBuilder(
+    column: $table.confine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inizio => $composableBuilder(
+    column: $table.inizio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fine => $composableBuilder(
+    column: $table.fine,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PianiTableAnnotationComposer
+    extends Composer<_$DatabaseTraker, $PianiTable> {
+  $$PianiTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<int> get giorniMask => $composableBuilder(
+    column: $table.giorniMask,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get targetPct =>
+      $composableBuilder(column: $table.targetPct, builder: (column) => column);
+
+  GeneratedColumn<String> get confine =>
+      $composableBuilder(column: $table.confine, builder: (column) => column);
+
+  GeneratedColumn<String> get inizio =>
+      $composableBuilder(column: $table.inizio, builder: (column) => column);
+
+  GeneratedColumn<String> get fine =>
+      $composableBuilder(column: $table.fine, builder: (column) => column);
+}
+
+class $$PianiTableTableManager
+    extends
+        RootTableManager<
+          _$DatabaseTraker,
+          $PianiTable,
+          RigaPiano,
+          $$PianiTableFilterComposer,
+          $$PianiTableOrderingComposer,
+          $$PianiTableAnnotationComposer,
+          $$PianiTableCreateCompanionBuilder,
+          $$PianiTableUpdateCompanionBuilder,
+          (RigaPiano, BaseReferences<_$DatabaseTraker, $PianiTable, RigaPiano>),
+          RigaPiano,
+          PrefetchHooks Function()
+        > {
+  $$PianiTableTableManager(_$DatabaseTraker db, $PianiTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PianiTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PianiTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PianiTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<int> giorniMask = const Value.absent(),
+                Value<double> targetPct = const Value.absent(),
+                Value<String> confine = const Value.absent(),
+                Value<String> inizio = const Value.absent(),
+                Value<String?> fine = const Value.absent(),
+              }) => PianiCompanion(
+                id: id,
+                nome: nome,
+                giorniMask: giorniMask,
+                targetPct: targetPct,
+                confine: confine,
+                inizio: inizio,
+                fine: fine,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String nome,
+                required int giorniMask,
+                Value<double> targetPct = const Value.absent(),
+                Value<String> confine = const Value.absent(),
+                required String inizio,
+                Value<String?> fine = const Value.absent(),
+              }) => PianiCompanion.insert(
+                id: id,
+                nome: nome,
+                giorniMask: giorniMask,
+                targetPct: targetPct,
+                confine: confine,
+                inizio: inizio,
+                fine: fine,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PianiTable, RigaPiano>(table),
+                  BaseReferences<_$DatabaseTraker, $PianiTable, RigaPiano>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PianiTableProcessedTableManager =
+    ProcessedTableManager<
+      _$DatabaseTraker,
+      $PianiTable,
+      RigaPiano,
+      $$PianiTableFilterComposer,
+      $$PianiTableOrderingComposer,
+      $$PianiTableAnnotationComposer,
+      $$PianiTableCreateCompanionBuilder,
+      $$PianiTableUpdateCompanionBuilder,
+      (RigaPiano, BaseReferences<_$DatabaseTraker, $PianiTable, RigaPiano>),
+      RigaPiano,
+      PrefetchHooks Function()
+    >;
+typedef $$ProgettiTableCreateCompanionBuilder = ProgettiCompanion Function({
+  Value<int> id,
+  required String nome,
+  Value<int> colore,
+  Value<String> note,
+});
+typedef $$ProgettiTableUpdateCompanionBuilder = ProgettiCompanion Function({
+  Value<int> id,
+  Value<String> nome,
+  Value<int> colore,
+  Value<String> note,
+});
+
+class $$ProgettiTableFilterComposer
+    extends Composer<_$DatabaseTraker, $ProgettiTable> {
+  $$ProgettiTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colore => $composableBuilder(
+    column: $table.colore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProgettiTableOrderingComposer
+    extends Composer<_$DatabaseTraker, $ProgettiTable> {
+  $$ProgettiTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get colore => $composableBuilder(
+    column: $table.colore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProgettiTableAnnotationComposer
+    extends Composer<_$DatabaseTraker, $ProgettiTable> {
+  $$ProgettiTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<int> get colore =>
+      $composableBuilder(column: $table.colore, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$ProgettiTableTableManager
+    extends
+        RootTableManager<
+          _$DatabaseTraker,
+          $ProgettiTable,
+          RigaProgetto,
+          $$ProgettiTableFilterComposer,
+          $$ProgettiTableOrderingComposer,
+          $$ProgettiTableAnnotationComposer,
+          $$ProgettiTableCreateCompanionBuilder,
+          $$ProgettiTableUpdateCompanionBuilder,
+          (
+            RigaProgetto,
+            BaseReferences<_$DatabaseTraker, $ProgettiTable, RigaProgetto>,
+          ),
+          RigaProgetto,
+          PrefetchHooks Function()
+        > {
+  $$ProgettiTableTableManager(_$DatabaseTraker db, $ProgettiTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgettiTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProgettiTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProgettiTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<int> colore = const Value.absent(),
+                Value<String> note = const Value.absent(),
+              }) => ProgettiCompanion(
+                id: id,
+                nome: nome,
+                colore: colore,
+                note: note,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String nome,
+                Value<int> colore = const Value.absent(),
+                Value<String> note = const Value.absent(),
+              }) => ProgettiCompanion.insert(
+                id: id,
+                nome: nome,
+                colore: colore,
+                note: note,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProgettiTable, RigaProgetto>(table),
+                  BaseReferences<
+                    _$DatabaseTraker,
+                    $ProgettiTable,
+                    RigaProgetto
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProgettiTableProcessedTableManager =
+    ProcessedTableManager<
+      _$DatabaseTraker,
+      $ProgettiTable,
+      RigaProgetto,
+      $$ProgettiTableFilterComposer,
+      $$ProgettiTableOrderingComposer,
+      $$ProgettiTableAnnotationComposer,
+      $$ProgettiTableCreateCompanionBuilder,
+      $$ProgettiTableUpdateCompanionBuilder,
+      (
+        RigaProgetto,
+        BaseReferences<_$DatabaseTraker, $ProgettiTable, RigaProgetto>,
+      ),
+      RigaProgetto,
+      PrefetchHooks Function()
+    >;
+typedef $$ProgettoSettimaneTableCreateCompanionBuilder =
+    ProgettoSettimaneCompanion Function({
+      Value<int> id,
+      required int progettoId,
+      required String settInizio,
+      Value<String?> settFine,
+      Value<String> snapshotJson,
+      Value<String> logTesto,
+    });
+typedef $$ProgettoSettimaneTableUpdateCompanionBuilder =
+    ProgettoSettimaneCompanion Function({
+      Value<int> id,
+      Value<int> progettoId,
+      Value<String> settInizio,
+      Value<String?> settFine,
+      Value<String> snapshotJson,
+      Value<String> logTesto,
+    });
+
+class $$ProgettoSettimaneTableFilterComposer
+    extends Composer<_$DatabaseTraker, $ProgettoSettimaneTable> {
+  $$ProgettoSettimaneTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get progettoId => $composableBuilder(
+    column: $table.progettoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get settInizio => $composableBuilder(
+    column: $table.settInizio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get settFine => $composableBuilder(
+    column: $table.settFine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get snapshotJson => $composableBuilder(
+    column: $table.snapshotJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get logTesto => $composableBuilder(
+    column: $table.logTesto,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProgettoSettimaneTableOrderingComposer
+    extends Composer<_$DatabaseTraker, $ProgettoSettimaneTable> {
+  $$ProgettoSettimaneTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get progettoId => $composableBuilder(
+    column: $table.progettoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get settInizio => $composableBuilder(
+    column: $table.settInizio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get settFine => $composableBuilder(
+    column: $table.settFine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get snapshotJson => $composableBuilder(
+    column: $table.snapshotJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get logTesto => $composableBuilder(
+    column: $table.logTesto,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProgettoSettimaneTableAnnotationComposer
+    extends Composer<_$DatabaseTraker, $ProgettoSettimaneTable> {
+  $$ProgettoSettimaneTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get progettoId => $composableBuilder(
+    column: $table.progettoId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get settInizio => $composableBuilder(
+    column: $table.settInizio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get settFine =>
+      $composableBuilder(column: $table.settFine, builder: (column) => column);
+
+  GeneratedColumn<String> get snapshotJson => $composableBuilder(
+    column: $table.snapshotJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get logTesto =>
+      $composableBuilder(column: $table.logTesto, builder: (column) => column);
+}
+
+class $$ProgettoSettimaneTableTableManager
+    extends
+        RootTableManager<
+          _$DatabaseTraker,
+          $ProgettoSettimaneTable,
+          RigaProgettoSettimana,
+          $$ProgettoSettimaneTableFilterComposer,
+          $$ProgettoSettimaneTableOrderingComposer,
+          $$ProgettoSettimaneTableAnnotationComposer,
+          $$ProgettoSettimaneTableCreateCompanionBuilder,
+          $$ProgettoSettimaneTableUpdateCompanionBuilder,
+          (
+            RigaProgettoSettimana,
+            BaseReferences<
+              _$DatabaseTraker,
+              $ProgettoSettimaneTable,
+              RigaProgettoSettimana
+            >,
+          ),
+          RigaProgettoSettimana,
+          PrefetchHooks Function()
+        > {
+  $$ProgettoSettimaneTableTableManager(
+    _$DatabaseTraker db,
+    $ProgettoSettimaneTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgettoSettimaneTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProgettoSettimaneTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProgettoSettimaneTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> progettoId = const Value.absent(),
+                Value<String> settInizio = const Value.absent(),
+                Value<String?> settFine = const Value.absent(),
+                Value<String> snapshotJson = const Value.absent(),
+                Value<String> logTesto = const Value.absent(),
+              }) => ProgettoSettimaneCompanion(
+                id: id,
+                progettoId: progettoId,
+                settInizio: settInizio,
+                settFine: settFine,
+                snapshotJson: snapshotJson,
+                logTesto: logTesto,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int progettoId,
+                required String settInizio,
+                Value<String?> settFine = const Value.absent(),
+                Value<String> snapshotJson = const Value.absent(),
+                Value<String> logTesto = const Value.absent(),
+              }) => ProgettoSettimaneCompanion.insert(
+                id: id,
+                progettoId: progettoId,
+                settInizio: settInizio,
+                settFine: settFine,
+                snapshotJson: snapshotJson,
+                logTesto: logTesto,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProgettoSettimaneTable, RigaProgettoSettimana>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$DatabaseTraker,
+                    $ProgettoSettimaneTable,
+                    RigaProgettoSettimana
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProgettoSettimaneTableProcessedTableManager =
+    ProcessedTableManager<
+      _$DatabaseTraker,
+      $ProgettoSettimaneTable,
+      RigaProgettoSettimana,
+      $$ProgettoSettimaneTableFilterComposer,
+      $$ProgettoSettimaneTableOrderingComposer,
+      $$ProgettoSettimaneTableAnnotationComposer,
+      $$ProgettoSettimaneTableCreateCompanionBuilder,
+      $$ProgettoSettimaneTableUpdateCompanionBuilder,
+      (
+        RigaProgettoSettimana,
+        BaseReferences<
+          _$DatabaseTraker,
+          $ProgettoSettimaneTable,
+          RigaProgettoSettimana
+        >,
+      ),
+      RigaProgettoSettimana,
+      PrefetchHooks Function()
+    >;
 
 class $DatabaseTrakerManager {
   final _$DatabaseTraker _db;
@@ -1771,4 +3600,10 @@ class $DatabaseTrakerManager {
       $$EventiTableTableManager(_db, _db.eventi);
   $$ImpostazioniTableTableManager get impostazioni =>
       $$ImpostazioniTableTableManager(_db, _db.impostazioni);
+  $$PianiTableTableManager get piani =>
+      $$PianiTableTableManager(_db, _db.piani);
+  $$ProgettiTableTableManager get progetti =>
+      $$ProgettiTableTableManager(_db, _db.progetti);
+  $$ProgettoSettimaneTableTableManager get progettoSettimane =>
+      $$ProgettoSettimaneTableTableManager(_db, _db.progettoSettimane);
 }

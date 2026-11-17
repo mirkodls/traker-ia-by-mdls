@@ -46,8 +46,8 @@ Lettura letturaAutomatica(
   sett: uso.sett,
   sess: uso.sess,
   lavoro: lavoroAperto(eventi),
-  modelli: pref.attiviTesto(Gruppo.modelli),
-  skill: pref.attiviTesto(Gruppo.skill),
+  modelli: pref.daRaccogliere(Gruppo.modelli),
+  skill: pref.daRaccogliere(Gruppo.skill),
   gestore: gestore,
 );
 

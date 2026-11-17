@@ -478,8 +478,8 @@ class StatoApp extends ChangeNotifier {
         sett: sett,
         sess: sess,
         fonte: 'manuale',
-        modelli: _pref.attiviTesto(Gruppo.modelli),
-        skill: _pref.attiviTesto(Gruppo.skill),
+        modelli: _pref.daRaccogliere(Gruppo.modelli),
+        skill: _pref.daRaccogliere(Gruppo.skill),
       ),
     );
     _letture = await servizi.letture();

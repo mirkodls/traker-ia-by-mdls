@@ -70,10 +70,20 @@ void main() {
     });
 
     test('lettura automatica prende lavoro, modelli e skill di adesso', () {
-      final Preferenze p = Preferenze()
+      final Preferenze p = Preferenze(modelliSkill: true)
           .tocca(Gruppo.modelli, 'Opus')
           .aggiungi(Gruppo.skill, 'caveman')
           .tocca(Gruppo.skill, 'caveman');
+      // V2: flag spento (base) -> niente modelli/skill, lavoro sì.
+      final Lettura spento = letturaAutomatica(
+        const Uso(sett: 40, sess: 12),
+        DateTime(2026, 11, 14, 9, 30),
+        p.copia(modelliSkill: false),
+        <Evento>[Evento(ora: t('2026-11-14 08:00'), tipo: TipoEvento.inizio)],
+      );
+      expect(spento.modelli, '');
+      expect(spento.skill, '');
+      expect(spento.lavoro, isTrue);
       final Lettura x = letturaAutomatica(
         const Uso(sett: 40, sess: 12),
         DateTime(2026, 11, 14, 9, 30, 45),

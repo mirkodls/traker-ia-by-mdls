@@ -8,6 +8,40 @@ import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'aiuti.dart';
 
 void main() {
+  test(
+    'V2 flag: base modelli/skill spenti, lavoro acceso; andata e ritorno',
+    () {
+      final Preferenze p = Preferenze.daMappa(<String, String?>{});
+      expect(p.modelliSkill, isFalse);
+      expect(p.lavoroV2, isTrue);
+      expect(p.aMappa()[Chiavi.v2ModelliSkill], '0');
+      expect(p.aMappa()[Chiavi.v2Lavoro], '1');
+      final Preferenze q = Preferenze.daMappa(
+        p.copia(modelliSkill: true, lavoroV2: false).aMappa(),
+      );
+      expect(q.modelliSkill, isTrue);
+      expect(q.lavoroV2, isFalse);
+      expect(
+        Chiavi.tutte,
+        containsAll(<String>[Chiavi.v2ModelliSkill, Chiavi.v2Lavoro]),
+      );
+    },
+  );
+
+  test('V2 flag spento: nessun modello/skill raccolto nelle letture', () {
+    final Preferenze p = Preferenze(
+      skill: <String>['caveman'],
+      modelliAttivi: <String>['Opus'],
+      skillAttive: <String>['caveman'],
+    );
+    expect(p.attiviTesto(Gruppo.modelli), 'Opus');
+    expect(p.daRaccogliere(Gruppo.modelli), '');
+    expect(p.daRaccogliere(Gruppo.skill), '');
+    final Preferenze on = p.copia(modelliSkill: true);
+    expect(on.daRaccogliere(Gruppo.modelli), 'Opus');
+    expect(on.daRaccogliere(Gruppo.skill), 'caveman');
+  });
+
   test('mappa vuota o rotta -> predefiniti', () {
     final Preferenze p = Preferenze.daMappa(<String, String?>{
       Chiavi.minuti: 'x',

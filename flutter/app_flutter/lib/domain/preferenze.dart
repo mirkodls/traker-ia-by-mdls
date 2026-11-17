@@ -50,9 +50,18 @@ abstract final class Chiavi {
   /// '1' = una lettura in sottofondo ha trovato il login scaduto.
   static const String loginScaduto = 'login_scaduto';
 
+  /// V2: '1' = modelli/skill accesi (tasti, raccolta, confronti).
+  /// Spento di base: le colonne e i dati vecchi restano intatti.
+  static const String v2ModelliSkill = 'v2_modelli_skill';
+
+  /// V2: '1' = funzioni lavoro V2 accese (piani, linee). Acceso di base.
+  static const String v2Lavoro = 'v2_lavoro';
+
   /// Tutte le chiavi lette all'avvio.
   static const List<String> tutte = <String>[
     loginScaduto,
+    v2ModelliSkill,
+    v2Lavoro,
     minuti,
     metodo,
     modelli,
@@ -121,6 +130,8 @@ class Preferenze {
     List<String> skillAttive = const <String>[],
     this.periodo = scattoPredefinito,
     this.soloLavoro = false,
+    this.modelliSkill = false,
+    this.lavoroV2 = true,
   }) : modelli = List<String>.unmodifiable(modelli),
        skill = List<String>.unmodifiable(skill),
        modelliAttivi = List<String>.unmodifiable(modelliAttivi),
@@ -139,6 +150,8 @@ class Preferenze {
       skillAttive: _lista(m[Chiavi.skillAttive], const <String>[]),
       periodo: normalizzaScatto(int.tryParse(m[Chiavi.periodo] ?? '')),
       soloLavoro: m[Chiavi.soloLavoro] == '1',
+      modelliSkill: m[Chiavi.v2ModelliSkill] == '1',
+      lavoroV2: m[Chiavi.v2Lavoro] != '0',
     );
   }
 
@@ -166,6 +179,12 @@ class Preferenze {
   /// Spunta "Conta solo lavoro".
   final bool soloLavoro;
 
+  /// V2: modelli/skill accesi (tasti, raccolta, confronti). Base: spento.
+  final bool modelliSkill;
+
+  /// V2: funzioni lavoro V2 accese. Base: acceso.
+  final bool lavoroV2;
+
   /// Preferenze -> impostazioni da salvare.
   Map<String, String> aMappa() => <String, String>{
     Chiavi.minuti: '$minuti',
@@ -176,6 +195,8 @@ class Preferenze {
     Chiavi.skillAttive: jsonEncode(skillAttive),
     Chiavi.periodo: '$periodo',
     Chiavi.soloLavoro: soloLavoro ? '1' : '0',
+    Chiavi.v2ModelliSkill: modelliSkill ? '1' : '0',
+    Chiavi.v2Lavoro: lavoroV2 ? '1' : '0',
   };
 
   /// Copia con alcuni valori cambiati.
@@ -188,6 +209,8 @@ class Preferenze {
     List<String>? skillAttive,
     int? periodo,
     bool? soloLavoro,
+    bool? modelliSkill,
+    bool? lavoroV2,
   }) => Preferenze(
     minuti: minuti ?? this.minuti,
     metodo: metodo ?? this.metodo,
@@ -197,6 +220,8 @@ class Preferenze {
     skillAttive: skillAttive ?? this.skillAttive,
     periodo: periodo ?? this.periodo,
     soloLavoro: soloLavoro ?? this.soloLavoro,
+    modelliSkill: modelliSkill ?? this.modelliSkill,
+    lavoroV2: lavoroV2 ?? this.lavoroV2,
   );
 
   /// Elenco del gruppo [g].
@@ -216,6 +241,10 @@ class Preferenze {
     final Set<String> el = elenco(g).toSet();
     return unisci(accesi(g).where(el.contains));
   }
+
+  /// Testo da salvare nella lettura per il gruppo [g]: vuoto se
+  /// modelli/skill sono spenti (V2), altrimenti [attiviTesto].
+  String daRaccogliere(Gruppo g) => modelliSkill ? attiviTesto(g) : '';
 
   /// Accende/spegne il tasto [nome].
   Preferenze tocca(Gruppo g, String nome) {
