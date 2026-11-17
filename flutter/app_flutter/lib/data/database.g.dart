@@ -1928,6 +1928,17 @@ class $ProgettoSettimaneTable extends ProgettoSettimane
     requiredDuringInsert: false,
     defaultValue: const Constant<String>(''),
   );
+  static const VerificationMeta _tokenManualiMeta = const VerificationMeta(
+    'tokenManuali',
+  );
+  @override
+  late final GeneratedColumn<int> tokenManuali = GeneratedColumn<int>(
+    'token_manuali',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1936,6 +1947,7 @@ class $ProgettoSettimaneTable extends ProgettoSettimane
     settFine,
     snapshotJson,
     logTesto,
+    tokenManuali,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1989,6 +2001,15 @@ class $ProgettoSettimaneTable extends ProgettoSettimane
         logTesto.isAcceptableOrUnknown(data['log_testo']!, _logTestoMeta),
       );
     }
+    if (data.containsKey('token_manuali')) {
+      context.handle(
+        _tokenManualiMeta,
+        tokenManuali.isAcceptableOrUnknown(
+          data['token_manuali']!,
+          _tokenManualiMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2022,6 +2043,10 @@ class $ProgettoSettimaneTable extends ProgettoSettimane
         DriftSqlType.string,
         data['${effectivePrefix}log_testo'],
       )!,
+      tokenManuali: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}token_manuali'],
+      ),
     );
   }
 
@@ -2050,6 +2075,9 @@ class RigaProgettoSettimana extends DataClass
 
   /// Log testuale della settimana.
   final String logTesto;
+
+  /// Token scritti a mano (schema 3; null = non noti). Mai stimati da %.
+  final int? tokenManuali;
   const RigaProgettoSettimana({
     required this.id,
     required this.progettoId,
@@ -2057,6 +2085,7 @@ class RigaProgettoSettimana extends DataClass
     this.settFine,
     required this.snapshotJson,
     required this.logTesto,
+    this.tokenManuali,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2069,6 +2098,9 @@ class RigaProgettoSettimana extends DataClass
     }
     map['snapshot_json'] = Variable<String>(snapshotJson);
     map['log_testo'] = Variable<String>(logTesto);
+    if (!nullToAbsent || tokenManuali != null) {
+      map['token_manuali'] = Variable<int>(tokenManuali);
+    }
     return map;
   }
 
@@ -2082,6 +2114,9 @@ class RigaProgettoSettimana extends DataClass
           : Value(settFine),
       snapshotJson: Value(snapshotJson),
       logTesto: Value(logTesto),
+      tokenManuali: tokenManuali == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokenManuali),
     );
   }
 
@@ -2097,6 +2132,7 @@ class RigaProgettoSettimana extends DataClass
       settFine: serializer.fromJson<String?>(json['settFine']),
       snapshotJson: serializer.fromJson<String>(json['snapshotJson']),
       logTesto: serializer.fromJson<String>(json['logTesto']),
+      tokenManuali: serializer.fromJson<int?>(json['tokenManuali']),
     );
   }
   @override
@@ -2109,6 +2145,7 @@ class RigaProgettoSettimana extends DataClass
       'settFine': serializer.toJson<String?>(settFine),
       'snapshotJson': serializer.toJson<String>(snapshotJson),
       'logTesto': serializer.toJson<String>(logTesto),
+      'tokenManuali': serializer.toJson<int?>(tokenManuali),
     };
   }
 
@@ -2119,6 +2156,7 @@ class RigaProgettoSettimana extends DataClass
     Value<String?> settFine = const Value.absent(),
     String? snapshotJson,
     String? logTesto,
+    Value<int?> tokenManuali = const Value.absent(),
   }) => RigaProgettoSettimana(
     id: id ?? this.id,
     progettoId: progettoId ?? this.progettoId,
@@ -2126,6 +2164,7 @@ class RigaProgettoSettimana extends DataClass
     settFine: settFine.present ? settFine.value : this.settFine,
     snapshotJson: snapshotJson ?? this.snapshotJson,
     logTesto: logTesto ?? this.logTesto,
+    tokenManuali: tokenManuali.present ? tokenManuali.value : this.tokenManuali,
   );
   RigaProgettoSettimana copyWithCompanion(ProgettoSettimaneCompanion data) {
     return RigaProgettoSettimana(
@@ -2141,6 +2180,9 @@ class RigaProgettoSettimana extends DataClass
           ? data.snapshotJson.value
           : this.snapshotJson,
       logTesto: data.logTesto.present ? data.logTesto.value : this.logTesto,
+      tokenManuali: data.tokenManuali.present
+          ? data.tokenManuali.value
+          : this.tokenManuali,
     );
   }
 
@@ -2152,14 +2194,22 @@ class RigaProgettoSettimana extends DataClass
           ..write('settInizio: $settInizio, ')
           ..write('settFine: $settFine, ')
           ..write('snapshotJson: $snapshotJson, ')
-          ..write('logTesto: $logTesto')
+          ..write('logTesto: $logTesto, ')
+          ..write('tokenManuali: $tokenManuali')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, progettoId, settInizio, settFine, snapshotJson, logTesto);
+  int get hashCode => Object.hash(
+    id,
+    progettoId,
+    settInizio,
+    settFine,
+    snapshotJson,
+    logTesto,
+    tokenManuali,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2169,7 +2219,8 @@ class RigaProgettoSettimana extends DataClass
           other.settInizio == this.settInizio &&
           other.settFine == this.settFine &&
           other.snapshotJson == this.snapshotJson &&
-          other.logTesto == this.logTesto);
+          other.logTesto == this.logTesto &&
+          other.tokenManuali == this.tokenManuali);
 }
 
 class ProgettoSettimaneCompanion
@@ -2180,6 +2231,7 @@ class ProgettoSettimaneCompanion
   final Value<String?> settFine;
   final Value<String> snapshotJson;
   final Value<String> logTesto;
+  final Value<int?> tokenManuali;
   const ProgettoSettimaneCompanion({
     this.id = const Value.absent(),
     this.progettoId = const Value.absent(),
@@ -2187,6 +2239,7 @@ class ProgettoSettimaneCompanion
     this.settFine = const Value.absent(),
     this.snapshotJson = const Value.absent(),
     this.logTesto = const Value.absent(),
+    this.tokenManuali = const Value.absent(),
   });
   ProgettoSettimaneCompanion.insert({
     this.id = const Value.absent(),
@@ -2195,6 +2248,7 @@ class ProgettoSettimaneCompanion
     this.settFine = const Value.absent(),
     this.snapshotJson = const Value.absent(),
     this.logTesto = const Value.absent(),
+    this.tokenManuali = const Value.absent(),
   }) : progettoId = Value(progettoId),
        settInizio = Value(settInizio);
   static Insertable<RigaProgettoSettimana> custom({
@@ -2204,6 +2258,7 @@ class ProgettoSettimaneCompanion
     Expression<String>? settFine,
     Expression<String>? snapshotJson,
     Expression<String>? logTesto,
+    Expression<int>? tokenManuali,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2212,6 +2267,7 @@ class ProgettoSettimaneCompanion
       if (settFine != null) 'sett_fine': settFine,
       if (snapshotJson != null) 'snapshot_json': snapshotJson,
       if (logTesto != null) 'log_testo': logTesto,
+      if (tokenManuali != null) 'token_manuali': tokenManuali,
     });
   }
 
@@ -2222,6 +2278,7 @@ class ProgettoSettimaneCompanion
     Value<String?>? settFine,
     Value<String>? snapshotJson,
     Value<String>? logTesto,
+    Value<int?>? tokenManuali,
   }) {
     return ProgettoSettimaneCompanion(
       id: id ?? this.id,
@@ -2230,6 +2287,7 @@ class ProgettoSettimaneCompanion
       settFine: settFine ?? this.settFine,
       snapshotJson: snapshotJson ?? this.snapshotJson,
       logTesto: logTesto ?? this.logTesto,
+      tokenManuali: tokenManuali ?? this.tokenManuali,
     );
   }
 
@@ -2254,6 +2312,9 @@ class ProgettoSettimaneCompanion
     if (logTesto.present) {
       map['log_testo'] = Variable<String>(logTesto.value);
     }
+    if (tokenManuali.present) {
+      map['token_manuali'] = Variable<int>(tokenManuali.value);
+    }
     return map;
   }
 
@@ -2265,7 +2326,8 @@ class ProgettoSettimaneCompanion
           ..write('settInizio: $settInizio, ')
           ..write('settFine: $settFine, ')
           ..write('snapshotJson: $snapshotJson, ')
-          ..write('logTesto: $logTesto')
+          ..write('logTesto: $logTesto, ')
+          ..write('tokenManuali: $tokenManuali')
           ..write(')'))
         .toString();
   }
@@ -2289,6 +2351,10 @@ abstract class _$DatabaseTraker extends GeneratedDatabase {
     'eventi_ora',
     'CREATE INDEX eventi_ora ON eventi (ora)',
   );
+  late final Index progettoSettimaneUnica = Index(
+    'progetto_settimane_unica',
+    'CREATE UNIQUE INDEX progetto_settimane_unica ON progetto_settimane (progetto_id, sett_inizio)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2302,6 +2368,7 @@ abstract class _$DatabaseTraker extends GeneratedDatabase {
     progettoSettimane,
     lettureOra,
     eventiOra,
+    progettoSettimaneUnica,
   ];
 }
 
@@ -3355,6 +3422,7 @@ typedef $$ProgettoSettimaneTableCreateCompanionBuilder =
       Value<String?> settFine,
       Value<String> snapshotJson,
       Value<String> logTesto,
+      Value<int?> tokenManuali,
     });
 typedef $$ProgettoSettimaneTableUpdateCompanionBuilder =
     ProgettoSettimaneCompanion Function({
@@ -3364,6 +3432,7 @@ typedef $$ProgettoSettimaneTableUpdateCompanionBuilder =
       Value<String?> settFine,
       Value<String> snapshotJson,
       Value<String> logTesto,
+      Value<int?> tokenManuali,
     });
 
 class $$ProgettoSettimaneTableFilterComposer
@@ -3402,6 +3471,11 @@ class $$ProgettoSettimaneTableFilterComposer
 
   ColumnFilters<String> get logTesto => $composableBuilder(
     column: $table.logTesto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokenManuali => $composableBuilder(
+    column: $table.tokenManuali,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3444,6 +3518,11 @@ class $$ProgettoSettimaneTableOrderingComposer
     column: $table.logTesto,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get tokenManuali => $composableBuilder(
+    column: $table.tokenManuali,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ProgettoSettimaneTableAnnotationComposer
@@ -3478,6 +3557,11 @@ class $$ProgettoSettimaneTableAnnotationComposer
 
   GeneratedColumn<String> get logTesto =>
       $composableBuilder(column: $table.logTesto, builder: (column) => column);
+
+  GeneratedColumn<int> get tokenManuali => $composableBuilder(
+    column: $table.tokenManuali,
+    builder: (column) => column,
+  );
 }
 
 class $$ProgettoSettimaneTableTableManager
@@ -3526,6 +3610,7 @@ class $$ProgettoSettimaneTableTableManager
                 Value<String?> settFine = const Value.absent(),
                 Value<String> snapshotJson = const Value.absent(),
                 Value<String> logTesto = const Value.absent(),
+                Value<int?> tokenManuali = const Value.absent(),
               }) => ProgettoSettimaneCompanion(
                 id: id,
                 progettoId: progettoId,
@@ -3533,6 +3618,7 @@ class $$ProgettoSettimaneTableTableManager
                 settFine: settFine,
                 snapshotJson: snapshotJson,
                 logTesto: logTesto,
+                tokenManuali: tokenManuali,
               ),
           createCompanionCallback:
               ({
@@ -3542,6 +3628,7 @@ class $$ProgettoSettimaneTableTableManager
                 Value<String?> settFine = const Value.absent(),
                 Value<String> snapshotJson = const Value.absent(),
                 Value<String> logTesto = const Value.absent(),
+                Value<int?> tokenManuali = const Value.absent(),
               }) => ProgettoSettimaneCompanion.insert(
                 id: id,
                 progettoId: progettoId,
@@ -3549,6 +3636,7 @@ class $$ProgettoSettimaneTableTableManager
                 settFine: settFine,
                 snapshotJson: snapshotJson,
                 logTesto: logTesto,
+                tokenManuali: tokenManuali,
               ),
           withReferenceMapper: (p0) => p0
               .map(

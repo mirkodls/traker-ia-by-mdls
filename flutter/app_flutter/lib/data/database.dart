@@ -120,8 +120,14 @@ class Progetti extends Table {
   TextColumn get note => text().withDefault(const Constant<String>(''))();
 }
 
-/// Settimane di un progetto (V2, schema 2). Vuota finché non la usa la V2.
+/// Settimane di un progetto (V2, schema 2; schema 3: token a mano + una
+/// sola riga per progetto e settimana).
 @DataClassName('RigaProgettoSettimana')
+@TableIndex(
+  name: 'progetto_settimane_unica',
+  columns: <Symbol>{#progettoId, #settInizio},
+  unique: true,
+)
 class ProgettoSettimane extends Table {
   /// Id automatico.
   IntColumn get id => integer().autoIncrement()();
@@ -141,10 +147,13 @@ class ProgettoSettimane extends Table {
 
   /// Log testuale della settimana.
   TextColumn get logTesto => text().withDefault(const Constant<String>(''))();
+
+  /// Token scritti a mano (schema 3; null = non noti). Mai stimati da %.
+  IntColumn get tokenManuali => integer().nullable()();
 }
 
 /// Versione attuale dello schema del database.
-const int versioneSchema = 2;
+const int versioneSchema = 3;
 
 /// Nome del file del database (senza '.sqlite').
 const String nomeDb = 'traker_ia';
@@ -188,9 +197,16 @@ class DatabaseTraker extends _$DatabaseTraker {
       // 1 -> 2: SOLO tabelle nuove vuote. Letture/Eventi/Impostazioni
       // non si toccano.
       if (da < 2) {
+        // Tabelle create già con le colonne dello schema attuale.
         await m.createTable(piani);
         await m.createTable(progetti);
         await m.createTable(progettoSettimane);
+      } else if (da < 3) {
+        // 2 -> 3: SOLO colonna nuova (null) su progetto_settimane.
+        await m.addColumn(progettoSettimane, progettoSettimane.tokenManuali);
+      }
+      if (da < 3) {
+        await m.createIndex(progettoSettimaneUnica);
       }
     },
   );

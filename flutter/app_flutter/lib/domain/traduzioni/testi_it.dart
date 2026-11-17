@@ -788,4 +788,10 @@ abstract final class Testi {
 
   /// Telefono: titolo corto settimana.
   static const String cortoSett = 'SETT.';
+
+  /// V2 progetti: nome della voce senza progetto attivo.
+  static const String senzaProgetto = 'Senza progetto';
+
+  /// V2 progetti: etichetta delle stime (mai numeri senza).
+  static const String stima = 'STIMA';
 }
