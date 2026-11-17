@@ -8,6 +8,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/combinazioni.dart';
 import 'package:traker_ia/domain/confronti.dart' hide confrontoNota;
@@ -21,6 +22,7 @@ import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/piano_giorni.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/previsione.dart' as prev;
+import 'package:traker_ia/domain/progetti.dart';
 import 'package:traker_ia/domain/serie_intensita.dart';
 import 'package:traker_ia/domain/serie_piano.dart';
 import 'package:traker_ia/domain/sfondo.dart';
@@ -29,6 +31,7 @@ import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/domain/tray.dart';
 import 'package:traker_ia/domain/vista.dart';
 import 'package:traker_ia/ui/grafico_dati.dart';
+import 'package:traker_ia/ui/progetti_dati.dart';
 import 'package:traker_ia/ui/servizi.dart';
 
 /// Valori di una carta in alto (sessione o settimana).
@@ -91,6 +94,17 @@ class StatoApp extends ChangeNotifier {
   ConfrontoCombo? _confCombo;
   String _classifica = '';
 
+  // V2 progetti: elenco, attivi (cache), settimane (solo a pagina aperta).
+  List<Progetto> _progetti = <Progetto>[];
+  Set<int> _attivi = <int>{};
+  String _chiaveAttivi = '';
+  bool _paginaProgetti = false;
+  List<RigaArchivio>? _settimane;
+  Ripartizione? _ripCorrente;
+  String _chiaveRip = '';
+  int _calcoliRip = 0;
+  DateTime? _archiviataIn;
+
   /// Ora attuale (al minuto).
   DateTime get adesso => alMinuto(_orologio());
 
@@ -147,6 +161,22 @@ class StatoApp extends ChangeNotifier {
 
   /// Quante volte la serie intensità è stata ricalcolata davvero.
   int get calcoliIntensita => _cacheIntensita.calcoli;
+
+  /// V2: progetti, per id.
+  List<Progetto> get progetti => _progetti;
+
+  /// V2: id dei progetti attivi adesso.
+  Set<int> get progettiAttivi => _attivi;
+
+  /// V2: settimane archiviate (null = pagina progetti chiusa).
+  List<RigaArchivio>? get settimane => _settimane;
+
+  /// V2: ripartizione della settimana in corso (null = pagina chiusa o
+  /// nessun progetto). Calcolata in cache, mai in build.
+  Ripartizione? get ripartizioneCorrente => _ripCorrente;
+
+  /// Quante volte la ripartizione corrente è stata ricalcolata davvero.
+  int get calcoliRipartizione => _calcoliRip;
 
   /// Frasi "Cosa dicono i dati".
   List<String> get frasi => _frasi;
@@ -237,8 +267,10 @@ class StatoApp extends ChangeNotifier {
     if (_vista.primoPiano && servizi.primoPianoDisponibile) {
       await servizi.primoPiano(acceso: true);
     }
+    await _caricaProgetti();
     _pronto = true;
     _ricalcola();
+    unawaited(_archivia());
     if (giri && !_chiuso) {
       _estensione = servizi.arriviEstensione.listen((_) => _daEstensione());
       _primaLettura = Timer(const Duration(milliseconds: 1500), () {
@@ -476,6 +508,7 @@ class StatoApp extends ChangeNotifier {
       _inLettura = false;
     }
     _ricalcola();
+    unawaited(_archivia());
   }
 
   /// L'avviso è stato mostrato.
@@ -530,6 +563,201 @@ class StatoApp extends ChangeNotifier {
     );
     _eventi = await servizi.eventi();
     _ricalcola();
+  }
+
+  // ---------------------------------------------------------- V2 progetti
+
+  Future<void> _caricaProgetti() async {
+    if (servizi.telefono || !_pref.lavoroV2) {
+      _progetti = <Progetto>[];
+      return;
+    }
+    try {
+      _progetti = await servizi.progetti();
+    } on Object {
+      _progetti = <Progetto>[];
+    }
+  }
+
+  String _firmaProgetti() =>
+      _progetti.map((Progetto p) => '${p.id}:${p.nome}').join('|');
+
+  String _firmaDati() {
+    final Lettura? l = _letture.isEmpty ? null : _letture.last;
+    final Evento? e = _eventi.isEmpty ? null : _eventi.last;
+    return '${_letture.length}/${l?.ora}/${l?.sett}/${l?.sess}'
+        '/${_eventi.length}/${e?.ora}/${e?.tipo.name}/${e?.testo}'
+        '/${_firmaProgetti()}';
+  }
+
+  /// Progetti attivi adesso (note-comando), in cache: si ricalcola solo se
+  /// cambiano eventi o progetti.
+  void _aggiornaAttivi(DateTime ora) {
+    if (!_pref.lavoroV2 || _progetti.isEmpty) {
+      _attivi = <int>{};
+      _chiaveAttivi = '';
+      return;
+    }
+    final String k = _firmaDati();
+    if (k == _chiaveAttivi) {
+      return;
+    }
+    _chiaveAttivi = k;
+    _attivi = <int>{
+      // +1 minuto: un progetto appena avviato (nota all'ora attuale) risulta
+      // subito attivo, senza aspettare il minuto dopo.
+      for (final IntervalloProgetto i in intervalliProgetti(
+        _eventi,
+        _progetti,
+        ora.add(const Duration(minutes: 1)),
+      ))
+        if (i.aperto) i.progettoId,
+    };
+  }
+
+  /// Ripartizione della settimana in corso: solo a pagina Progetti aperta,
+  /// in cache (ricalcolo se cambiano dati/progetti o ogni 5 minuti).
+  void _aggiornaRipartizione(DateTime ora) {
+    if (!_paginaProgetti || !_pref.lavoroV2 || _progetti.isEmpty) {
+      _ripCorrente = null;
+      _chiaveRip = '';
+      return;
+    }
+    final DateTime ini = inizioSettimana(ora);
+    final String k =
+        '${_firmaDati()}/$ini/${ora.difference(ini).inMinutes ~/ 5}';
+    if (k == _chiaveRip) {
+      return;
+    }
+    _chiaveRip = k;
+    _calcoliRip++;
+    _ripCorrente = ripartisci(
+      <Lettura>[
+        for (final Lettura l in _letture)
+          if (!l.ora.isBefore(ini) && l.ora.isBefore(ora)) l,
+      ],
+      _eventi,
+      _progetti,
+      da: ini,
+      a: ora,
+    );
+  }
+
+  /// Archivia le settimane chiuse (reset passato). Una volta per settimana
+  /// (si riprova solo se è fallita): costa poco.
+  Future<void> _archivia() async {
+    if (!_pronto || _chiuso || servizi.telefono || !_pref.lavoroV2) {
+      return;
+    }
+    final DateTime ora = adesso;
+    final DateTime ini = inizioSettimana(ora);
+    if (_archiviataIn == ini) {
+      return;
+    }
+    try {
+      final int n = await servizi.archiviaSettimaneChiuse(
+        letture: _letture,
+        eventi: _eventi,
+        adesso: ora,
+        piano: Piano(nome: 'Piano', giorniMask: _pref.giorniPiano, inizio: ini),
+      );
+      _archiviataIn = ini;
+      if (n > 0 && _paginaProgetti && !_chiuso) {
+        await _caricaSettimane();
+        _avvisa();
+      }
+    } on Object {
+      // Non blocca l'app: si riprova alla prossima lettura.
+    }
+  }
+
+  Future<void> _caricaSettimane() async {
+    final List<RigaArchivio> righe = <RigaArchivio>[
+      for (final SettimanaProgetto r in await servizi.settimane())
+        RigaArchivio(r),
+    ];
+    _settimane = righe;
+  }
+
+  /// Pagina Progetti aperta: carica le settimane archiviate e calcola la
+  /// settimana in corso.
+  Future<void> caricaSettimane() async {
+    _paginaProgetti = true;
+    try {
+      await _caricaSettimane();
+    } on Object {
+      _settimane = <RigaArchivio>[];
+    }
+    _aggiornaRipartizione(adesso);
+    _avvisa();
+  }
+
+  /// Pagina Progetti chiusa: butta le istantanee dalla memoria.
+  void rilasciaSettimane() {
+    _paginaProgetti = false;
+    _settimane = null;
+    _ripCorrente = null;
+    _chiaveRip = '';
+  }
+
+  /// Tasto "progetto attivo": inizia o finisce il progetto [p] scrivendo la
+  /// nota-comando (una sola fonte: gli eventi nota).
+  Future<void> cambiaProgettoAttivo(Progetto p) async {
+    final int? id = p.id;
+    if (id == null) {
+      return;
+    }
+    final TipoComandoProgetto tipo = _attivi.contains(id)
+        ? TipoComandoProgetto.fine
+        : TipoComandoProgetto.inizio;
+    await servizi.aggiungiEvento(
+      Evento(
+        ora: adesso,
+        tipo: TipoEvento.nota,
+        testo: notaComandoProgetto(p, tipo),
+      ),
+    );
+    _eventi = await servizi.eventi();
+    _ricalcola();
+  }
+
+  /// Aggiunge ([p] senza id) o modifica ([p] con id) un progetto.
+  /// Ritorna il testo dell'errore (nome vuoto o già usato) o null se ok.
+  Future<String?> salvaProgetto(Progetto p) async {
+    final String n = normalizzaNome(p.nome);
+    if (n.isEmpty) {
+      return Testi.nomeProgettoNonValido;
+    }
+    for (final Progetto x in _progetti) {
+      if (x.id != p.id && normalizzaNome(x.nome) == n) {
+        return Testi.nomeProgettoNonValido;
+      }
+    }
+    try {
+      if (p.id == null) {
+        await servizi.aggiungiProgetto(p);
+      } else {
+        await servizi.modificaProgetto(p);
+      }
+    } on ArgumentError {
+      return Testi.nomeProgettoNonValido;
+    }
+    _progetti = await servizi.progetti();
+    _chiaveAttivi = '';
+    _ricalcola();
+    return null;
+  }
+
+  /// Salva i token scritti a mano ([token] null = cancella) della riga [r].
+  Future<void> salvaTokenSettimana(RigaArchivio r, int? token) async {
+    await servizi.salvaTokenManuali(r.id, token);
+    final List<RigaArchivio>? ls = _settimane;
+    if (ls != null) {
+      _settimane = <RigaArchivio>[
+        for (final RigaArchivio x in ls) x.id == r.id ? x.conToken(token) : x,
+      ];
+    }
+    _avvisa();
   }
 
   // ------------------------------------------------------------- preferenze
@@ -763,6 +991,8 @@ class StatoApp extends ChangeNotifier {
         : cf.confrontoNota(_letture, n.ora, periodi: periodi);
 
     _aggiornaCombo(periodi);
+    _aggiornaAttivi(ora);
+    _aggiornaRipartizione(ora);
     _aggiornaTray(ora);
     _avvisa();
   }

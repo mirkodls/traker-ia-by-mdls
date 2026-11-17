@@ -3,8 +3,11 @@
 // Servizi finti in memoria per i test della ui.
 import 'dart:async';
 
+import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/modelli.dart';
+import 'package:traker_ia/domain/piani_progetti.dart';
+import 'package:traker_ia/domain/progetti.dart';
 import 'package:traker_ia/ui/servizi.dart';
 
 /// Servizi finti: tutto in memoria.
@@ -204,4 +207,117 @@ class ServiziFinti implements Servizi {
     required int minuti,
     required bool acceso,
   }) async => sfondo.add((minuti, acceso));
+
+  /// Progetti salvati.
+  final List<Progetto> prog = <Progetto>[];
+
+  /// Settimane archiviate.
+  final List<SettimanaProgetto> sett = <SettimanaProgetto>[];
+
+  /// Quante volte si è chiesto di archiviare.
+  int archiviazioni = 0;
+
+  /// Quante volte si sono lette le settimane.
+  int letturaSettimane = 0;
+
+  @override
+  Future<List<Progetto>> progetti() async => List<Progetto>.of(prog);
+
+  @override
+  Future<Progetto> aggiungiProgetto(Progetto p) async {
+    final String n = normalizzaNome(p.nome);
+    if (n.isEmpty || prog.any((Progetto x) => normalizzaNome(x.nome) == n)) {
+      throw ArgumentError.value(p.nome, 'nome');
+    }
+    final Progetto nuovo = Progetto(
+      id: prog.length + 1,
+      nome: p.nome.trim(),
+      colore: p.colore,
+      note: p.note,
+    );
+    prog.add(nuovo);
+    return nuovo;
+  }
+
+  @override
+  Future<void> modificaProgetto(Progetto p) async {
+    final int i = prog.indexWhere((Progetto x) => x.id == p.id);
+    final String n = normalizzaNome(p.nome);
+    if (i < 0 ||
+        n.isEmpty ||
+        prog.any((Progetto x) => x.id != p.id && normalizzaNome(x.nome) == n)) {
+      throw ArgumentError.value(p.nome, 'nome');
+    }
+    prog[i] = Progetto(
+      id: p.id,
+      nome: p.nome.trim(),
+      colore: p.colore,
+      note: p.note,
+    );
+  }
+
+  @override
+  Future<List<SettimanaProgetto>> settimane() async {
+    letturaSettimane++;
+    return List<SettimanaProgetto>.of(sett);
+  }
+
+  @override
+  Future<void> salvaTokenManuali(int idRiga, int? token) async {
+    final int i = sett.indexWhere((SettimanaProgetto r) => r.id == idRiga);
+    if (i < 0) {
+      return;
+    }
+    final SettimanaProgetto r = sett[i];
+    sett[i] = SettimanaProgetto(
+      id: r.id,
+      progettoId: r.progettoId,
+      inizio: r.inizio,
+      fine: r.fine,
+      istantanea: r.istantanea,
+      log: r.log,
+      tokenManuali: token,
+    );
+  }
+
+  @override
+  Future<int> archiviaSettimaneChiuse({
+    required List<Lettura> letture,
+    required List<Evento> eventi,
+    required DateTime adesso,
+    Piano? piano,
+  }) async {
+    archiviazioni++;
+    final Set<DateTime> gia = <DateTime>{
+      for (final SettimanaProgetto r in sett) r.inizio,
+    };
+    int n = 0;
+    for (final ({DateTime inizio, DateTime fine}) w in settimaneDaArchiviare(
+      letture,
+      adesso,
+      gia: gia,
+    )) {
+      for (final SettimanaProgetto r in archiviaSettimana(
+        letture: letture,
+        eventi: eventi,
+        progetti: prog,
+        inizio: w.inizio,
+        fine: w.fine,
+        piano: piano,
+      )) {
+        sett.add(
+          SettimanaProgetto(
+            id: sett.length + 1,
+            progettoId: r.progettoId,
+            inizio: r.inizio,
+            fine: r.fine,
+            istantanea: r.istantanea,
+            log: r.log,
+          ),
+        );
+        n++;
+      }
+    }
+    return n;
+  }
 }

@@ -3,8 +3,10 @@
 // Strato ui: cosa serve alla grafica dal resto dell'app. La ui NON importa
 // data: main.dart crea l'oggetto vero che collega archivio, cassaforte,
 // lettori e finestra.
+import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/modelli.dart';
+import 'package:traker_ia/domain/piani_progetti.dart';
 
 /// Esito di un import dei vecchi dati.
 typedef EsitoImportUi = ({int file, int letture, int eventi, int scartate});
@@ -108,4 +110,28 @@ abstract interface class Servizi {
 
   /// Accende/spegne la lettura in sottofondo (solo telefono).
   Future<void> aggiornaSfondo({required int minuti, required bool acceso});
+
+  /// V2: tutti i progetti, per id.
+  Future<List<Progetto>> progetti();
+
+  /// V2: aggiunge un progetto (nome vuoto o doppio = ArgumentError).
+  Future<Progetto> aggiungiProgetto(Progetto p);
+
+  /// V2: cambia nome/colore/note di un progetto (id obbligatorio).
+  Future<void> modificaProgetto(Progetto p);
+
+  /// V2: settimane archiviate (con istantanea intera), per inizio.
+  Future<List<SettimanaProgetto>> settimane();
+
+  /// V2: token scritti a mano per la riga [idRiga] (null = cancella).
+  Future<void> salvaTokenManuali(int idRiga, int? token);
+
+  /// V2: archivia le settimane chiuse non ancora archiviate (idempotente).
+  /// Ritorna le righe aggiunte.
+  Future<int> archiviaSettimaneChiuse({
+    required List<Lettura> letture,
+    required List<Evento> eventi,
+    required DateTime adesso,
+    Piano? piano,
+  });
 }

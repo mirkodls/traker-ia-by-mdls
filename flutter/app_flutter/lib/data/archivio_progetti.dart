@@ -141,11 +141,14 @@ class ArchivioProgetti {
     int h = 20,
     int m = 0,
   }) async {
-    final List<RigaProgettoSettimana> gia = await _db
-        .select(_db.progettoSettimane)
-        .get();
+    // Solo la colonna dell'inizio: le istantanee (~50 KB a riga) non si
+    // caricano a ogni controllo.
+    final GeneratedColumn<String> colInizio = _db.progettoSettimane.settInizio;
+    final List<TypedResult> gia = await (_db.selectOnly(
+      _db.progettoSettimane,
+    )..addColumns(<Expression<Object>>[colInizio])).get();
     final Set<DateTime> inizi = <DateTime>{
-      for (final RigaProgettoSettimana r in gia) ?interpreta(r.settInizio),
+      for (final TypedResult r in gia) ?interpreta(r.read(colInizio) ?? ''),
     };
     final List<({DateTime inizio, DateTime fine})> da = settimaneDaArchiviare(
       letture,

@@ -11,6 +11,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:traker_ia/data/archivio.dart';
+import 'package:traker_ia/data/archivio_progetti.dart';
 import 'package:traker_ia/data/cassaforte.dart';
 import 'package:traker_ia/data/collegamenti_pc.dart';
 import 'package:traker_ia/data/database.dart';
@@ -19,9 +20,11 @@ import 'package:traker_ia/data/lettori_anthropic.dart';
 import 'package:traker_ia/data/rete.dart';
 import 'package:traker_ia/data/ricevitore.dart';
 import 'package:traker_ia/data/sfondo_telefono.dart';
+import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/collegamenti.dart';
 import 'package:traker_ia/domain/modelli.dart';
+import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/app.dart';
 import 'package:traker_ia/ui/servizi.dart';
@@ -34,8 +37,12 @@ const MethodChannel _canaleFinestra = MethodChannel('traker_ia/finestra');
 /// Servizi veri: collegano lo strato data alla grafica.
 class ServiziVeri implements Servizi {
   /// Crea i servizi. [minuti] = intervallo letture attuale.
-  ServiziVeri({required this.minuti})
-    : _archivio = Archivio(DatabaseTraker.suDisco()),
+  factory ServiziVeri({required int Function() minuti}) =>
+      ServiziVeri._(minuti, DatabaseTraker.suDisco());
+
+  ServiziVeri._(this.minuti, DatabaseTraker db)
+    : _archivio = Archivio(db),
+      _progetti = ArchivioProgetti(db),
       _cassaforte = CassaforteSistema() {
     _ricevitore = Ricevitore(minuti: () => minuti());
     _estensione = LettoreEstensione(
@@ -50,6 +57,7 @@ class ServiziVeri implements Servizi {
   int Function() minuti;
 
   final Archivio _archivio;
+  final ArchivioProgetti _progetti;
   final Cassaforte _cassaforte;
   final ClientJson _client = const ClientJsonIo();
   late final Ricevitore _ricevitore;
@@ -230,6 +238,36 @@ class ServiziVeri implements Servizi {
       await _telefono.sfondo(minuti: minuti, acceso: acceso);
     }
   }
+
+  @override
+  Future<List<Progetto>> progetti() => _progetti.progetti();
+
+  @override
+  Future<Progetto> aggiungiProgetto(Progetto p) =>
+      _progetti.aggiungiProgetto(p);
+
+  @override
+  Future<void> modificaProgetto(Progetto p) => _progetti.modificaProgetto(p);
+
+  @override
+  Future<List<SettimanaProgetto>> settimane() => _progetti.settimane();
+
+  @override
+  Future<void> salvaTokenManuali(int idRiga, int? token) =>
+      _progetti.salvaTokenManuali(idRiga, token);
+
+  @override
+  Future<int> archiviaSettimaneChiuse({
+    required List<Lettura> letture,
+    required List<Evento> eventi,
+    required DateTime adesso,
+    Piano? piano,
+  }) => _progetti.archiviaSettimaneChiuse(
+    letture: letture,
+    eventi: eventi,
+    adesso: adesso,
+    piano: piano,
+  );
 
   /// Chiama la finestra Windows; errori = null (finestra non pronta, test).
   Future<T?> _finestra<T>(String metodo, [Object? argomenti]) async {

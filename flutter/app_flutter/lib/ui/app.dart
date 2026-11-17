@@ -16,6 +16,7 @@ import 'package:traker_ia/ui/barra_piano.dart';
 import 'package:traker_ia/ui/dialoghi.dart';
 import 'package:traker_ia/ui/grafico.dart';
 import 'package:traker_ia/ui/grafico_dati.dart';
+import 'package:traker_ia/ui/pagina_progetti.dart';
 import 'package:traker_ia/ui/schermo_telefono.dart';
 import 'package:traker_ia/ui/sezioni.dart';
 import 'package:traker_ia/ui/stato_app.dart';
@@ -194,6 +195,12 @@ class _StatoFinestra extends State<Finestra> {
         child: const Text(Testi.impostazioni),
       ),
       _tastoVista(),
+      if (_s.preferenze.lavoroV2)
+        FilledButton(
+          key: const ValueKey<String>('tasto-progetti'),
+          onPressed: () => apriPaginaProgetti(context, _s),
+          child: const Text(Testi.tastoProgetti),
+        ),
       const Tooltip(
         message: Testi.inArrivo,
         child: FilledButton(
@@ -333,6 +340,10 @@ class _StatoFinestra extends State<Finestra> {
               stato: _s,
               modifica: (Gruppo g) => apriModifica(context, _s, g),
             ),
+            const SizedBox(height: 6),
+          ],
+          if (_s.preferenze.lavoroV2 && _s.progetti.isNotEmpty) ...<Widget>[
+            BarraProgetti(stato: _s),
             const SizedBox(height: 6),
           ],
           RigaNota(stato: _s),

@@ -794,4 +794,152 @@ abstract final class Testi {
 
   /// V2 progetti: etichetta delle stime (mai numeri senza).
   static const String stima = 'STIMA';
+
+  // ------------------------------------------------- V2 progetti (pagina)
+
+  /// Tasto che apre la pagina dei progetti.
+  static const String tastoProgetti = 'Progetti';
+
+  /// Etichetta dei tasti "progetto attivo".
+  static const String progettoAttivo = 'Progetto attivo:';
+
+  /// Spiegazione dei tasti progetto attivo (tooltip).
+  static const String spiegaProgettoAttivo =
+      'Tocca per iniziare o finire il progetto. Più progetti attivi '
+      'insieme: consumo diviso in parti uguali (2 progetti = 50 e 50). '
+      'Per cambiare le parti scrivi una nota: NOME 70%.';
+
+  /// Titolo della pagina.
+  static const String titoloPaginaProgetti = 'PROGETTI';
+
+  /// Tasto indietro.
+  static const String indietro = '◂ Indietro';
+
+  /// Tasto nuovo progetto.
+  static const String nuovoProgetto = 'Nuovo progetto';
+
+  /// Tasto modifica progetto.
+  static const String modificaProgetto = 'Modifica';
+
+  /// Titolo del dialogo nuovo progetto.
+  static const String titoloNuovoProgetto = 'Nuovo progetto';
+
+  /// Titolo del dialogo modifica progetto.
+  static const String titoloModificaProgetto = 'Modifica progetto';
+
+  /// Nessun progetto ancora.
+  static const String nessunProgetto =
+      'Nessun progetto. Premi "Nuovo progetto".';
+
+  /// Campo nome del progetto.
+  static const String campoNomeProgetto = 'Nome';
+
+  /// Campo note del progetto.
+  static const String campoNoteProgetto = 'Note';
+
+  /// Etichetta della scelta colore.
+  static const String campoColoreProgetto = 'Colore';
+
+  /// Avviso prima di rinominare un progetto.
+  static const String avvisoRinomina =
+      'Se rinomini, le note scritte col nome vecchio ("NOME inizio") non '
+      'valgono più.';
+
+  /// Nome progetto vuoto o già usato.
+  static const String nomeProgettoNonValido = 'Nome vuoto o già usato.';
+
+  /// Titolo riquadro settimana in corso.
+  static const String titoloInCorso = 'SETTIMANA IN CORSO';
+
+  /// Titolo riquadro confronto.
+  static const String titoloConfronto = 'CONFRONTO SETTIMANE';
+
+  /// Titolo riquadro settimane archiviate.
+  static const String titoloSettimane = 'SETTIMANE ARCHIVIATE';
+
+  /// Titolo riquadro progetti.
+  static const String titoloElencoProgetti = 'I TUOI PROGETTI';
+
+  /// Filtro confronto: tutti i progetti.
+  static const String filtroTutti = 'Tutti';
+
+  /// Spiegazione del confronto.
+  static const String spiegaConfronto =
+      'Punti % settimanali consumati per settimana (STIMA).';
+
+  /// Nessuna settimana archiviata.
+  static const String nessunaSettimana =
+      'Nessuna settimana archiviata. Si archivia da sola dopo il reset.';
+
+  /// Nessun consumo nella settimana in corso.
+  static const String nessunConsumoInCorso =
+      'Nessun consumo da attribuire in questa settimana.';
+
+  /// Titolo scheda: grafici salvati.
+  static const String titoloGraficiSalvati = 'GRAFICI SALVATI';
+
+  /// Titolo scheda: costo energia.
+  static const String titoloCosto = 'COSTO ENERGIA · STIMA';
+
+  /// Titolo scheda: log.
+  static const String titoloLog = 'LOG';
+
+  /// Istantanea non leggibile.
+  static const String istantaneaRotta = 'Istantanea non leggibile.';
+
+  /// Log vuoto.
+  static const String logVuoto = 'Nessuna voce nel log.';
+
+  /// Campo token scritti a mano.
+  static const String campoToken = 'Token (a mano, opzionale)';
+
+  /// Spiegazione token.
+  static const String spiegaToken =
+      'I token non si calcolano dalle %: scrivili tu se li conosci.';
+
+  /// Token non validi.
+  static const String tokenNonValidi = 'Scrivi un numero intero, 0 o più.';
+
+  /// Titolo della riga settimana: 'mar 17/11 20:00 → mar 24/11 20:00'.
+  static String intervalloSettimana(String da, String a) => '$da → $a';
+
+  /// Stima in punti: esatta '12,3 pt'; condivisa '~12,3 pt (8,1–15,0) STIMA'.
+  static String stimaPt(double v, double min, double max) {
+    if ((max - min).abs() < 1e-9) {
+      return '${numero(v, dec: 1)} pt';
+    }
+    return '~${numero(v, dec: 1)} pt '
+        '(${numero(min, dec: 1)}–${numero(max, dec: 1)}) $stima';
+  }
+
+  /// Riga 'Settimana: ...' della scheda.
+  static String rigaSett(String valore) => 'Settimana: $valore';
+
+  /// Riga 'Sessione 5 ore: ...' della scheda.
+  static String rigaSess(String valore) => 'Sessione 5 ore: $valore';
+
+  /// Riga ore attive e condivise.
+  static String rigaOre(String attive, String condivise) =>
+      'Ore attive: $attive · di cui insieme ad altri progetti: $condivise';
+
+  /// Riga medie pt/h (STIMA).
+  static String rigaMedie(String sett, String sess) =>
+      'Media: ~$sett pt sett/h · ~$sess pt sess/h ($stima)';
+
+  /// Riga picco intensità 5 ore (STIMA).
+  static String rigaPicco(String v) =>
+      'Picco intensità 5 ore: ~$v pt sess/h ($stima)';
+
+  /// Riga token scritti a mano.
+  static String rigaToken(int t) => 'Token (scritti da te): $t';
+
+  /// Riga di una settimana archiviata: 'sett ... · sess ... · ore ...'.
+  static String rigaArchivio(String sett, String sess, String ore) =>
+      'sett $sett · sess $sess · $ore';
+
+  /// Settimana in corso: riga di un progetto.
+  static String rigaInCorso(String sett, String ore) => '$sett · $ore';
+
+  /// Etichetta ore attive nelle righe corte.
+  static String oreAttiveCorto(String d) => 'attivo $d';
 }
