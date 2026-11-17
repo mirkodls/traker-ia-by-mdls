@@ -7,6 +7,7 @@ import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
+import 'package:traker_ia/domain/resoconto_ia.dart';
 
 /// Esito di un import dei vecchi dati.
 typedef EsitoImportUi = ({int file, int letture, int eventi, int scartate});
@@ -145,4 +146,32 @@ abstract interface class Servizi {
     required String nome,
     required String testo,
   });
+
+  /// V2 B17: ultimi 4 caratteri della chiave API salvata in cassaforte per
+  /// [f] (null = nessuna). La ui NON riceve mai la chiave intera.
+  Future<String?> fineChiaveIA(FornitoreIA f);
+
+  /// V2 B17: salva in cassaforte la chiave API di [f] ('' = cancella).
+  /// Chiave non valida -> ErroreIA col motivo.
+  Future<void> salvaChiaveIA(FornitoreIA f, String chiave);
+
+  /// V2 B17: manda [testo] all'IA di [c]; ritorna la risposta.
+  /// Errore -> ErroreIA in italiano.
+  Future<String> chiediIA(ConfigIA c, String testo);
+
+  /// V2 B17: chiamata minima di prova. Errore -> ErroreIA.
+  Future<String> provaIA(ConfigIA c);
+
+  /// V2 B17: file resoconto .md nella [cartella] (solo la settimana che
+  /// inizia il giorno di [inizio], se dato). Più nuovi prima.
+  Future<List<FileResoconto>> resocontiSalvati(
+    String cartella, {
+    DateTime? inizio,
+  });
+
+  /// V2 B17: testo di un file (resoconto salvato).
+  Future<String> leggiTestoFile(String percorso);
+
+  /// V2 B17: apre il file con il programma di Windows (Esplora risorse).
+  Future<void> apriFile(String percorso);
 }

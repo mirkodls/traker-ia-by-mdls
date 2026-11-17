@@ -23,6 +23,7 @@ import 'package:traker_ia/domain/piano_giorni.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/previsione.dart' as prev;
 import 'package:traker_ia/domain/progetti.dart';
+import 'package:traker_ia/domain/resoconto_ia.dart';
 import 'package:traker_ia/domain/serie_intensita.dart';
 import 'package:traker_ia/domain/serie_piano.dart';
 import 'package:traker_ia/domain/sfondo.dart';
@@ -833,6 +834,17 @@ class StatoApp extends ChangeNotifier {
   /// (50-100; fuori limiti -> 95).
   Future<void> cambiaSogliaRosso(int percento) =>
       _salvaPref(_pref.copia(sogliaRosso: sogliaRossoValida(percento)));
+
+  /// V2 B17: fornitore/modello/URL del resoconto IA. Solo salvataggio:
+  /// nessun ricalcolo (la chiave NON passa da qui: Servizi.salvaChiaveIA).
+  Future<void> cambiaIA(ConfigIA c) async {
+    if (c == _pref.ia) {
+      return;
+    }
+    _pref = _pref.copia(ia: c);
+    _avvisa();
+    await servizi.salvaImpostazioni(c.aMappa());
+  }
 
   /// V2: linee e rosso tornano come all'inizio.
   Future<void> ripristinaLinee() => _salvaPref(

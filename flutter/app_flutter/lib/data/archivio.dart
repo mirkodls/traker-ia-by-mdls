@@ -16,6 +16,9 @@ const List<String> _paroleSegrete = <String>[
   'token',
   'segret',
   'password',
+  'api_key',
+  'apikey',
+  'ia_api',
 ];
 
 /// Archivio locale dei dati.

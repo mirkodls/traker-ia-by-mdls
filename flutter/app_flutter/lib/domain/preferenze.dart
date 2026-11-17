@@ -10,6 +10,7 @@ import 'intensita.dart';
 import 'modelli.dart';
 import 'periodo.dart';
 import 'piani_progetti.dart';
+import 'resoconto_ia.dart';
 import 'stile_linee.dart';
 
 /// Chiavi delle impostazioni (mai segreti: quelli vanno in cassaforte).
@@ -88,6 +89,7 @@ abstract final class Chiavi {
     ],
     v2RossoAcceso,
     v2SogliaRosso,
+    ...chiaviIA,
     loginScaduto,
     v2ModelliSkill,
     v2Lavoro,
@@ -178,7 +180,9 @@ class Preferenze {
     this.stileLinee = const StileLinee(),
     this.rossoAcceso = true,
     int sogliaRosso = sogliaRossoPredefinita,
-  }) : sogliaRosso = sogliaRossoValida(sogliaRosso),
+    ConfigIA? ia,
+  }) : ia = ia ?? ConfigIA(),
+       sogliaRosso = sogliaRossoValida(sogliaRosso),
        finestraPostuma = finestraPostumaValida(finestraPostuma),
        giorniPiano = _maschera(giorniPiano),
        modelli = List<String>.unmodifiable(modelli),
@@ -209,6 +213,7 @@ class Preferenze {
       ),
       stileLinee: StileLinee.daMappa(m),
       rossoAcceso: m[Chiavi.v2RossoAcceso] != '0',
+      ia: ConfigIA.daMappa(m),
       sogliaRosso: sogliaRossoValida(
         int.tryParse((m[Chiavi.v2SogliaRosso] ?? '').trim()),
       ),
@@ -267,8 +272,13 @@ class Preferenze {
   /// (50-100). Base 95.
   final int sogliaRosso;
 
+  /// V2: fornitore, modello e URL del resoconto IA (MAI la chiave API:
+  /// quella sta in cassaforte).
+  final ConfigIA ia;
+
   /// Preferenze -> impostazioni da salvare.
   Map<String, String> aMappa() => <String, String>{
+    ...ia.aMappa(),
     ...stileLinee.aMappa(),
     Chiavi.v2RossoAcceso: rossoAcceso ? '1' : '0',
     Chiavi.v2SogliaRosso: '$sogliaRosso',
@@ -307,6 +317,7 @@ class Preferenze {
     StileLinee? stileLinee,
     bool? rossoAcceso,
     int? sogliaRosso,
+    ConfigIA? ia,
   }) => Preferenze(
     minuti: minuti ?? this.minuti,
     metodo: metodo ?? this.metodo,
@@ -325,6 +336,7 @@ class Preferenze {
     stileLinee: stileLinee ?? this.stileLinee,
     rossoAcceso: rossoAcceso ?? this.rossoAcceso,
     sogliaRosso: sogliaRosso ?? this.sogliaRosso,
+    ia: ia ?? this.ia,
   );
 
   /// Accende/spegne il giorno [g] (1 = lunedì ... 7 = domenica) del piano.

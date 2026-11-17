@@ -409,6 +409,7 @@ void main() {
     await tester.ensureVisible(
       find.byKey(const ValueKey<String>('esporta-salva')),
     );
+    await tester.pumpAndSettle(); // B17: dialogo più alto, scorre
     await tester.tap(find.byKey(const ValueKey<String>('esporta-salva')));
     await tester.pump();
     expect(find.text(Testi.cartellaEsportaVuota), findsOneWidget);

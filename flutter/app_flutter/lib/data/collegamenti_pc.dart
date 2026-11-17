@@ -106,6 +106,15 @@ class CollegamentiPc {
     }
   }
 
+  /// Apre il file [percorso] col programma scelto da Windows.
+  Future<void> apriFile(String percorso) async {
+    try {
+      await _avvia('explorer.exe', <String>[percorso]);
+    } on ProcessException {
+      // niente: il percorso si vede comunque nel dialogo
+    }
+  }
+
   /// Scrive accedi_claude_code.bat nella cartella dati e lo apre (finestra
   /// cmd nuova con la guida). Falso = non partito.
   Future<bool> accediClaudeCode() async {

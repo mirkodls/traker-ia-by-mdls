@@ -1010,8 +1010,9 @@ abstract final class Testi {
 
   /// Spiegazione del dialogo export.
   static const String spiegaEsportaIA =
-      "Testo pronto da incollare in Claude. L'app non chiama nessuna IA e "
-      'non mette mai cookie o chiavi nel testo.';
+      'Copia / Salva .md: testo pronto da incollare in Claude. '
+      "Resoconto IA: l'app manda questo testo all'IA scelta in Impostazioni "
+      'e salva la risposta. Mai cookie o chiavi nel testo.';
 
   /// Tasto copia negli appunti.
   static const String tastoCopiaEsporta = 'Copia';
@@ -1037,4 +1038,111 @@ abstract final class Testi {
   /// Salvataggio fallito.
   static String erroreSalvaEsporta(String motivo) =>
       'Non riesco a salvare: $motivo';
+
+  // ------------------------------------------------------- V2 resoconto IA
+
+  /// Titolo della sezione in Impostazioni.
+  static const String titoloIA = 'IA resoconto';
+
+  /// Spiegazione della sezione.
+  static const String spiegaIA =
+      'Serve al tasto "Resoconto IA" in Esporta: l\'app manda i dati della '
+      'settimana (senza cookie né chiavi) all\'IA scelta e salva la risposta '
+      'in un file .md. Serve una chiave API del fornitore.';
+
+  /// Campo fornitore.
+  static const String campoFornitoreIA = 'Fornitore';
+
+  /// Campo modello.
+  static const String campoModelloIA = 'Modello';
+
+  /// Campo URL base (solo "Compatibile OpenAI").
+  static const String campoUrlIA =
+      'Indirizzo base (es. https://openrouter.ai/api/v1)';
+
+  /// Campo chiave API.
+  static const String campoChiaveIA =
+      'Chiave API (incolla e premi Salva chiave)';
+
+  /// Tasto salva chiave.
+  static const String tastoSalvaChiaveIA = 'Salva chiave';
+
+  /// Tasto cancella chiave.
+  static const String tastoCancellaChiaveIA = 'Cancella chiave';
+
+  /// Tasto prova.
+  static const String tastoProvaIA = 'Prova';
+
+  /// Stato della chiave ([fine] = ultimi 4 caratteri, null = nessuna).
+  static String chiaveIASalvata(String? fine) =>
+      fine == null ? 'Nessuna chiave salvata.' : 'Chiave salvata ••••$fine';
+
+  /// Dove sta la chiave.
+  static const String spiegaChiaveIA =
+      'La chiave sta solo nella cassaforte di questo PC: mai nelle '
+      'impostazioni, nei file, nei log o nel sync.';
+
+  /// Chiave salvata.
+  static const String chiaveIASalvataOk = 'Chiave salvata in cassaforte.';
+
+  /// Chiave cancellata.
+  static const String chiaveIACancellata = 'Chiave cancellata.';
+
+  /// Prova riuscita.
+  static const String provaIAOk = "Prova riuscita: l'IA risponde.";
+
+  /// Errore dell'IA.
+  static String erroreIA(String motivo) => 'Errore: $motivo';
+
+  /// Avviso costo (prima di OGNI invio).
+  static const String avvisoCostoIA =
+      'Costo a consumo sul conto API del fornitore (non nell\'abbonamento '
+      'Claude). Stima: pochi centesimi.';
+
+  /// Titolo della conferma di invio.
+  static const String titoloConfermaIA = "Invio all'IA";
+
+  /// Cosa si manda e a chi.
+  static String confermaIA(String fornitore, String modello) =>
+      'Mando i dati a $fornitore (modello: $modello).';
+
+  /// Tasto invia.
+  static const String tastoInviaIA = 'Invia';
+
+  /// Tasto resoconto nel dialogo Esporta.
+  static const String tastoResocontoIA = 'Resoconto IA';
+
+  /// Attesa della risposta.
+  static const String attendoIA = 'Attendo la risposta (max 60 s)…';
+
+  /// Chiave mancante.
+  static const String mancaChiaveIA =
+      'Prima metti la chiave API in Impostazioni > IA resoconto.';
+
+  /// Resoconto salvato.
+  static String resocontoSalvato(String percorso) =>
+      'Resoconto salvato: $percorso';
+
+  /// Titolo elenco resoconti salvati.
+  static const String titoloResocontiSalvati = 'Resoconti salvati';
+
+  /// Nessun resoconto.
+  static const String nessunResoconto =
+      'Nessun resoconto salvato per questa settimana.';
+
+  /// Titolo del dialogo che mostra un resoconto.
+  static const String titoloResoconto = 'Resoconto IA';
+
+  /// Tasto apri file.
+  static const String tastoApriFile = 'Apri file';
+
+  /// Tasto apri cartella.
+  static const String tastoApriCartella = 'Apri cartella';
+
+  /// Copiato.
+  static const String copiato = 'Copiato.';
+
+  /// File non leggibile.
+  static String erroreLeggiFile(String motivo) =>
+      'Non riesco a leggere il file: $motivo';
 }

@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:traker_ia/data/archivio.dart';
 import 'package:traker_ia/data/archivio_progetti.dart';
 import 'package:traker_ia/data/cassaforte.dart';
+import 'package:traker_ia/data/cliente_ia.dart';
 import 'package:traker_ia/data/collegamenti_pc.dart';
 import 'package:traker_ia/data/database.dart';
 import 'package:traker_ia/data/import_file.dart';
@@ -25,6 +26,7 @@ import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/collegamenti.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
+import 'package:traker_ia/domain/resoconto_ia.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/app.dart';
 import 'package:traker_ia/ui/servizi.dart';
@@ -51,6 +53,7 @@ class ServiziVeri implements Servizi {
     );
     _claudeCode = LettoreClaudeCode(client: _client);
     _web = LettoreClaudeWeb(client: _client, cassaforte: _cassaforte);
+    _ia = ClienteIA(cassaforte: _cassaforte);
   }
 
   /// Minuti tra due letture (dalle preferenze).
@@ -64,6 +67,7 @@ class ServiziVeri implements Servizi {
   late final LettoreEstensione _estensione;
   late final LettoreClaudeCode _claudeCode;
   late final LettoreClaudeWeb _web;
+  late final ClienteIA _ia;
 
   /// Avvia il ricevitore dell'estensione (falso se la porta è occupata).
   Future<bool> avviaRicevitore() => _ricevitore.avvia();
@@ -202,6 +206,32 @@ class ServiziVeri implements Servizi {
     await f.writeAsString(testo, flush: true);
     return f.path;
   }
+
+  @override
+  Future<String?> fineChiaveIA(FornitoreIA f) => _ia.fineChiaveSalvata(f);
+
+  @override
+  Future<void> salvaChiaveIA(FornitoreIA f, String chiave) =>
+      _ia.salvaChiave(f, chiave);
+
+  @override
+  Future<String> chiediIA(ConfigIA c, String testo) => _ia.chiedi(c, testo);
+
+  @override
+  Future<String> provaIA(ConfigIA c) => _ia.prova(c);
+
+  @override
+  Future<List<FileResoconto>> resocontiSalvati(
+    String cartella, {
+    DateTime? inizio,
+  }) => elencaResoconti(cartella, inizio: inizio);
+
+  @override
+  Future<String> leggiTestoFile(String percorso) =>
+      File(percorso).readAsString();
+
+  @override
+  Future<void> apriFile(String percorso) => _collegamenti.apriFile(percorso);
 
   @override
   bool get collegamentiDisponibili => Platform.isWindows;

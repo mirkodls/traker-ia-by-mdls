@@ -1,15 +1,21 @@
 // TraKer IA by mdls — Copyright (C) 2026 Mirko Del Sette. Tutti i diritti riservati.
 //
-// Strato ui (V2, B14): dialogo "Esporta per IA". Il testo si crea UNA volta
-// all'apertura (mai in build); Copia lo mette negli appunti, Salva .md lo
-// scrive nella cartella scelta. L'app non chiama nessuna IA.
+// Strato ui (V2, B14+B17): dialogo "Esporta per IA". Il testo si crea UNA
+// volta all'apertura (mai in build); Copia lo mette negli appunti, Salva .md
+// lo scrive nella cartella scelta. B17: Resoconto IA lo manda all'IA scelta
+// (dopo conferma costo), salva la risposta come ..._resoconto.md e la
+// mostra; i resoconti già salvati della settimana si rileggono da qui.
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/export_ia.dart';
 import 'package:traker_ia/domain/progetti.dart';
+import 'package:traker_ia/domain/resoconto_ia.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
+import 'package:traker_ia/ui/dialogo_resoconto.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 import 'package:traker_ia/ui/tema.dart';
 
@@ -44,6 +50,117 @@ class _StatoDialogoEsporta extends State<_DialogoEsporta> {
   );
   String? _esito;
   bool _errore = false;
+  bool _occupato = false;
+  List<FileResoconto> _salvati = <FileResoconto>[];
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_caricaSalvati());
+  }
+
+  DateTime? get _inizio =>
+      widget.righe.isEmpty ? null : widget.righe.first.inizio;
+
+  /// Nome del progetto nei nomi file ('' = tutta la settimana).
+  String get _nomeProgetto => widget.righe.length == 1
+      ? nomeProgetto(widget.righe.first.progettoId, widget.stato.progetti)
+      : '';
+
+  Future<void> _caricaSalvati() async {
+    final DateTime? i = _inizio;
+    final String c = _cartella.text.trim();
+    if (i == null || c.isEmpty) {
+      return;
+    }
+    try {
+      final List<FileResoconto> l = await widget.stato.servizi.resocontiSalvati(
+        c,
+        inizio: i,
+      );
+      if (mounted) {
+        setState(() => _salvati = l);
+      }
+    } on Object {
+      // cartella illeggibile: elenco vuoto
+    }
+  }
+
+  void _mostra(String testo, {bool errore = false}) {
+    if (mounted) {
+      setState(() {
+        _esito = testo;
+        _errore = errore;
+      });
+    }
+  }
+
+  Future<void> _resoconto() async {
+    final String cart = _cartella.text.trim();
+    if (cart.isEmpty) {
+      _mostra(Testi.cartellaEsportaVuota, errore: true);
+      return;
+    }
+    final ConfigIA c = widget.stato.preferenze.ia;
+    if (c.fornitore.chiaveObbligatoria &&
+        await widget.stato.servizi.fineChiaveIA(c.fornitore) == null) {
+      _mostra(Testi.mancaChiaveIA, errore: true);
+      return;
+    }
+    if (!mounted || !await confermaInvioIA(context, c)) {
+      return;
+    }
+    setState(() => _occupato = true);
+    _mostra(Testi.attendoIA);
+    String? testo;
+    String? percorso;
+    try {
+      final String risposta = await widget.stato.servizi.chiediIA(c, _testoIA);
+      testo = testoFileResoconto(
+        risposta: risposta,
+        config: c,
+        creato: DateTime.now(),
+      );
+      percorso = await widget.stato.servizi.salvaTestoInCartella(
+        cartella: cart,
+        nome: nomeFileResoconto(_inizio ?? DateTime.now(), nome: _nomeProgetto),
+        testo: testo,
+      );
+      _mostra(Testi.resocontoSalvato(percorso));
+    } on ErroreIA catch (e) {
+      _mostra(Testi.erroreIA(e.messaggio), errore: true);
+    } on Object catch (e) {
+      _mostra(Testi.erroreSalvaEsporta('$e'), errore: true);
+    }
+    if (mounted) {
+      setState(() => _occupato = false);
+    }
+    await _caricaSalvati();
+    if (testo != null && percorso != null && mounted) {
+      await apriDialogoResoconto(
+        context,
+        widget.stato.servizi,
+        testo: testo,
+        percorso: percorso,
+      );
+    }
+  }
+
+  Future<void> _apriSalvato(FileResoconto f) async {
+    try {
+      final String t = await widget.stato.servizi.leggiTestoFile(f.percorso);
+      if (mounted) {
+        await apriDialogoResoconto(
+          context,
+          widget.stato.servizi,
+          testo: t,
+          percorso: f.percorso,
+        );
+      }
+    } on Object catch (e) {
+      _mostra(Testi.erroreLeggiFile('$e'), errore: true);
+    }
+  }
 
   String _crea() {
     final Map<int, String> nomi = <int, String>{
@@ -57,12 +174,7 @@ class _StatoDialogoEsporta extends State<_DialogoEsporta> {
     if (widget.righe.isEmpty) {
       return nomeFileEsportazione(DateTime.now());
     }
-    final SettimanaProgetto p = widget.righe.first;
-    final bool uno = widget.righe.length == 1;
-    return nomeFileEsportazione(
-      p.inizio,
-      nome: uno ? nomeProgetto(p.progettoId, widget.stato.progetti) : '',
-    );
+    return nomeFileEsportazione(widget.righe.first.inizio, nome: _nomeProgetto);
   }
 
   @override
@@ -153,6 +265,7 @@ class _StatoDialogoEsporta extends State<_DialogoEsporta> {
               TextField(
                 key: const ValueKey<String>('esporta-cartella'),
                 controller: _cartella,
+                onSubmitted: (String _) => unawaited(_caricaSalvati()),
                 style: stileNormale,
                 decoration: const InputDecoration(
                   labelText: Testi.campoCartellaEsporta,
@@ -164,6 +277,18 @@ class _StatoDialogoEsporta extends State<_DialogoEsporta> {
                 onPressed: _salva,
                 child: const Text(Testi.tastoSalvaMd),
               ),
+              const SizedBox(height: 6),
+              FilledButton(
+                key: const ValueKey<String>('esporta-resoconto'),
+                onPressed: _occupato ? null : _resoconto,
+                style: stileAccento(),
+                child: const Text(Testi.tastoResocontoIA),
+              ),
+              if (_occupato)
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: LinearProgressIndicator(),
+                ),
               if (_esito != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
@@ -175,6 +300,20 @@ class _StatoDialogoEsporta extends State<_DialogoEsporta> {
                     ),
                   ),
                 ),
+              const SizedBox(height: 8),
+              const Text(Testi.titoloResocontiSalvati, style: stileNormale),
+              if (_salvati.isEmpty)
+                const Text(Testi.nessunResoconto, style: stilePiccolo)
+              else
+                for (final FileResoconto f in _salvati)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      key: ValueKey<String>('resoconto-salvato-${f.nome}'),
+                      onPressed: () => unawaited(_apriSalvato(f)),
+                      child: Text(f.nome, style: stilePiccolo),
+                    ),
+                  ),
             ],
           ),
         ),

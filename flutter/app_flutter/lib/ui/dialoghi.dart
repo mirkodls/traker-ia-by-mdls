@@ -16,6 +16,7 @@ import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/pagina_login.dart';
 import 'package:traker_ia/ui/servizi.dart';
+import 'package:traker_ia/ui/sezione_ia.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 import 'package:traker_ia/ui/tema.dart';
 
@@ -540,6 +541,10 @@ class _StatoImpostazioni extends State<_Impostazioni> {
             ],
             const SizedBox(height: 14),
             _linee(),
+            if (!_tel) ...<Widget>[
+              const SizedBox(height: 14),
+              SezioneIA(stato: widget.stato),
+            ],
             if (_errore != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),

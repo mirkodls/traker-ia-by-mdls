@@ -8,6 +8,7 @@ import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/progetti.dart';
+import 'package:traker_ia/domain/resoconto_ia.dart';
 import 'package:traker_ia/ui/servizi.dart';
 
 /// Servizi finti: tutto in memoria.
@@ -343,4 +344,82 @@ class ServiziFinti implements Servizi {
     }
     return n;
   }
+
+  /// B17: cassaforte finta delle chiavi API.
+  final Map<FornitoreIA, String> chiaviIA = <FornitoreIA, String>{};
+
+  /// B17: risposte di chiediIA/provaIA: String o ErroreIA (l'ultima si
+  /// ripete). Vuota = 'Resoconto finto'.
+  final List<Object> risposteIA = <Object>[];
+
+  /// B17: testi mandati all'IA (con la config).
+  final List<(ConfigIA, String)> chiamateIA = <(ConfigIA, String)>[];
+
+  /// B17: attesa finta della risposta IA (per vedere "attendo").
+  Completer<void>? attesaIA;
+
+  Future<String> _rispostaIA(ConfigIA c, String testo) async {
+    chiamateIA.add((c, testo));
+    if (attesaIA != null) {
+      await attesaIA!.future;
+    }
+    if (risposteIA.isEmpty) {
+      return 'Resoconto finto';
+    }
+    final Object r = risposteIA.length > 1
+        ? risposteIA.removeAt(0)
+        : risposteIA.first;
+    if (r is ErroreIA) {
+      throw r;
+    }
+    return '$r';
+  }
+
+  @override
+  Future<String?> fineChiaveIA(FornitoreIA f) async {
+    final String? k = chiaviIA[f];
+    return k == null ? null : fineChiave(k);
+  }
+
+  @override
+  Future<void> salvaChiaveIA(FornitoreIA f, String chiave) async {
+    final String k = chiave.trim();
+    if (k.isEmpty) {
+      chiaviIA.remove(f);
+      return;
+    }
+    final String? p = problemaChiave(k);
+    if (p != null) {
+      throw ErroreIA(p);
+    }
+    chiaviIA[f] = k;
+  }
+
+  @override
+  Future<String> chiediIA(ConfigIA c, String testo) => _rispostaIA(c, testo);
+
+  @override
+  Future<String> provaIA(ConfigIA c) => _rispostaIA(c, testoProva);
+
+  @override
+  Future<List<FileResoconto>> resocontiSalvati(
+    String cartella, {
+    DateTime? inizio,
+  }) async {
+    final List<FileResoconto> out = <FileResoconto>[
+      for (final String p in fileSalvati.keys)
+        if (p.startsWith('$cartella/') &&
+            eResoconto(p.substring(cartella.length + 1), inizio: inizio))
+          (percorso: p, nome: p.substring(cartella.length + 1)),
+    ]..sort((FileResoconto a, FileResoconto b) => b.nome.compareTo(a.nome));
+    return out;
+  }
+
+  @override
+  Future<String> leggiTestoFile(String percorso) async =>
+      fileSalvati[percorso] ?? (throw Exception('file mancante'));
+
+  @override
+  Future<void> apriFile(String percorso) async =>
+      collegamenti.add('apri:$percorso');
 }
