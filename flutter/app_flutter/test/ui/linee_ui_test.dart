@@ -16,6 +16,7 @@ import 'package:traker_ia/ui/grafico_dati.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 import 'package:traker_ia/ui/tema.dart';
 
+import 'aiuti_impostazioni.dart';
 import 'servizi_finti.dart';
 
 DateTime _t(String s) => interpreta(s)!;
@@ -55,6 +56,7 @@ Future<({StatoApp stato, ServiziFinti f})> _apri(
 Future<void> _apriImpostazioni(WidgetTester tester) async {
   await tester.tap(find.text(Testi.impostazioni));
   await tester.pumpAndSettle();
+  await apriScheda(tester, Testi.schedaGrafico);
 }
 
 Future<void> _spostaCursore(

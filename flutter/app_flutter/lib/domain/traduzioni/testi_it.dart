@@ -325,20 +325,20 @@ abstract final class Testi {
 
   /// Impostazioni: spiegazione sezione linee.
   static const String spiegaLinee =
-      'Ogni linea: trasparenza (0% = piena, 100% = invisibile) e spessore. '
-      'Si vede subito sul grafico e si salva da solo.';
+      'Per ogni linea: colore, trasparenza (0% = piena, 100% = invisibile) '
+      'e spessore. Il grafico qui sotto cambia subito.';
 
   /// Impostazioni: nome di ogni linea.
-  static const String lineaSettimana = 'Settimana (blu)';
+  static const String lineaSettimana = 'Settimana';
 
   /// Impostazioni: nome linea.
-  static const String lineaSessione = 'Sessione 5 ore (arancione)';
+  static const String lineaSessione = 'Sessione 5 ore';
 
   /// Impostazioni: nome linea.
-  static const String lineaIdeale = 'Ideale (verde tratteggiata)';
+  static const String lineaIdeale = 'Ideale (tratteggiata)';
 
   /// Impostazioni: nome linea.
-  static const String lineaAdattiva = 'Adattiva (gialla a puntini)';
+  static const String lineaAdattiva = 'Adattiva (a puntini)';
 
   /// Impostazioni: nome linea del grafico intensità.
   static const String lineaInt5h = 'Intensità 5 ore';
@@ -759,6 +759,80 @@ abstract final class Testi {
 
   /// Tasto salva e prova.
   static const String salvaEProva = 'Salva e prova';
+
+  // ------------------------------------------- V2 B18: impostazioni a schede
+
+  /// Scheda: generale.
+  static const String schedaGenerale = 'Generale';
+
+  /// Scheda: accesso.
+  static const String schedaAccesso = 'Accesso';
+
+  /// Scheda: grafico.
+  static const String schedaGrafico = 'Grafico';
+
+  /// Gruppo: letture.
+  static const String gruppoLetture = 'Letture';
+
+  /// Gruppo: letture (spiegazione).
+  static const String spiegaLetture =
+      "Ogni quanto e in che modo l'app legge le percentuali.";
+
+  /// Gruppo: avvio.
+  static const String gruppoAvvio = 'Avvio';
+
+  /// Gruppo: avvio (spiegazione).
+  static const String spiegaAvvio = "Se l'app parte da sola con Windows.";
+
+  /// Gruppo: sottofondo (telefono).
+  static const String gruppoSottofondo = 'Sottofondo';
+
+  /// Gruppo: sottofondo (spiegazione).
+  static const String spiegaSottofondoGruppo =
+      "Per leggere anche con l'app chiusa o lo schermo spento.";
+
+  /// Gruppo: accesso a claude.ai.
+  static const String gruppoAccesso = 'Accesso a claude.ai';
+
+  /// Gruppo: accesso (spiegazione).
+  static const String spiegaAccesso =
+      'Serve per leggere le tue percentuali. Il cookie resta cifrato qui.';
+
+  /// Gruppo: collegamenti.
+  static const String spiegaCollegamenti =
+      "Altre fonti da cui l'app può leggere (browser, Claude Code).";
+
+  /// Gruppo: vecchi dati.
+  static const String gruppoVecchiDati = 'Vecchi dati';
+
+  /// Gruppo: vecchi dati (spiegazione).
+  static const String spiegaVecchiDati =
+      'Porta qui le letture salvate dalla versione vecchia.';
+
+  /// Scritta piccola: la scheda si salva da sola.
+  static const String siSalvaDaSolo = 'Si salva da solo';
+
+  /// Sotto le schede: come si salva.
+  static const String notaSalvataggio =
+      'Grafico e IA si salvano da soli. Generale e Accesso: premi Salva e prova.';
+
+  /// Gruppo: settimana rossa.
+  static const String gruppoRosso = 'Settimana rossa';
+
+  /// Anteprima: titolo.
+  static const String anteprima = 'Anteprima';
+
+  /// Anteprima: grafico principale.
+  static const String anteprimaPrincipale = 'Principale';
+
+  /// Anteprima: grafico intensità.
+  static const String anteprimaIntensita = 'Intensità';
+
+  /// Anteprima: nessun dato.
+  static const String anteprimaVuota = 'Nessun dato da mostrare ancora.';
+
+  /// Etichetta cursore colore.
+  static const String colore = 'Colore';
 
   /// Errore minuti.
   static const String erroreMinuti = 'Minuti: numero intero da 1 a 120.';

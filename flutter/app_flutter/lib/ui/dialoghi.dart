@@ -11,10 +11,10 @@ import 'package:traker_ia/domain/collegamenti.dart';
 import 'package:traker_ia/domain/fornitori.dart';
 import 'package:traker_ia/domain/preferenze.dart';
 import 'package:traker_ia/domain/sfondo.dart';
-import 'package:traker_ia/domain/stile_linee.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/pagina_login.dart';
+import 'package:traker_ia/ui/scheda_grafico.dart';
 import 'package:traker_ia/ui/servizi.dart';
 import 'package:traker_ia/ui/sezione_ia.dart';
 import 'package:traker_ia/ui/stato_app.dart';
@@ -132,49 +132,6 @@ Future<void> apriImpostazioni(
       _Impostazioni(stato: stato, claudeCode: claudeCode),
 );
 
-/// Linee regolabili: id, nome e colore (il colore serve solo al segno).
-const List<(LineaGrafico, String, Color)> _lineeImpostazioni =
-    <(LineaGrafico, String, Color)>[
-      (LineaGrafico.settimana, Testi.lineaSettimana, Colori.sett),
-      (LineaGrafico.sessione, Testi.lineaSessione, Colori.sess),
-      (LineaGrafico.ideale, Testi.lineaIdeale, Colori.ideale),
-      (LineaGrafico.adattiva, Testi.lineaAdattiva, Colori.adattiva),
-      (LineaGrafico.int5h, Testi.lineaInt5h, Colori.sess),
-      (LineaGrafico.int7gg, Testi.lineaInt7gg, Colori.sett),
-    ];
-
-/// Riga: etichetta + cursore + valore (stretta: sta in 340 px).
-Widget _cursore({
-  required Key chiave,
-  required String etichetta,
-  required double valore,
-  required double min,
-  required double max,
-  required int divisioni,
-  required String testoValore,
-  required ValueChanged<double>? alCambio,
-  required ValueChanged<double>? allaFine,
-}) => Row(
-  children: <Widget>[
-    SizedBox(width: 84, child: Text(etichetta, style: stilePiccolo)),
-    Expanded(
-      child: Slider(
-        key: chiave,
-        value: valore.clamp(min, max).toDouble(),
-        min: min,
-        max: max,
-        divisions: divisioni,
-        onChanged: alCambio,
-        onChangeEnd: allaFine,
-      ),
-    ),
-    SizedBox(
-      width: 64,
-      child: Text(testoValore, style: stilePiccolo, textAlign: TextAlign.end),
-    ),
-  ],
-);
-
 class _Impostazioni extends StatefulWidget {
   const _Impostazioni({required this.stato, required this.claudeCode});
 
@@ -185,7 +142,12 @@ class _Impostazioni extends StatefulWidget {
   State<_Impostazioni> createState() => _StatoImpostazioni();
 }
 
-class _StatoImpostazioni extends State<_Impostazioni> {
+class _StatoImpostazioni extends State<_Impostazioni>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tab = TabController(
+    length: _tel ? 3 : 4,
+    vsync: this,
+  )..addListener(() => setState(() {}));
   late final TextEditingController _minuti = TextEditingController(
     text: '${widget.stato.preferenze.minuti}',
   );
@@ -204,10 +166,10 @@ class _StatoImpostazioni extends State<_Impostazioni> {
   String? _esitoClaudeCode;
   String? _errore;
   String? _esitoImport;
-  int? _sogliaProva; // soglia rossa mentre si trascina il cursore
 
   @override
   void dispose() {
+    _tab.dispose();
     _minuti.dispose();
     _cookie.dispose();
     _cartella.dispose();
@@ -218,6 +180,7 @@ class _StatoImpostazioni extends State<_Impostazioni> {
     final int? m = int.tryParse(_minuti.text.trim());
     if (m == null || m < 1 || m > 120) {
       setState(() => _errore = Testi.erroreMinuti);
+      _tab.animateTo(0);
       return;
     }
     final String ck = _cookie.text.trim();
@@ -255,115 +218,6 @@ class _StatoImpostazioni extends State<_Impostazioni> {
     await st.salvaLoginWeb(valore);
   }
 
-  /// Linea [l]: cursori trasparenza e spessore. Il cambio ridisegna subito
-  /// (nessun ricalcolo), il salvataggio avviene al rilascio.
-  Widget _bloccoLinea(LineaGrafico l, String nome, Color col) {
-    final StatoApp st = widget.stato;
-    final StileLinea v = st.preferenze.stileLinee.di(l);
-    void cambia(StileLinee n, {required bool salva}) =>
-        unawaited(st.cambiaStileLinee(n, salva: salva));
-    StileLinee con({int? alfa, double? spessore}) =>
-        st.preferenze.stileLinee.con(l, alfa: alfa, spessore: spessore);
-    return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Container(width: 18, height: 4, color: col),
-              const SizedBox(width: 8),
-              Expanded(child: Text(nome, style: stileNormale)),
-            ],
-          ),
-          _cursore(
-            chiave: Key('linea-${l.nome}-trasparenza'),
-            etichetta: Testi.trasparenza,
-            valore: (100 - v.alfa).toDouble(),
-            min: 0,
-            max: 100,
-            divisioni: 20,
-            testoValore: Testi.trasparenzaN(100 - v.alfa),
-            alCambio: (double x) =>
-                cambia(con(alfa: 100 - x.round()), salva: false),
-            allaFine: (double x) =>
-                cambia(con(alfa: 100 - x.round()), salva: true),
-          ),
-          _cursore(
-            chiave: Key('linea-${l.nome}-spessore'),
-            etichetta: Testi.spessore,
-            valore: v.spessore,
-            min: spessoreMin,
-            max: spessoreMax,
-            divisioni: 11,
-            testoValore: Testi.spessoreN(v.spessore),
-            alCambio: (double x) => cambia(con(spessore: x), salva: false),
-            allaFine: (double x) => cambia(con(spessore: x), salva: true),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Sezione "Linee grafico": linee regolabili + settimana rossa.
-  Widget _linee() {
-    final StatoApp st = widget.stato;
-    return ListenableBuilder(
-      listenable: st,
-      builder: (BuildContext _, Widget? _) {
-        final Preferenze p = st.preferenze;
-        final int soglia = _sogliaProva ?? p.sogliaRosso;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const Text(Testi.titoloLinee, style: stileNormale),
-            const Text(Testi.spiegaLinee, style: stilePiccolo),
-            for (final (LineaGrafico, String, Color) r in _lineeImpostazioni)
-              _bloccoLinea(r.$1, r.$2, r.$3),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              key: const Key('rosso-acceso'),
-              contentPadding: EdgeInsets.zero,
-              value: p.rossoAcceso,
-              onChanged: (bool v) => unawaited(st.cambiaRossoAcceso(acceso: v)),
-              title: const Text(Testi.rossoAcceso, style: stileNormale),
-            ),
-            _cursore(
-              chiave: const Key('rosso-soglia'),
-              etichetta: Testi.sogliaRosso,
-              valore: soglia.toDouble(),
-              min: sogliaRossoMin.toDouble(),
-              max: sogliaRossoMax.toDouble(),
-              divisioni: sogliaRossoMax - sogliaRossoMin,
-              testoValore: Testi.sogliaRossoN(soglia),
-              alCambio: p.rossoAcceso
-                  ? (double x) => setState(() => _sogliaProva = x.round())
-                  : null,
-              allaFine: p.rossoAcceso
-                  ? (double x) {
-                      setState(() => _sogliaProva = null);
-                      unawaited(st.cambiaSogliaRosso(x.round()));
-                    }
-                  : null,
-            ),
-            const Text(Testi.spiegaRosso, style: stilePiccolo),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton(
-                key: const Key('ripristina-linee'),
-                onPressed: () {
-                  setState(() => _sogliaProva = null);
-                  unawaited(st.ripristinaLinee());
-                },
-                child: const Text(Testi.ripristinaLinee),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _infoApp() async {
     await widget.stato.servizi.apriInfoApp();
   }
@@ -375,11 +229,24 @@ class _StatoImpostazioni extends State<_Impostazioni> {
     }
   }
 
-  /// Telefono: login nell'app, batteria Samsung, letture a app chiusa.
-  List<Widget> _telefono() {
+  /// Gruppo di impostazioni: titolo, una riga di spiegazione, contenuto.
+  Widget _gruppo(String titolo, String spiega, List<Widget> figli) => Padding(
+    padding: const EdgeInsets.only(bottom: 20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(titolo, style: stileNormale.copyWith(fontWeight: FontWeight.bold)),
+        Text(spiega, style: stilePiccolo),
+        const SizedBox(height: 10),
+        ...figli,
+      ],
+    ),
+  );
+
+  /// Telefono: login nell'app (scheda Accesso).
+  List<Widget> _loginTelefono() {
     final StatoApp st = widget.stato;
     return <Widget>[
-      const Text(Testi.titoloAccesso, style: stileNormale),
       Text(
         _esitoLogin ??
             Testi.statoLogin(fatto: st.cookie, scaduto: st.loginScaduto),
@@ -388,6 +255,7 @@ class _StatoImpostazioni extends State<_Impostazioni> {
           fontSize: Misure.piccolo,
         ),
       ),
+      const SizedBox(height: 6),
       Wrap(
         spacing: 10,
         runSpacing: 6,
@@ -400,7 +268,14 @@ class _StatoImpostazioni extends State<_Impostazioni> {
             ),
         ],
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: 12),
+    ];
+  }
+
+  /// Telefono: batteria Samsung, letture a app chiusa (scheda Generale).
+  List<Widget> _sottofondoTelefono() {
+    final StatoApp st = widget.stato;
+    return <Widget>[
       // Si aggiorna da sola tornando da Info app.
       ListenableBuilder(
         listenable: st,
@@ -418,6 +293,7 @@ class _StatoImpostazioni extends State<_Impostazioni> {
             ),
             if (st.batteriaLibera != true) ...<Widget>[
               const Text(Testi.passiBatteria, style: stilePiccolo),
+              const SizedBox(height: 6),
               OutlinedButton(
                 onPressed: () => unawaited(_infoApp()),
                 child: const Text(Testi.apriInfoApp),
@@ -426,146 +302,222 @@ class _StatoImpostazioni extends State<_Impostazioni> {
           ],
         ),
       ),
+      const SizedBox(height: 6),
       const Text(Testi.spiegaSfondo, style: stilePiccolo),
     ];
   }
 
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    // Telefono: bordi stretti, più spazio ai campi.
-    insetPadding: _tel
-        ? const EdgeInsets.symmetric(horizontal: 12, vertical: 24)
-        : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-    title: const Text(Testi.titoloImpostazioni),
-    content: SizedBox(
-      width: 460,
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _schedaGenerale() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      _gruppo(Testi.gruppoLetture, Testi.spiegaLetture, <Widget>[
+        _campo(_minuti, Testi.campoMinuti),
+        const Text(Testi.campoMetodo, style: stilePiccolo),
+        DropdownButton<String>(
+          value: _metodo,
+          isExpanded: true,
+          dropdownColor: Colori.carta2,
+          style: stileNormale,
+          items: <DropdownMenuItem<String>>[
+            for (final String m in metodiDisponibili(telefono: _tel))
+              DropdownMenuItem<String>(
+                value: m,
+                child: Text(Testi.nomiMetodi[m] ?? m),
+              ),
+          ],
+          onChanged: (String? v) => setState(() => _metodo = v ?? metodoAuto),
+        ),
+      ]),
+      if (widget.stato.servizi.avvioWindowsDisponibile)
+        _gruppo(Testi.gruppoAvvio, Testi.spiegaAvvio, <Widget>[
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _avvio,
+            onChanged: (bool v) => setState(() => _avvio = v),
+            title: const Text(Testi.avvioWindows, style: stileNormale),
+          ),
+          const Text(Testi.spiegaX, style: stilePiccolo),
+        ]),
+      if (_tel)
+        _gruppo(
+          Testi.gruppoSottofondo,
+          Testi.spiegaSottofondoGruppo,
+          _sottofondoTelefono(),
+        ),
+      if (_errore != null)
+        Text(_errore!, style: const TextStyle(color: Colori.errore)),
+    ],
+  );
+
+  Widget _schedaAccesso() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      _gruppo(Testi.gruppoAccesso, Testi.spiegaAccesso, <Widget>[
+        if (_tel) ..._loginTelefono(),
+        _campo(_cookie, Testi.campoCookie, segreto: true),
+        Row(
           children: <Widget>[
-            _campo(_minuti, Testi.campoMinuti),
-            const Text(Testi.campoMetodo, style: stilePiccolo),
-            DropdownButton<String>(
-              value: _metodo,
-              isExpanded: true,
-              dropdownColor: Colori.carta2,
-              style: stileNormale,
-              items: <DropdownMenuItem<String>>[
-                for (final String m in metodiDisponibili(telefono: _tel))
-                  DropdownMenuItem<String>(
-                    value: m,
-                    child: Text(Testi.nomiMetodi[m] ?? m),
-                  ),
-              ],
-              onChanged: (String? v) =>
-                  setState(() => _metodo = v ?? metodoAuto),
+            Expanded(
+              child: Text(
+                Testi.cookieSalvato(widget.stato.cookie && !_cancellaCookie),
+                style: stilePiccolo,
+              ),
             ),
-            const SizedBox(height: 6),
-            if (_tel)
-              ..._telefono()
-            else
-              Text(Testi.claudeCode(widget.claudeCode), style: stilePiccolo),
-            const SizedBox(height: 14),
-            _campo(_cookie, Testi.campoCookie, segreto: true),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    Testi.cookieSalvato(
-                      widget.stato.cookie && !_cancellaCookie,
-                    ),
-                    style: stilePiccolo,
-                  ),
+            if (widget.stato.cookie)
+              TextButton(
+                onPressed: () => setState(() => _cancellaCookie = true),
+                child: const Text(Testi.cancellaCookie),
+              ),
+          ],
+        ),
+        const Text(
+          Testi.avvisoCookie,
+          style: TextStyle(color: Colori.errore, fontSize: Misure.piccolo),
+        ),
+      ]),
+      if (widget.stato.servizi.collegamentiDisponibili)
+        _gruppo(Testi.collegaFonti, Testi.spiegaCollegamenti, <Widget>[
+          Text(Testi.claudeCode(widget.claudeCode), style: stilePiccolo),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 10,
+            runSpacing: 6,
+            children: <Widget>[
+              OutlinedButton(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) =>
+                      DialogoEstensione(servizi: widget.stato.servizi),
                 ),
-                if (widget.stato.cookie)
-                  TextButton(
-                    onPressed: () => setState(() => _cancellaCookie = true),
-                    child: const Text(Testi.cancellaCookie),
-                  ),
-              ],
+                child: const Text(Testi.installaEstensione),
+              ),
+              OutlinedButton(
+                onPressed: _accediClaudeCode,
+                child: const Text(Testi.accediClaudeCode),
+              ),
+            ],
+          ),
+          if (_esitoClaudeCode != null)
+            Text(_esitoClaudeCode!, style: stilePiccolo),
+        ])
+      else if (!_tel)
+        Text(Testi.claudeCode(widget.claudeCode), style: stilePiccolo),
+      if (!_tel)
+        _gruppo(Testi.gruppoVecchiDati, Testi.spiegaVecchiDati, <Widget>[
+          _campo(_cartella, Testi.campoCartella),
+          Row(
+            children: <Widget>[
+              FilledButton(
+                onPressed: _importa,
+                child: const Text(Testi.importaOra),
+              ),
+              const SizedBox(width: 10),
+              if (_esitoImport != null)
+                Expanded(child: Text(_esitoImport!, style: stilePiccolo)),
+            ],
+          ),
+        ]),
+    ],
+  );
+
+  /// Pagina scorrevole di una scheda.
+  Widget _pagina(Widget figlio) => SingleChildScrollView(
+    padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+    child: figlio,
+  );
+
+  @override
+  Widget build(BuildContext context) => Dialog(
+    // PC: grande (820x780, si stringe se lo schermo è piccolo).
+    // Telefono: schermo intero.
+    insetPadding: _tel
+        ? EdgeInsets.zero
+        : EdgeInsets.symmetric(
+            horizontal: MediaQuery.sizeOf(context).width < 600 ? 12 : 40,
+            vertical: 24,
+          ),
+    child: _tel
+        ? SizedBox.expand(child: _contenuto())
+        : SizedBox(width: 820, height: 780, child: _contenuto()),
+  );
+
+  Widget _contenuto() => Column(
+    children: <Widget>[
+      const Padding(
+        padding: EdgeInsets.fromLTRB(20, 16, 20, 4),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            Testi.titoloImpostazioni,
+            style: TextStyle(
+              color: Colori.testo,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-            const Text(
-              Testi.avvisoCookie,
-              style: TextStyle(color: Colori.errore, fontSize: Misure.piccolo),
-            ),
-            if (!_tel) ...<Widget>[
-              const SizedBox(height: 14),
-              _campo(_cartella, Testi.campoCartella),
-              Row(
-                children: <Widget>[
-                  FilledButton(
-                    onPressed: _importa,
-                    child: const Text(Testi.importaOra),
-                  ),
-                  const SizedBox(width: 10),
-                  if (_esitoImport != null)
-                    Expanded(child: Text(_esitoImport!, style: stilePiccolo)),
-                ],
-              ),
-            ],
-            if (widget.stato.servizi.avvioWindowsDisponibile) ...<Widget>[
-              const SizedBox(height: 14),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _avvio,
-                onChanged: (bool v) => setState(() => _avvio = v),
-                title: const Text(Testi.avvioWindows, style: stileNormale),
-              ),
-              const Text(Testi.spiegaX, style: stilePiccolo),
-            ],
-            if (widget.stato.servizi.collegamentiDisponibili) ...<Widget>[
-              const SizedBox(height: 14),
-              const Text(Testi.collegaFonti, style: stileNormale),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 10,
-                runSpacing: 6,
-                children: <Widget>[
-                  OutlinedButton(
-                    onPressed: () => showDialog<void>(
-                      context: context,
-                      builder: (_) =>
-                          DialogoEstensione(servizi: widget.stato.servizi),
-                    ),
-                    child: const Text(Testi.installaEstensione),
-                  ),
-                  OutlinedButton(
-                    onPressed: _accediClaudeCode,
-                    child: const Text(Testi.accediClaudeCode),
-                  ),
-                ],
-              ),
-              if (_esitoClaudeCode != null)
-                Text(_esitoClaudeCode!, style: stilePiccolo),
-            ],
-            const SizedBox(height: 14),
-            _linee(),
-            if (!_tel) ...<Widget>[
-              const SizedBox(height: 14),
-              SezioneIA(stato: widget.stato),
-            ],
-            if (_errore != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  _errore!,
-                  style: const TextStyle(color: Colori.errore),
+          ),
+        ),
+      ),
+      TabBar(
+        key: const Key('schede-impostazioni'),
+        controller: _tab,
+        tabs: <Widget>[
+          const Tab(text: Testi.schedaGenerale),
+          const Tab(text: Testi.schedaAccesso),
+          const Tab(text: Testi.schedaGrafico),
+          if (!_tel) const Tab(text: Testi.titoloIA),
+        ],
+      ),
+      // Tutte le schede restano vive (si perde nulla cambiando scheda).
+      Expanded(
+        child: IndexedStack(
+          index: _tab.index,
+          children: <Widget>[
+            _pagina(_schedaGenerale()),
+            _pagina(_schedaAccesso()),
+            SchedaGrafico(stato: widget.stato),
+            if (!_tel)
+              _pagina(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Text(Testi.siSalvaDaSolo, style: stilePiccolo),
+                    const SizedBox(height: 6),
+                    SezioneIA(stato: widget.stato),
+                  ],
                 ),
               ),
           ],
         ),
       ),
-    ),
-    actions: <Widget>[
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text(Testi.annulla),
-      ),
-      FilledButton(
-        onPressed: _salva,
-        style: stileAccento(),
-        child: const Text(Testi.salvaEProva),
+      const Divider(height: 1),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 12, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text(Testi.notaSalvataggio, style: stilePiccolo),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                children: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(Testi.annulla),
+                  ),
+                  FilledButton(
+                    onPressed: _salva,
+                    style: stileAccento(),
+                    child: const Text(Testi.salvaEProva),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     ],
   );

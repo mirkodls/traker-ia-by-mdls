@@ -11,6 +11,7 @@ import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/app.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 
+import 'aiuti_impostazioni.dart';
 import 'progetti_helper.dart';
 import 'servizi_finti.dart';
 
@@ -56,6 +57,7 @@ Finder _k2(String k) => find.byKey(ValueKey<String>(k));
 
 Future<void> _apriImpostazioni(WidgetTester tester) async {
   await _tocca(tester, find.text(Testi.impostazioni));
+  await apriScheda(tester, Testi.titoloIA);
 }
 
 /// Nessun segreto in impostazioni, file salvati, testi mandati.
@@ -88,7 +90,7 @@ void main() {
     ) async {
       final ({StatoApp stato, ServiziFinti f}) a = await _apri(tester, taglia);
       await _apriImpostazioni(tester);
-      expect(find.text(Testi.titoloIA), findsOneWidget);
+      expect(find.text(Testi.titoloIA), findsWidgets);
       expect(find.text(Testi.chiaveIASalvata(null)), findsOneWidget);
       // Chiave sbagliata rifiutata.
       await tester.enterText(_k2('ia-chiave'), 'corta');
