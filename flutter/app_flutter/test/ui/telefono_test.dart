@@ -9,6 +9,7 @@ import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/app.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 
+import 'aiuti_impostazioni.dart';
 import 'servizi_finti.dart';
 
 DateTime _t(String s) => interpreta(s)!;
@@ -118,15 +119,19 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text(Testi.impostazioni));
     await tester.pumpAndSettle();
-    expect(find.text(Testi.accedi('Claude')), findsOneWidget);
+    // Generale: batteria; Accesso: login; Grafico sì; IA no (solo PC).
     expect(find.text(Testi.batteria(false)), findsOneWidget);
     expect(find.text(Testi.apriInfoApp), findsOneWidget);
-    expect(find.text(Testi.campoCartella), findsNothing);
-    expect(find.text(Testi.installaEstensione), findsNothing);
+    expect(find.text(Testi.schedaGrafico), findsOneWidget);
+    expect(find.text(Testi.titoloIA), findsNothing);
     await tester.ensureVisible(find.text(Testi.apriInfoApp));
     await tester.tap(find.text(Testi.apriInfoApp));
     await tester.pump();
     expect(f.infoApp, 1);
+    await apriScheda(tester, Testi.schedaAccesso);
+    expect(find.text(Testi.accedi('Claude')), findsOneWidget);
+    expect(find.text(Testi.campoCartella), findsNothing);
+    expect(find.text(Testi.installaEstensione), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

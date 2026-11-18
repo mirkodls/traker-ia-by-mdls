@@ -28,9 +28,10 @@ void main() {
           for (final LineaGrafico l in LineaGrafico.values) ...<String>[
             l.chiaveAlfa,
             l.chiaveSpessore,
+            l.chiaveColore,
           ],
         }.length,
-        12,
+        18,
       );
     });
 
@@ -62,16 +63,85 @@ void main() {
       expect(s.hashCode == const StileLinee().hashCode, isFalse);
     });
 
-    test('mappa: salva e rilegge identico, 12 chiavi', () {
+    test('mappa: salva e rilegge identico, 18 chiavi', () {
       final StileLinee s = const StileLinee()
           .con(LineaGrafico.settimana, alfa: 70, spessore: 3.5)
           .con(LineaGrafico.int7gg, alfa: 0, spessore: 6);
       final Map<String, String> m = s.aMappa();
-      expect(m.length, 12);
+      expect(m.length, 18);
+      expect(m['v2_linea_settimana_colore'], ''); // '' = colore base
       expect(m['v2_linea_settimana_alfa'], '70');
       expect(m['v2_linea_settimana_spessore'], '3.5');
       expect(m['v2_linea_adattiva_spessore'], '2.4');
       expect(StileLinee.daMappa(m), s);
+    });
+
+    test('colore: scelto, salvato in esadecimale, riletto identico', () {
+      final StileLinee s = const StileLinee()
+          .con(LineaGrafico.settimana, colore: 0xFFA78BFA)
+          .con(LineaGrafico.ideale, colore: 0x00F472B6, alfa: 40);
+      expect(s.di(LineaGrafico.settimana).colore, 0xFFA78BFA);
+      // alfa del colore forzato a FF: la trasparenza è un'altra scelta
+      expect(s.di(LineaGrafico.ideale).colore, 0xFFF472B6);
+      final Map<String, String> m = s.aMappa();
+      expect(m['v2_linea_settimana_colore'], 'FFA78BFA');
+      expect(m['v2_linea_ideale_colore'], 'FFF472B6');
+      expect(m['v2_linea_sessione_colore'], '');
+      expect(StileLinee.daMappa(m), s);
+      expect(s == const StileLinee(), isFalse);
+      expect(s.predefinito, isFalse);
+      // cambiare solo trasparenza tiene il colore
+      expect(
+        s.con(LineaGrafico.settimana, alfa: 50).di(LineaGrafico.settimana),
+        const StileLinea(spessore: 2, alfa: 50, colore: 0xFFA78BFA),
+      );
+    });
+
+    test('colore: torna al base, rotto = base, vecchie chiavi invariate', () {
+      final StileLinee s = const StileLinee().con(
+        LineaGrafico.sessione,
+        colore: 0xFF22D3EE,
+      );
+      expect(
+        s.con(LineaGrafico.sessione, coloreBase: true),
+        const StileLinee(),
+      );
+      final StileLinee r = StileLinee.daMappa(<String, String?>{
+        'v2_linea_settimana_colore': 'zzzzzz',
+        'v2_linea_sessione_colore': '123',
+        'v2_linea_ideale_colore': null,
+        'v2_linea_adattiva_colore': '#4ade80',
+        'v2_linea_int5h_alfa': '60', // mappa vecchia: niente colore
+      });
+      expect(r.di(LineaGrafico.settimana).colore, isNull);
+      expect(r.di(LineaGrafico.sessione).colore, isNull);
+      expect(r.di(LineaGrafico.ideale).colore, isNull);
+      expect(
+        r.di(LineaGrafico.adattiva).colore,
+        0xFF4ADE80,
+      ); // # e minuscole ok
+      expect(r.di(LineaGrafico.int5h).alfa, 60);
+      expect(r.di(LineaGrafico.int5h).colore, isNull);
+    });
+
+    test('tavolozza: 10 colori diversi, opachi, riconosciuti dal testo', () {
+      expect(tavolozzaLinee.length, 10);
+      expect(tavolozzaLinee.toSet().length, 10);
+      for (final int c in tavolozzaLinee) {
+        expect(c >> 24, 0xFF);
+        expect(coloreDaTesto(coloreATesto(c)), c);
+      }
+      // i colori base di oggi stanno nella tavolozza
+      for (final int base in <int>[
+        0xFF60A5FA,
+        0xFFFB923C,
+        0xFF4ADE80,
+        0xFFFACC15,
+      ]) {
+        expect(tavolozzaLinee, contains(base));
+      }
+      expect(coloreDaTesto(''), isNull);
+      expect(coloreDaTesto(null), isNull);
     });
 
     test('valori rotti o fuori limiti -> predefinito di quella linea', () {

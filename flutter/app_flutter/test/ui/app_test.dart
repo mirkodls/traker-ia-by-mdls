@@ -11,6 +11,7 @@ import 'package:traker_ia/ui/grafico.dart';
 import 'package:traker_ia/ui/sezioni.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 
+import 'aiuti_impostazioni.dart';
 import 'servizi_finti.dart';
 
 DateTime _t(String s) => interpreta(s)!;
@@ -164,6 +165,7 @@ void main() {
     await _apri(tester, const Size(1300, 950));
     await tester.tap(find.text(Testi.impostazioni));
     await tester.pumpAndSettle();
+    await apriScheda(tester, Testi.schedaAccesso);
     expect(find.text(Testi.campoCookie), findsOneWidget);
     await tester.tap(find.text(Testi.annulla));
     await tester.pumpAndSettle();

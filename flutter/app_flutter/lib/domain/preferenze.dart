@@ -86,6 +86,7 @@ abstract final class Chiavi {
     for (final LineaGrafico l in LineaGrafico.values) ...<String>[
       l.chiaveAlfa,
       l.chiaveSpessore,
+      l.chiaveColore,
     ],
     v2RossoAcceso,
     v2SogliaRosso,

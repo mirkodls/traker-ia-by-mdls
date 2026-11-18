@@ -441,6 +441,11 @@ String _etichettaTempo(DateTime d, bool corto) {
       : '${giorniBrevi[d.weekday - 1]} ${d.day.toString().padLeft(2, '0')} $hm';
 }
 
+/// Colore della linea: quello scelto dall'utente, se c'è, altrimenti [base].
+/// Solo ridisegno: le serie non cambiano mai.
+Color _coloreLinea(StileLinea st, Color base) =>
+    st.colore == null ? base : Color(st.colore!);
+
 /// Disegna il grafico principale.
 class PittorePrincipale extends CustomPainter {
   /// Crea il pittore. [dpr] = pixel fisici per pixel logico.
@@ -477,14 +482,32 @@ class PittorePrincipale extends CustomPainter {
     final double y1 = s.height - g.b;
     final double xr = s.width - g.r;
 
+    // colori scelti (o base) delle 4 linee del grafico
+    final Color cSett = _coloreLinea(
+      stile.di(LineaGrafico.settimana),
+      Colori.sett,
+    );
+    final Color cSess = _coloreLinea(
+      stile.di(LineaGrafico.sessione),
+      Colori.sess,
+    );
+    final Color cIdeale = _coloreLinea(
+      stile.di(LineaGrafico.ideale),
+      Colori.ideale,
+    );
+    final Color cAdattiva = _coloreLinea(
+      stile.di(LineaGrafico.adattiva),
+      Colori.adattiva,
+    );
+
     // legenda
     final SeriePiano? pi = dati.piano;
     double lx = g.l;
     for (final (String, Color, int) v in <(String, Color, int)>[
-      (Testi.legSett, Colori.sett, 0),
-      (Testi.legSess, Colori.sess, 0),
-      if (pi != null && mostraIdeale) (Testi.legIdeale, Colori.ideale, 1),
-      if (pi != null && mostraAdattiva) (Testi.legAdattiva, Colori.adattiva, 2),
+      (Testi.legSett, cSett, 0),
+      (Testi.legSess, cSess, 0),
+      if (pi != null && mostraIdeale) (Testi.legIdeale, cIdeale, 1),
+      if (pi != null && mostraAdattiva) (Testi.legAdattiva, cAdattiva, 2),
       (Testi.legNota, Colori.nota, 0),
       (Testi.legReset, Colori.reset, 0),
       (Testi.legLavoro, Colori.lavoroLegenda, 0),
@@ -578,7 +601,7 @@ class PittorePrincipale extends CustomPainter {
         _lineaPiano(
           c,
           _percorsoPiano(g, pi.ideale),
-          Colori.ideale,
+          cIdeale,
           stile: stile.di(LineaGrafico.ideale),
         );
       }
@@ -586,7 +609,7 @@ class PittorePrincipale extends CustomPainter {
         _lineaPiano(
           c,
           _percorsoPiano(g, pi.adattiva),
-          Colori.adattiva,
+          cAdattiva,
           adattiva: true,
           stile: stile.di(LineaGrafico.adattiva),
         );
@@ -599,12 +622,12 @@ class PittorePrincipale extends CustomPainter {
       c,
       g,
       dati.sett,
-      Colori.sett,
+      cSett,
       stile.di(LineaGrafico.settimana),
       area: true,
       rosso: pi?.rosso ?? const <Periodo>[],
     );
-    _serie(c, g, dati.sess, Colori.sess, stile.di(LineaGrafico.sessione));
+    _serie(c, g, dati.sess, cSess, stile.di(LineaGrafico.sessione));
 
     // note
     final Paint pn = Paint()
@@ -778,7 +801,13 @@ class PittorePrincipale extends CustomPainter {
           ..lineTo(cx(pts.last.ora), g.y(0))
           ..lineTo(cx(pts.first.ora), g.y(0))
           ..close();
-        c.drawPath(a, Paint()..color = Colori.settArea);
+        c.drawPath(
+          a,
+          Paint()
+            ..color = st.colore == null
+                ? Colori.settArea
+                : Color.alphaBlend(col.withValues(alpha: 0.2), Colori.carta),
+        );
       }
       final Paint pl = Paint()
         ..color = col.withValues(alpha: st.opacita)
@@ -911,7 +940,7 @@ class PittoreIntensita extends CustomPainter {
     }
     final StileLinea s5 = stile.di(LineaGrafico.int5h);
     final Paint p = Paint()
-      ..color = Colori.sess.withValues(alpha: s5.opacita)
+      ..color = _coloreLinea(s5, Colori.sess).withValues(alpha: s5.opacita)
       ..style = PaintingStyle.stroke
       ..strokeWidth = s5.spessore
       ..strokeCap = StrokeCap.round
@@ -977,12 +1006,17 @@ class PittoreIntensita extends CustomPainter {
       c.drawRect(Rect.fromLTRB(g5.x(p.inizio), y0, g5.x(p.fine), y1), fl);
     }
 
+    final StileLinea s5 = stile.di(LineaGrafico.int5h);
+    final StileLinea s7 = stile.di(LineaGrafico.int7gg);
+    final Color c5 = _coloreLinea(s5, Colori.sess);
+    final Color c7 = _coloreLinea(s7, Colori.sett);
+
     // titolo + legenda (si ferma se la finestra è stretta)
     _testo(c, Testi.titoloIntensitaV2, Offset(g5.l, 9), dpr: dpr);
     double lx = g5.l + _larghezzaTesto(Testi.titoloIntensitaV2) + 16;
     for (final (String, Color, int) v in <(String, Color, int)>[
-      (Testi.legInt5h, Colori.sess, 1),
-      (Testi.legInt7gg, Colori.sett, 2),
+      (Testi.legInt5h, c5, 1),
+      (Testi.legInt7gg, c7, 2),
       if (dati.fasce.isNotEmpty) (Testi.legLavoro, Colori.lavoroLegenda, 0),
     ]) {
       final double w = (v.$3 == 0 ? 26 : 38) + _larghezzaTesto(v.$1);
@@ -1017,7 +1051,7 @@ class PittoreIntensita extends CustomPainter {
         _scala(v),
         Offset(g5.l - 8, y),
         ancoraX: 1,
-        colore: Colori.sess,
+        colore: c5,
         dpr: dpr,
       );
     }
@@ -1026,21 +1060,19 @@ class PittoreIntensita extends CustomPainter {
       _scala(g7.max),
       Offset(xr - 4, y0 + 7),
       ancoraX: 1,
-      colore: Colori.sett,
+      colore: c7,
       dpr: dpr,
     );
 
     // linee: 5h piena, 7gg tratteggiata; un tratto per fonte, buchi vuoti
-    final StileLinea s5 = stile.di(LineaGrafico.int5h);
-    final StileLinea s7 = stile.di(LineaGrafico.int7gg);
     final Paint p5 = Paint()
-      ..color = Colori.sess.withValues(alpha: s5.opacita)
+      ..color = c5.withValues(alpha: s5.opacita)
       ..style = PaintingStyle.stroke
       ..strokeWidth = s5.spessore
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     final Paint p7 = Paint()
-      ..color = Colori.sett.withValues(alpha: s7.opacita)
+      ..color = c7.withValues(alpha: s7.opacita)
       ..style = PaintingStyle.stroke
       ..strokeWidth = s7.spessore
       ..strokeJoin = StrokeJoin.round;
