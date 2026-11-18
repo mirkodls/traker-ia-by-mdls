@@ -221,6 +221,56 @@ void main() {
       }
     });
 
+    test('dettaglio errore: 3 forme, una riga, corto, niente chiavi', () {
+      expect(
+        dettaglioErroreIA(<String, Object?>{
+          'type': 'error',
+          'error': <String, Object?>{
+            'type': 'invalid_request_error',
+            'message': 'Your credit balance is too low',
+          },
+        }),
+        'invalid_request_error: Your credit balance is too low',
+      );
+      expect(
+        dettaglioErroreIA(<String, Object?>{
+          'error': <String, Object?>{
+            'message': 'Incorrect API key provided: sk-proj-abcdefgh1234',
+            'code': 'invalid_api_key',
+          },
+        }),
+        'invalid_api_key: Incorrect API key provided: [RIMOSSO]',
+      );
+      expect(
+        dettaglioErroreIA(<String, Object?>{
+          'error': <String, Object?>{
+            'status': 'INVALID_ARGUMENT',
+            'message': 'key AIzaSyA1234567890abcdef bad\nriga2',
+          },
+        }),
+        'INVALID_ARGUMENT: key [RIMOSSO] bad riga2',
+      );
+      expect(dettaglioErroreIA(null), '');
+      expect(dettaglioErroreIA('testo'), '');
+      final String lungo = dettaglioErroreIA(<String, Object?>{
+        'error': <String, Object?>{'message': 'parola ' * 100},
+      });
+      expect(lungo.length, maxDettaglioErrore + 1);
+      expect(
+        messaggioErroreIA(400, dettaglio: 'x: Your credit balance is too low'),
+        contains('credito finito'),
+      );
+      expect(
+        messaggioErroreIA(400, dettaglio: 'not_found_error: model: claude-x'),
+        isNot(contains('credito')),
+      );
+      expect(
+        spiegaDettaglioIA('not_found_error: model: x not found'),
+        'nome del modello sbagliato',
+      );
+      expect(messaggioErroreIA(400), 'richiesta rifiutata dal fornitore (400)');
+    });
+
     test('messaggi errore in italiano per codice', () {
       expect(messaggioErroreIA(401), contains('chiave API sbagliata'));
       expect(messaggioErroreIA(403), contains('chiave API sbagliata'));

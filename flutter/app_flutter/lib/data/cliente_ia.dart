@@ -68,7 +68,7 @@ class ClienteIA {
       maxToken: maxToken,
       base: base,
     );
-    final Object? json = await _posta(r);
+    final Object? json = await _posta(r, chiave);
     return senzaChiave(leggiRisposta(c.fornitore, json), chiave);
   }
 
@@ -76,14 +76,16 @@ class ClienteIA {
   Future<String> prova(ConfigIA c) =>
       chiedi(c, testoProva, maxToken: maxTokenProva);
 
-  Future<Object?> _posta(RichiestaIA r) async {
+  Future<Object?> _posta(RichiestaIA r, String chiave) async {
     final HttpClient h = HttpClient()
       ..connectionTimeout = attesa
       ..userAgent = agenteApp;
     try {
       final HttpClientRequest req = await h.postUrl(r.url).timeout(attesa);
       r.intestazioni.forEach(req.headers.set);
-      req.add(utf8.encode(r.corpo));
+      final List<int> corpo = utf8.encode(r.corpo);
+      req.contentLength = corpo.length; // niente invio "a pezzi"
+      req.add(corpo);
       final HttpClientResponse risp = await req.close().timeout(attesa);
       final List<int> byte = <int>[];
       await for (final List<int> pezzo in risp.timeout(attesa)) {
@@ -93,7 +95,12 @@ class ClienteIA {
         }
       }
       if (risp.statusCode < 200 || risp.statusCode > 299) {
-        throw ErroreIA(messaggioErroreIA(risp.statusCode));
+        throw ErroreIA(
+          messaggioErroreIA(
+            risp.statusCode,
+            dettaglio: senzaChiave(_dettaglio(byte), chiave),
+          ),
+        );
       }
       return jsonDecode(utf8.decode(byte));
     } on TimeoutException {
@@ -108,6 +115,15 @@ class ClienteIA {
       throw const ErroreIA('risposta non valida dal fornitore');
     } finally {
       h.close(force: true);
+    }
+  }
+
+  /// Motivo dell'errore dal corpo (JSON) già ripulito; '' se illeggibile.
+  static String _dettaglio(List<int> byte) {
+    try {
+      return dettaglioErroreIA(jsonDecode(utf8.decode(byte)));
+    } on FormatException {
+      return '';
     }
   }
 }

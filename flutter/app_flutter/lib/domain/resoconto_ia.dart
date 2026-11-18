@@ -266,8 +266,9 @@ class RichiestaIA {
 /// Token massimi della risposta del resoconto.
 const int maxTokenResoconto = 4000;
 
-/// Token massimi della risposta di "Prova".
-const int maxTokenProva = 16;
+/// Token massimi della risposta di "Prova" (spazio anche per il
+/// ragionamento dei modelli che pensano prima di rispondere).
+const int maxTokenProva = 1024;
 
 /// Testo mandato con "Prova".
 const String testoProva = 'Rispondi solo con la parola: OK';
@@ -414,26 +415,101 @@ String leggiRisposta(FornitoreIA f, Object? json) {
   return s;
 }
 
-/// Messaggio per un codice HTTP sbagliato del fornitore (mai il corpo).
-String messaggioErroreIA(int codice) {
+/// Lunghezza massima del dettaglio d'errore mostrato.
+const int maxDettaglioErrore = 240;
+
+final RegExp _aspettoChiave = RegExp(
+  r'(sk-[A-Za-z0-9_\-]{6,}|AIza[0-9A-Za-z_\-]{10,}|[A-Za-z0-9_\-]{32,})',
+);
+
+/// Motivo scritto dal fornitore nel corpo d'errore [json] (Anthropic,
+/// OpenAI, Gemini, compatibili): 'tipo: messaggio', una riga, corto, con
+/// tutto ciò che sembra una chiave sostituito. '' = niente da mostrare.
+String dettaglioErroreIA(Object? json) {
+  final Object? e = _a(json, 'error');
+  String tipo = '';
+  String msg = '';
+  if (e is Map<String, Object?>) {
+    final Object? t = e['type'] ?? e['status'] ?? e['code'];
+    final Object? m = e['message'];
+    tipo = t is String ? t : '';
+    msg = m is String ? m : '';
+  } else if (e is String) {
+    msg = e;
+  }
+  final Object? m2 = _a(json, 'message');
+  if (msg.isEmpty && m2 is String) {
+    msg = m2;
+  }
+  String d = <String>[
+    tipo,
+    msg,
+  ].where((String x) => x.trim().isNotEmpty).join(': ');
+  d = d
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .replaceAll(_aspettoChiave, rigaRimossa)
+      .trim();
+  return d.length > maxDettaglioErrore
+      ? '${d.substring(0, maxDettaglioErrore)}…'
+      : d;
+}
+
+/// Spiegazione in italiano di alcuni motivi noti del fornitore ('' = no).
+String spiegaDettaglioIA(String dettaglio) {
+  final String d = dettaglio.toLowerCase();
+  if (d.contains('credit balance') || d.contains('insufficient_quota')) {
+    return 'credito finito sul conto API';
+  }
+  if (d.contains('model') &&
+      (d.contains('not found') ||
+          d.contains('not_found') ||
+          d.contains('does not exist') ||
+          d.contains('invalid model'))) {
+    return 'nome del modello sbagliato';
+  }
+  if (d.contains('max_tokens')) {
+    return 'limite token della risposta non accettato';
+  }
+  if (d.contains('thinking')) {
+    return 'impostazione "ragionamento" non accettata dal modello';
+  }
+  if (d.contains('api key') ||
+      d.contains('api_key') ||
+      d.contains('authentication')) {
+    return 'chiave API non accettata';
+  }
+  return '';
+}
+
+/// Messaggio per un codice HTTP sbagliato del fornitore. [dettaglio] =
+/// motivo del fornitore già ripulito (dettaglioErroreIA), aggiunto in fondo.
+String messaggioErroreIA(int codice, {String dettaglio = ''}) {
+  final String base;
   if (codice == 401 || codice == 403) {
-    return 'chiave API sbagliata o senza permessi ($codice)';
-  }
-  if (codice == 402) {
-    return 'credito finito sul conto API del fornitore (402)';
-  }
-  if (codice == 429) {
-    return 'limite raggiunto o credito finito (429): riprova più tardi '
+    base = 'chiave API sbagliata o senza permessi ($codice)';
+  } else if (codice == 402) {
+    base = 'credito finito sul conto API del fornitore (402)';
+  } else if (codice == 429) {
+    base =
+        'limite raggiunto o credito finito (429): riprova più tardi '
         'o controlla il conto API';
-  }
-  if (codice == 400 || codice == 404 || codice == 422) {
-    return 'modello o indirizzo sbagliato ($codice): controlla il nome del '
+  } else if (codice == 404) {
+    base =
+        'modello o indirizzo sbagliato (404): controlla il nome del '
         'modello';
+  } else if (codice == 400 || codice == 422) {
+    base = 'richiesta rifiutata dal fornitore ($codice)';
+  } else if (codice >= 500) {
+    base = 'il fornitore ha un problema ($codice): riprova più tardi';
+  } else {
+    base = 'errore dal fornitore ($codice)';
   }
-  if (codice >= 500) {
-    return 'il fornitore ha un problema ($codice): riprova più tardi';
+  final String d = dettaglio.trim();
+  if (d.isEmpty) {
+    return base;
   }
-  return 'errore dal fornitore ($codice)';
+  final String it = spiegaDettaglioIA(d);
+  return '$base${it.isEmpty ? '' : ' — $it'}. Motivo del fornitore: $d';
 }
 
 /// Toglie [chiave] (se c'è) da [testo]: la risposta non deve mai salvarla.

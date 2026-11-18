@@ -178,8 +178,41 @@ void main() {
       } on ErroreIA catch (err) {
         expect(err.messaggio, contains(e.value), reason: '${e.key}');
         expect(err.messaggio, isNot(contains(_k)));
-        expect('$err', isNot(contains('Incorrect')));
+        // B17 fix: motivo del fornitore mostrato, chiave tolta.
+        expect('$err', contains('Motivo del fornitore'));
+        expect('$err', contains('Incorrect API key'));
       }
+    }
+  });
+
+  test('400 Anthropic: motivo vero mostrato e spiegato; corpo non JSON = '
+      'solo codice; corpo inviato con lunghezza (non a pezzi)', () async {
+    await ia.salvaChiave(FornitoreIA.anthropic, _k);
+    srv
+      ..codice = 400
+      ..risposta = <String, Object?>{
+        'type': 'error',
+        'error': <String, Object?>{
+          'type': 'invalid_request_error',
+          'message': 'max_tokens: must be greater than thinking budget',
+        },
+      };
+    try {
+      await ia.chiedi(ConfigIA(), 'x');
+      fail('doveva fallire');
+    } on ErroreIA catch (e) {
+      expect(e.messaggio, contains('richiesta rifiutata dal fornitore (400)'));
+      expect(e.messaggio, contains('invalid_request_error: max_tokens'));
+      expect(e.messaggio, contains('limite token'));
+    }
+    expect(srv.ricevute.last.h['content-length'], isNotNull);
+    expect(srv.ricevute.last.h.containsKey('transfer-encoding'), isFalse);
+    srv.risposta = 'non json';
+    try {
+      await ia.chiedi(ConfigIA(), 'x');
+      fail('doveva fallire');
+    } on ErroreIA catch (e) {
+      expect(e.messaggio, 'richiesta rifiutata dal fornitore (400)');
     }
   });
 
