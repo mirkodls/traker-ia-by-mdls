@@ -71,6 +71,8 @@ void main() {
       final Map<String, Object?> b = _corpo(r);
       expect(b['model'], 'claude-sonnet-5-5');
       expect(b['max_tokens'], maxTokenResoconto);
+      expect(maxTokenResoconto, 16000);
+      expect(b['output_config'], <String, Object?>{'effort': 'low'});
       expect(jsonEncode(b['messages']), contains('ciao'));
     });
 
@@ -269,6 +271,42 @@ void main() {
         'nome del modello sbagliato',
       );
       expect(messaggioErroreIA(400), 'richiesta rifiutata dal fornitore (400)');
+    });
+
+    test('vuota per token finiti = "risposta tagliata" (3 forme)', () {
+      final Map<FornitoreIA, Object?> j = <FornitoreIA, Object?>{
+        FornitoreIA.anthropic: <String, Object?>{
+          'content': <Object?>[
+            <String, Object?>{'type': 'thinking', 'thinking': '...'},
+          ],
+          'stop_reason': 'max_tokens',
+        },
+        FornitoreIA.gemini: <String, Object?>{
+          'candidates': <Object?>[
+            <String, Object?>{'finishReason': 'MAX_TOKENS'},
+          ],
+        },
+        FornitoreIA.openai: <String, Object?>{
+          'choices': <Object?>[
+            <String, Object?>{
+              'message': <String, Object?>{'content': ''},
+              'finish_reason': 'length',
+            },
+          ],
+        },
+      };
+      j.forEach((FornitoreIA f, Object? v) {
+        expect(
+          () => leggiRisposta(f, v),
+          throwsA(
+            isA<ErroreIA>().having(
+              (ErroreIA e) => e.messaggio,
+              'm',
+              contains('tagliata'),
+            ),
+          ),
+        );
+      });
     });
 
     test('messaggi errore in italiano per codice', () {

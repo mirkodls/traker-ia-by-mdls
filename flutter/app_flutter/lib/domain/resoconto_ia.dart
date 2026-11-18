@@ -263,8 +263,13 @@ class RichiestaIA {
   String toString() => 'RichiestaIA(POST ${url.host}${url.path})';
 }
 
-/// Token massimi della risposta del resoconto.
-const int maxTokenResoconto = 4000;
+/// Token massimi della risposta del resoconto (i modelli che ragionano
+/// spendono qui anche i token del ragionamento).
+const int maxTokenResoconto = 16000;
+
+/// Sforzo di ragionamento chiesto ad Anthropic (basso = meno token, meno
+/// costo: per un riassunto basta).
+const String sforzoAnthropic = 'low';
 
 /// Token massimi della risposta di "Prova" (spazio anche per il
 /// ragionamento dei modelli che pensano prima di rispondere).
@@ -316,6 +321,7 @@ RichiestaIA costruisciRichiesta(
         corpo: jsonEncode(<String, Object?>{
           'model': modello,
           'max_tokens': maxToken,
+          'output_config': <String, Object?>{'effort': sforzoAnthropic},
           'messages': <Object?>[
             <String, Object?>{'role': 'user', 'content': testo},
           ],
@@ -410,6 +416,16 @@ String leggiRisposta(FornitoreIA f, Object? json) {
   }
   final String s = b.toString().trim();
   if (s.isEmpty) {
+    final Object? fine =
+        _a(json, 'stop_reason') ??
+        _a(_a(_a(json, 'candidates'), 0), 'finishReason') ??
+        _a(_a(_a(json, 'choices'), 0), 'finish_reason');
+    if (fine == 'max_tokens' || fine == 'MAX_TOKENS' || fine == 'length') {
+      throw const ErroreIA(
+        'risposta tagliata: l\'IA ha finito i token mentre ragionava '
+        '(riprova o usa un modello più leggero)',
+      );
+    }
     throw const ErroreIA('risposta vuota: riprova o cambia modello');
   }
   return s;
