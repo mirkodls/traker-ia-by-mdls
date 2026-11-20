@@ -46,6 +46,9 @@ class Letture extends Table {
 
   /// Gestore IA (es. 'anthropic').
   TextColumn get gestore => text()();
+
+  /// % Fable (schema 4; null = non letta o lettura vecchia).
+  RealColumn get fable => real().nullable()();
 }
 
 /// Tabella degli eventi (note, inizio/fine lavoro, reset).
@@ -153,7 +156,7 @@ class ProgettoSettimane extends Table {
 }
 
 /// Versione attuale dello schema del database.
-const int versioneSchema = 3;
+const int versioneSchema = 4;
 
 /// Nome del file del database (senza '.sqlite').
 const String nomeDb = 'traker_ia';
@@ -207,6 +210,10 @@ class DatabaseTraker extends _$DatabaseTraker {
       }
       if (da < 3) {
         await m.createIndex(progettoSettimaneUnica);
+      }
+      if (da < 4) {
+        // 3 -> 4: SOLO colonna nuova (null) su letture. Righe vecchie intatte.
+        await m.addColumn(letture, letture.fable);
       }
     },
   );

@@ -32,6 +32,9 @@ abstract final class Colori {
   /// Linea sessione 5 ore.
   static const Color sess = Color(0xFFFB923C);
 
+  /// Linea Fable (rosa della tavolozza linee, stile_linee.dart).
+  static const Color fable = Color(0xFFF472B6);
+
   /// Note.
   static const Color nota = Color(0xFFC084FC);
 

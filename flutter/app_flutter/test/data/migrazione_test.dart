@@ -3,11 +3,13 @@
 // B07: migrazione database 1 -> 2 senza perdere righe + copia .bak-v1.
 // B12: migrazione 2 -> 3 (colonna token_manuali + indice unico) con DB v2
 // popolato: nessuna riga persa + copia .bak-v2.
+// B19: migrazione 3 -> 4 (colonna fable su letture) con DB v3 popolato:
+// nessuna riga persa, Fable null sulle righe vecchie + copia .bak-v3.
 import 'dart:io';
 
 import 'package:drift/backends.dart';
 import 'package:drift/drift.dart'
-    show OpeningDetails, QueryRow, driftRuntimeOptions;
+    show OpeningDetails, QueryRow, Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:traker_ia/data/copia_db.dart';
@@ -83,10 +85,36 @@ Future<Map<String, List<Map<String, Object?>>>> _tuttoV2(
     ),
 };
 
-/// Crea un database v2 popolato (anche le tabelle V2) in [f].
-Future<Map<String, List<Map<String, Object?>>>> _creaV2(File f) async {
+class _UtenteV3 extends QueryExecutorUser {
+  @override
+  int get schemaVersion => 3;
+
+  @override
+  Future<void> beforeOpen(QueryExecutor e, OpeningDetails d) async {
+    await e.ensureOpen(this);
+    if (d.wasCreated) {
+      for (final String s in <String>[
+        ..._schemaV1,
+        ..._schemaV2Nuove,
+        'ALTER TABLE progetto_settimane ADD COLUMN '
+            '"token_manuali" INTEGER NULL',
+        'CREATE UNIQUE INDEX progetto_settimane_unica ON '
+            'progetto_settimane (progetto_id, sett_inizio)',
+      ]) {
+        await e.runCustom(s);
+      }
+    }
+  }
+}
+
+/// Crea un database v2 popolato (anche le tabelle V2) in [f]
+/// ([utente] = schema v3 per la prova 3 -> 4).
+Future<Map<String, List<Map<String, Object?>>>> _creaV2(
+  File f, {
+  QueryExecutorUser? utente,
+}) async {
   final NativeDatabase e = NativeDatabase(f);
-  await e.ensureOpen(_UtenteV2());
+  await e.ensureOpen(utente ?? _UtenteV2());
   for (int i = 0; i < 200; i++) {
     await e.runInsert(
       'INSERT INTO letture (ora, sett, sess, fonte, al_pc, lavoro, modelli, '
@@ -211,6 +239,22 @@ Future<Map<String, List<Map<String, Object?>>>> _creaV1(File f) async {
   return righe;
 }
 
+/// Righe di [t] senza la colonna 'fable' (schema 4), che deve essere null.
+List<Map<String, Object?>> _senzaFable(
+  List<Map<String, Object?>> righe,
+  String t,
+) => <Map<String, Object?>>[
+  for (final Map<String, Object?> r in righe)
+    if (t != 'letture')
+      r
+    else
+      () {
+        final Map<String, Object?> d = Map<String, Object?>.of(r);
+        expect(d.remove('fable'), isNull);
+        return d;
+      }(),
+];
+
 void main() {
   late Directory dir;
   late File f;
@@ -276,7 +320,7 @@ void main() {
       await db.close();
 
       for (final String t in _tabelleVecchie) {
-        expect(dopo[t], prima[t], reason: t);
+        expect(_senzaFable(dopo[t]!, t), prima[t], reason: t);
       }
       expect(await versioneFileDb(f), versioneSchema);
       // Già alla 2: nessuna nuova copia.
@@ -332,6 +376,9 @@ void main() {
         if (t == 'progetto_settimane') {
           expect(d.remove('token_manuali'), isNull);
         }
+        if (t == 'letture') {
+          expect(d.remove('fable'), isNull);
+        }
         expect(d, prima[t]![i], reason: '$t riga $i');
       }
     }
@@ -355,6 +402,53 @@ void main() {
 
     final NativeDatabase vecchio = NativeDatabase(bak);
     await vecchio.ensureOpen(_UtenteV2());
+    expect(await _tuttoV2(vecchio), prima);
+    await vecchio.close();
+  });
+
+  test('3 -> 4: copia .bak-v3, nessuna riga persa, Fable null, poi '
+      'si salva', () async {
+    final Map<String, List<Map<String, Object?>>> prima = await _creaV2(
+      f,
+      utente: _UtenteV3(),
+    );
+    expect(await versioneFileDb(f), 3);
+    final File? bak = await copiaPrimaDiMigrare(f, versioneSchema);
+    expect(bak!.path, '${f.path}.bak-v3');
+
+    final DatabaseTraker db = DatabaseTraker(NativeDatabase(f));
+    // Prima query = apertura + migrazione.
+    await db.customSelect('SELECT 1').get();
+    final Map<String, List<Map<String, Object?>>> dopo = await _tuttoV2(
+      db.executor,
+    );
+    for (final String t in _tabelleV2) {
+      expect(_senzaFable(dopo[t]!, t), prima[t], reason: t);
+    }
+    final List<RigaLettura> ls = await db.select(db.letture).get();
+    expect(ls.length, 200);
+    expect(ls.every((RigaLettura r) => r.fable == null), isTrue);
+    await db
+        .into(db.letture)
+        .insert(
+          LettureCompanion.insert(
+            ora: '2026-11-20 09:00',
+            gestore: 'anthropic',
+            fable: const Value<double?>(80),
+          ),
+        );
+    final RigaLettura nuova =
+        (await (db.select(
+                  db.letture,
+                )..where(($LettureTable t) => t.ora.equals('2026-11-20 09:00')))
+                .get())
+            .single;
+    expect(nuova.fable, 80);
+    await db.close();
+    expect(await versioneFileDb(f), versioneSchema);
+
+    final NativeDatabase vecchio = NativeDatabase(bak);
+    await vecchio.ensureOpen(_UtenteV3());
     expect(await _tuttoV2(vecchio), prima);
     await vecchio.close();
   });

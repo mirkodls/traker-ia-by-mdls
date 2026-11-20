@@ -1,8 +1,10 @@
 // TraKer IA by mdls — Copyright (C) 2026 Mirko Del Sette. Tutti i diritti riservati.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:traker_ia/domain/modelli.dart';
+import 'package:traker_ia/domain/stile_linee.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/ui/grafico_dati.dart';
+import 'package:traker_ia/ui/tema.dart';
 
 DateTime _t(String s) => interpreta(s)!;
 
@@ -52,6 +54,36 @@ void main() {
     expect(d.note.single.numero, 2);
     expect(d.note.single.testo, 'b');
     expect(d.maxIntensita, greaterThanOrEqualTo(1));
+  });
+
+  test('B19: linea Fable solo dalle letture con Fable', () {
+    final DatiGrafico d = calcolaDatiGrafico(
+      <Lettura>[
+        Lettura(ora: _t('2026-11-13 10:10'), sett: 50, sess: 10, fable: 70),
+        Lettura(ora: _t('2026-11-13 10:40'), sett: 51, sess: 11),
+        Lettura(ora: _t('2026-11-13 11:10'), sett: 52, sess: 12, fable: 72),
+      ],
+      <Evento>[],
+      da,
+      a,
+      a,
+    );
+    expect(d.fable.map((PuntoG p) => p.valore), <double>[70, 72]);
+    expect(d.sett.length, 3);
+    final DatiGrafico senza = calcolaDatiGrafico(
+      <Lettura>[_l('2026-11-13 10:10', 50, 10)],
+      <Evento>[],
+      da,
+      a,
+      a,
+    );
+    expect(senza.fable, isEmpty);
+  });
+
+  test('B19: colore Fable dalla tavolozza linee, diverso da sett/sess', () {
+    expect(tavolozzaLinee, contains(Colori.fable.toARGB32()));
+    expect(Colori.fable, isNot(Colori.sett));
+    expect(Colori.fable, isNot(Colori.sess));
   });
 
   test('vuoto senza letture; passo intensità', () {

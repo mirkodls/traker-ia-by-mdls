@@ -56,15 +56,116 @@ Uso leggiRisposta(Object? body) {
   final (double?, DateTime?) b7 = blocco('seven_day');
   double? sess = b5.$1;
   double? sett = b7.$1;
+  double? fable = cercaFable(body);
   // Alcune versioni danno frazioni 0-1: se tutti <= 1 e uno non intero, scala.
-  final List<double> vals = <double>[?sess, ?sett];
+  final List<double> vals = <double>[?sess, ?sett, ?fable];
   if (vals.isNotEmpty &&
       vals.every((double x) => x <= 1) &&
       vals.any((double x) => x > 0 && x < 1)) {
     sess = sess == null ? null : sess * 100;
     sett = sett == null ? null : sett * 100;
+    fable = fable == null ? null : fable * 100;
   }
-  return Uso(sess: sess, sett: sett, resetSess: b5.$2, resetSett: b7.$2);
+  return Uso(
+    sess: sess,
+    sett: sett,
+    fable: fable,
+    resetSess: b5.$2,
+    resetSett: b7.$2,
+  );
+}
+
+/// Parole che indicano ripristino/reimpostazione del limite: da ignorare.
+const List<String> _paroleRipristino = <String>[
+  'reset',
+  'ripristin',
+  'reimpost',
+];
+
+/// Campi che possono contenere il nome di una voce (es. 'Fable').
+const List<String> _campiNome = <String>[
+  'name',
+  'model',
+  'label',
+  'display_name',
+  'title',
+  'type',
+  'id',
+];
+
+bool _eRipristino(String s) {
+  final String t = s.toLowerCase();
+  return _paroleRipristino.any(t.contains);
+}
+
+double? _utilizzo(Object? v) {
+  if (v is! Map<Object?, Object?>) {
+    return null;
+  }
+  final Object? u = v['utilization'];
+  return u is num ? u.toDouble() : null;
+}
+
+/// % Fable nella risposta /usage (valore grezzo, prima della scala 0-1).
+/// Trova: una chiave con 'fable' (es. 'seven_day_fable') con dentro
+/// 'utilization', oppure una voce con nome 'Fable' e 'utilization'.
+/// Ripristino/reimpostazione ignorati. Nessuna riga Fable -> null.
+double? cercaFable(Object? body, {int profondita = 0}) {
+  if (profondita > 3) {
+    return null;
+  }
+  if (body is List<Object?>) {
+    for (final Object? x in body) {
+      final double? f = cercaFable(x, profondita: profondita + 1);
+      if (f != null) {
+        return f;
+      }
+    }
+    return null;
+  }
+  if (body is! Map<Object?, Object?>) {
+    return null;
+  }
+  // Voce con nome 'Fable' (dentro un elenco di limiti).
+  if (profondita > 0) {
+    final double? u = _utilizzo(body);
+    if (u != null) {
+      for (final String c in _campiNome) {
+        final Object? n = body[c];
+        if (n is String && n.toLowerCase().contains('fable')) {
+          return _eRipristino(n) ? null : u;
+        }
+      }
+    }
+  }
+  // Chiave con 'fable'.
+  for (final MapEntry<Object?, Object?> e in body.entries) {
+    final Object? k = e.key;
+    if (k is String && k.toLowerCase().contains('fable') && !_eRipristino(k)) {
+      final double? u = _utilizzo(e.value);
+      if (u != null) {
+        return u;
+      }
+    }
+  }
+  // Più in profondità (saltando ripristino e i blocchi già noti).
+  for (final MapEntry<Object?, Object?> e in body.entries) {
+    final Object? k = e.key;
+    if (k is! String ||
+        _eRipristino(k) ||
+        k == 'five_hour' ||
+        k == 'seven_day') {
+      continue;
+    }
+    final Object? v = e.value;
+    if (v is Map<Object?, Object?> || v is List<Object?>) {
+      final double? f = cercaFable(v, profondita: profondita + 1);
+      if (f != null) {
+        return f;
+      }
+    }
+  }
+  return null;
 }
 
 /// Momenti in cui la barra [campo] scende (= reset).

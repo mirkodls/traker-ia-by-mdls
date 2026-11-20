@@ -22,6 +22,7 @@ class Lettura {
     required this.ora,
     this.sett,
     this.sess,
+    this.fable,
     this.fonte = 'auto',
     this.alPc,
     this.lavoro = false,
@@ -38,6 +39,10 @@ class Lettura {
 
   /// % sessione 5 ore (0-100), null se mancante.
   final double? sess;
+
+  /// % Fable (0-100) come mostrata da claude.ai, null se mancante
+  /// (letture vecchie o riga Fable assente).
+  final double? fable;
 
   /// Origine: auto | manuale | iniziale.
   final String fonte;
@@ -102,16 +107,20 @@ class Evento {
   final String testo;
 }
 
-/// Uso letto da un gestore: due barre con % e ora di reset.
+/// Uso letto da un gestore: due barre con % e ora di reset, più la %
+/// Fable se c'è.
 class Uso {
   /// Crea un uso.
-  const Uso({this.sess, this.sett, this.resetSess, this.resetSett});
+  const Uso({this.sess, this.sett, this.fable, this.resetSess, this.resetSett});
 
   /// % sessione 5 ore.
   final double? sess;
 
   /// % settimanale.
   final double? sett;
+
+  /// % Fable (null = riga Fable assente).
+  final double? fable;
 
   /// Prossimo reset della sessione (ora locale).
   final DateTime? resetSess;

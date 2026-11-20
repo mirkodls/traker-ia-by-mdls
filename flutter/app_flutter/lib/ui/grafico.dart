@@ -506,6 +506,7 @@ class PittorePrincipale extends CustomPainter {
     for (final (String, Color, int) v in <(String, Color, int)>[
       (Testi.legSett, cSett, 0),
       (Testi.legSess, cSess, 0),
+      if (dati.fable.isNotEmpty) (Testi.legFable, Colori.fable, 0),
       if (pi != null && mostraIdeale) (Testi.legIdeale, cIdeale, 1),
       if (pi != null && mostraAdattiva) (Testi.legAdattiva, cAdattiva, 2),
       (Testi.legNota, Colori.nota, 0),
@@ -628,6 +629,8 @@ class PittorePrincipale extends CustomPainter {
       rosso: pi?.rosso ?? const <Periodo>[],
     );
     _serie(c, g, dati.sess, cSess, stile.di(LineaGrafico.sessione));
+    // Fable: colore fisso dalla tavolozza, spessore come la sessione.
+    _serie(c, g, dati.fable, Colori.fable, LineaGrafico.sessione.predefinito);
 
     // note
     final Paint pn = Paint()
