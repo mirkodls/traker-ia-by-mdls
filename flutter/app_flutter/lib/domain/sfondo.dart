@@ -45,6 +45,7 @@ Lettura letturaAutomatica(
   ora: alMinuto(ora),
   sett: uso.sett,
   sess: uso.sess,
+  fable: uso.fable,
   lavoro: lavoroAperto(eventi),
   modelli: pref.daRaccogliere(Gruppo.modelli),
   skill: pref.daRaccogliere(Gruppo.skill),

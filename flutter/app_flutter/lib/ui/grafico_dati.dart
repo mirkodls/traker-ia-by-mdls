@@ -54,6 +54,7 @@ class DatiGrafico {
     required this.note,
     required this.intensita,
     required this.maxIntensita,
+    this.fable = const <PuntoG>[],
     this.piano,
     this.intensitaV2,
   });
@@ -69,6 +70,9 @@ class DatiGrafico {
 
   /// Linea sessione 5 ore.
   final List<PuntoG> sess;
+
+  /// Linea Fable (vuota se nessuna lettura ha la % Fable).
+  final List<PuntoG> fable;
 
   /// Reset dentro [da, a].
   final List<DateTime> reset;
@@ -99,10 +103,17 @@ class DatiGrafico {
 bool _dentro(DateTime t, DateTime da, DateTime a) =>
     !t.isBefore(da) && !t.isAfter(a);
 
-List<PuntoG> _linea(List<Lettura> ls, Campo campo, DateTime da, DateTime a) {
-  final List<Lettura> pts = ls
-      .where((Lettura l) => l.valore(campo) != null)
-      .toList();
+List<PuntoG> _linea(List<Lettura> ls, Campo campo, DateTime da, DateTime a) =>
+    _lineaDi(ls, (Lettura l) => l.valore(campo), da, a);
+
+/// Linea del valore [v] di ogni lettura (letture senza valore saltate).
+List<PuntoG> _lineaDi(
+  List<Lettura> ls,
+  double? Function(Lettura) v,
+  DateTime da,
+  DateTime a,
+) {
+  final List<Lettura> pts = ls.where((Lettura l) => v(l) != null).toList();
   final List<PuntoG> out = <PuntoG>[];
   Lettura? prima;
   for (final Lettura l in pts) {
@@ -110,14 +121,14 @@ List<PuntoG> _linea(List<Lettura> ls, Campo campo, DateTime da, DateTime a) {
       prima = l;
     } else if (!l.ora.isAfter(a)) {
       if (prima != null && out.isEmpty) {
-        out.add(PuntoG(prima.ora, prima.valore(campo)!));
+        out.add(PuntoG(prima.ora, v(prima)!));
       }
-      out.add(PuntoG(l.ora, l.valore(campo)!, manuale: l.fonte != 'auto'));
+      out.add(PuntoG(l.ora, v(l)!, manuale: l.fonte != 'auto'));
     } else {
       if (out.isEmpty && prima != null) {
-        out.add(PuntoG(prima.ora, prima.valore(campo)!));
+        out.add(PuntoG(prima.ora, v(prima)!));
       }
-      out.add(PuntoG(l.ora, l.valore(campo)!));
+      out.add(PuntoG(l.ora, v(l)!));
       break;
     }
   }
@@ -193,6 +204,7 @@ DatiGrafico calcolaDatiGrafico(
     a: a,
     sett: _linea(ls, Campo.sett, da, a),
     sess: _linea(ls, Campo.sess, da, a),
+    fable: _lineaDi(ls, (Lettura l) => l.fable, da, a),
     reset: reset,
     fasce: fasce,
     note: note,

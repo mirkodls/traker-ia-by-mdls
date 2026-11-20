@@ -66,6 +66,7 @@ List<Object?> _lettura(Lettura l) => <Object?>[
   l.modelli,
   l.skill,
   l.gestore,
+  l.fable,
 ];
 
 List<Object?> _evento(Evento e) => <Object?>[
@@ -217,6 +218,8 @@ IstantaneaLetta leggiIstantanea(String json) {
         modelli: r[6] is String ? r[6]! as String : '',
         skill: r[7] is String ? r[7]! as String : '',
         gestore: r[8] is String ? r[8]! as String : gestoreAnthropic,
+        // Fable in coda (istantanee vecchie: 9 voci -> null).
+        fable: r.length > 9 ? _num(r[9]) : null,
       ),
     );
   }

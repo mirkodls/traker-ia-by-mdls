@@ -116,6 +116,15 @@ class $LettureTable extends Letture with TableInfo<$LettureTable, RigaLettura> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _fableMeta = const VerificationMeta('fable');
+  @override
+  late final GeneratedColumn<double> fable = GeneratedColumn<double>(
+    'fable',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -128,6 +137,7 @@ class $LettureTable extends Letture with TableInfo<$LettureTable, RigaLettura> {
     modelli,
     skill,
     gestore,
+    fable,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -202,6 +212,12 @@ class $LettureTable extends Letture with TableInfo<$LettureTable, RigaLettura> {
     } else if (isInserting) {
       context.missing(_gestoreMeta);
     }
+    if (data.containsKey('fable')) {
+      context.handle(
+        _fableMeta,
+        fable.isAcceptableOrUnknown(data['fable']!, _fableMeta),
+      );
+    }
     return context;
   }
 
@@ -251,6 +267,10 @@ class $LettureTable extends Letture with TableInfo<$LettureTable, RigaLettura> {
         DriftSqlType.string,
         data['${effectivePrefix}gestore'],
       )!,
+      fable: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fable'],
+      ),
     );
   }
 
@@ -290,6 +310,9 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
 
   /// Gestore IA (es. 'anthropic').
   final String gestore;
+
+  /// % Fable (schema 4; null = non letta o lettura vecchia).
+  final double? fable;
   const RigaLettura({
     required this.id,
     required this.ora,
@@ -301,6 +324,7 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
     required this.modelli,
     required this.skill,
     required this.gestore,
+    this.fable,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -321,6 +345,9 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
     map['modelli'] = Variable<String>(modelli);
     map['skill'] = Variable<String>(skill);
     map['gestore'] = Variable<String>(gestore);
+    if (!nullToAbsent || fable != null) {
+      map['fable'] = Variable<double>(fable);
+    }
     return map;
   }
 
@@ -336,6 +363,9 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
       modelli: Value(modelli),
       skill: Value(skill),
       gestore: Value(gestore),
+      fable: fable == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fable),
     );
   }
 
@@ -355,6 +385,7 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
       modelli: serializer.fromJson<String>(json['modelli']),
       skill: serializer.fromJson<String>(json['skill']),
       gestore: serializer.fromJson<String>(json['gestore']),
+      fable: serializer.fromJson<double?>(json['fable']),
     );
   }
   @override
@@ -371,6 +402,7 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
       'modelli': serializer.toJson<String>(modelli),
       'skill': serializer.toJson<String>(skill),
       'gestore': serializer.toJson<String>(gestore),
+      'fable': serializer.toJson<double?>(fable),
     };
   }
 
@@ -385,6 +417,7 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
     String? modelli,
     String? skill,
     String? gestore,
+    Value<double?> fable = const Value.absent(),
   }) => RigaLettura(
     id: id ?? this.id,
     ora: ora ?? this.ora,
@@ -396,6 +429,7 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
     modelli: modelli ?? this.modelli,
     skill: skill ?? this.skill,
     gestore: gestore ?? this.gestore,
+    fable: fable.present ? fable.value : this.fable,
   );
   RigaLettura copyWithCompanion(LettureCompanion data) {
     return RigaLettura(
@@ -409,6 +443,7 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
       modelli: data.modelli.present ? data.modelli.value : this.modelli,
       skill: data.skill.present ? data.skill.value : this.skill,
       gestore: data.gestore.present ? data.gestore.value : this.gestore,
+      fable: data.fable.present ? data.fable.value : this.fable,
     );
   }
 
@@ -424,7 +459,8 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
           ..write('lavoro: $lavoro, ')
           ..write('modelli: $modelli, ')
           ..write('skill: $skill, ')
-          ..write('gestore: $gestore')
+          ..write('gestore: $gestore, ')
+          ..write('fable: $fable')
           ..write(')'))
         .toString();
   }
@@ -441,6 +477,7 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
     modelli,
     skill,
     gestore,
+    fable,
   );
   @override
   bool operator ==(Object other) =>
@@ -455,7 +492,8 @@ class RigaLettura extends DataClass implements Insertable<RigaLettura> {
           other.lavoro == this.lavoro &&
           other.modelli == this.modelli &&
           other.skill == this.skill &&
-          other.gestore == this.gestore);
+          other.gestore == this.gestore &&
+          other.fable == this.fable);
 }
 
 class LettureCompanion extends UpdateCompanion<RigaLettura> {
@@ -469,6 +507,7 @@ class LettureCompanion extends UpdateCompanion<RigaLettura> {
   final Value<String> modelli;
   final Value<String> skill;
   final Value<String> gestore;
+  final Value<double?> fable;
   const LettureCompanion({
     this.id = const Value.absent(),
     this.ora = const Value.absent(),
@@ -480,6 +519,7 @@ class LettureCompanion extends UpdateCompanion<RigaLettura> {
     this.modelli = const Value.absent(),
     this.skill = const Value.absent(),
     this.gestore = const Value.absent(),
+    this.fable = const Value.absent(),
   });
   LettureCompanion.insert({
     this.id = const Value.absent(),
@@ -492,6 +532,7 @@ class LettureCompanion extends UpdateCompanion<RigaLettura> {
     this.modelli = const Value.absent(),
     this.skill = const Value.absent(),
     required String gestore,
+    this.fable = const Value.absent(),
   }) : ora = Value(ora),
        gestore = Value(gestore);
   static Insertable<RigaLettura> custom({
@@ -505,6 +546,7 @@ class LettureCompanion extends UpdateCompanion<RigaLettura> {
     Expression<String>? modelli,
     Expression<String>? skill,
     Expression<String>? gestore,
+    Expression<double>? fable,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -517,6 +559,7 @@ class LettureCompanion extends UpdateCompanion<RigaLettura> {
       if (modelli != null) 'modelli': modelli,
       if (skill != null) 'skill': skill,
       if (gestore != null) 'gestore': gestore,
+      if (fable != null) 'fable': fable,
     });
   }
 
@@ -531,6 +574,7 @@ class LettureCompanion extends UpdateCompanion<RigaLettura> {
     Value<String>? modelli,
     Value<String>? skill,
     Value<String>? gestore,
+    Value<double?>? fable,
   }) {
     return LettureCompanion(
       id: id ?? this.id,
@@ -543,6 +587,7 @@ class LettureCompanion extends UpdateCompanion<RigaLettura> {
       modelli: modelli ?? this.modelli,
       skill: skill ?? this.skill,
       gestore: gestore ?? this.gestore,
+      fable: fable ?? this.fable,
     );
   }
 
@@ -579,6 +624,9 @@ class LettureCompanion extends UpdateCompanion<RigaLettura> {
     if (gestore.present) {
       map['gestore'] = Variable<String>(gestore.value);
     }
+    if (fable.present) {
+      map['fable'] = Variable<double>(fable.value);
+    }
     return map;
   }
 
@@ -594,7 +642,8 @@ class LettureCompanion extends UpdateCompanion<RigaLettura> {
           ..write('lavoro: $lavoro, ')
           ..write('modelli: $modelli, ')
           ..write('skill: $skill, ')
-          ..write('gestore: $gestore')
+          ..write('gestore: $gestore, ')
+          ..write('fable: $fable')
           ..write(')'))
         .toString();
   }
@@ -2383,6 +2432,7 @@ typedef $$LettureTableCreateCompanionBuilder = LettureCompanion Function({
   Value<String> modelli,
   Value<String> skill,
   required String gestore,
+  Value<double?> fable,
 });
 typedef $$LettureTableUpdateCompanionBuilder = LettureCompanion Function({
   Value<int> id,
@@ -2395,6 +2445,7 @@ typedef $$LettureTableUpdateCompanionBuilder = LettureCompanion Function({
   Value<String> modelli,
   Value<String> skill,
   Value<String> gestore,
+  Value<double?> fable,
 });
 
 class $$LettureTableFilterComposer
@@ -2453,6 +2504,11 @@ class $$LettureTableFilterComposer
 
   ColumnFilters<String> get gestore => $composableBuilder(
     column: $table.gestore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fable => $composableBuilder(
+    column: $table.fable,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2515,6 +2571,11 @@ class $$LettureTableOrderingComposer
     column: $table.gestore,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get fable => $composableBuilder(
+    column: $table.fable,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LettureTableAnnotationComposer
@@ -2555,6 +2616,9 @@ class $$LettureTableAnnotationComposer
 
   GeneratedColumn<String> get gestore =>
       $composableBuilder(column: $table.gestore, builder: (column) => column);
+
+  GeneratedColumn<double> get fable =>
+      $composableBuilder(column: $table.fable, builder: (column) => column);
 }
 
 class $$LettureTableTableManager
@@ -2598,6 +2662,7 @@ class $$LettureTableTableManager
                 Value<String> modelli = const Value.absent(),
                 Value<String> skill = const Value.absent(),
                 Value<String> gestore = const Value.absent(),
+                Value<double?> fable = const Value.absent(),
               }) => LettureCompanion(
                 id: id,
                 ora: ora,
@@ -2609,6 +2674,7 @@ class $$LettureTableTableManager
                 modelli: modelli,
                 skill: skill,
                 gestore: gestore,
+                fable: fable,
               ),
           createCompanionCallback:
               ({
@@ -2622,6 +2688,7 @@ class $$LettureTableTableManager
                 Value<String> modelli = const Value.absent(),
                 Value<String> skill = const Value.absent(),
                 required String gestore,
+                Value<double?> fable = const Value.absent(),
               }) => LettureCompanion.insert(
                 id: id,
                 ora: ora,
@@ -2633,6 +2700,7 @@ class $$LettureTableTableManager
                 modelli: modelli,
                 skill: skill,
                 gestore: gestore,
+                fable: fable,
               ),
           withReferenceMapper: (p0) => p0
               .map(

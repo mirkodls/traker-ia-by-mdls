@@ -57,6 +57,19 @@ void main() {
     expect(x.gestore, gestoreAnthropic);
   });
 
+  test('B19: % Fable salvata e riletta; senza Fable -> null', () async {
+    await a.aggiungiLettura(
+      Lettura(ora: _t('2026-11-20 09:00'), sett: 64, sess: 14, fable: 80),
+    );
+    await a.aggiungiLettura(
+      Lettura(ora: _t('2026-11-20 09:15'), sett: 65, sess: 15),
+    );
+    final List<Lettura> l = await a.letture();
+    expect(l.map((Lettura x) => x.fable), <double?>[80, null]);
+    expect(l.first.sett, 64);
+    expect(l.first.sess, 14);
+  });
+
   test('copia in memoria: stessa lista finché non si scrive', () async {
     final List<Lettura> l1 = await a.letture();
     expect(identical(l1, await a.letture()), isTrue);

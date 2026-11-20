@@ -288,6 +288,9 @@ abstract final class Testi {
   /// Legenda grafico.
   static const String legSess = 'Sessione 5h';
 
+  /// Legenda: linea Fable.
+  static const String legFable = 'Fable';
+
   /// Legenda grafico.
   static const String legNota = 'Nota';
 
