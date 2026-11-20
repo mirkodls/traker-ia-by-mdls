@@ -7,9 +7,9 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 
-import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/progetti.dart';
+import 'package:traker_ia/domain/resoconto_periodo.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/barre_settimane.dart';
@@ -208,6 +208,11 @@ class _StatoPagina extends State<PaginaProgetti> {
             style: stileAccento(),
             child: const Text(Testi.nuovoProgetto),
           ),
+          OutlinedButton(
+            key: const ValueKey<String>('resoconto-ia'),
+            onPressed: () => apriDialogoPeriodo(context, _s),
+            child: const Text(Testi.tastoResocontoIA),
+          ),
         ],
       ),
       const SizedBox(height: 10),
@@ -268,11 +273,30 @@ class _StatoPagina extends State<PaginaProgetti> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton(
-                    key: ValueKey<String>('modifica-${p.id}'),
-                    onPressed: () =>
-                        apriDialogoProgetto(context, _s, progetto: p),
-                    child: const Text(Testi.modificaProgetto),
+                  Flexible(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      alignment: WrapAlignment.end,
+                      children: <Widget>[
+                        OutlinedButton(
+                          key: ValueKey<String>('resoconto-progetto-${p.id}'),
+                          onPressed: () => apriDialogoPeriodo(
+                            context,
+                            _s,
+                            tipo: TipoPeriodo.progetto,
+                            progettoId: p.id,
+                          ),
+                          child: const Text(Testi.tastoResocontoIA),
+                        ),
+                        FilledButton(
+                          key: ValueKey<String>('modifica-${p.id}'),
+                          onPressed: () =>
+                              apriDialogoProgetto(context, _s, progetto: p),
+                          child: const Text(Testi.modificaProgetto),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -468,10 +492,12 @@ class _StatoPagina extends State<PaginaProgetti> {
                 key: ValueKey<String>(
                   'esporta-sett-${g.inizio.toIso8601String()}',
                 ),
-                onPressed: () =>
-                    apriDialogoEsporta(context, _s, <SettimanaProgetto>[
-                      for (final RigaArchivio r in g.righe) r.riga,
-                    ]),
+                onPressed: () => apriDialogoPeriodo(
+                  context,
+                  _s,
+                  tipo: TipoPeriodo.settimana,
+                  quando: g.inizio,
+                ),
                 child: const Text(Testi.tastoEsportaIA),
               ),
             ],

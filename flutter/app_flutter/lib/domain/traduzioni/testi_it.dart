@@ -1127,6 +1127,76 @@ abstract final class Testi {
   static String erroreSalvaEsporta(String motivo) =>
       'Non riesco a salvare: $motivo';
 
+  // ------------------------------------------- V2 resoconto per periodo (B20)
+
+  /// Scelta periodo: un giorno.
+  static const String periodoGiorno = 'Giorno';
+
+  /// Scelta periodo: una settimana.
+  static const String periodoSettimana = 'Settimana';
+
+  /// Scelta periodo: un progetto.
+  static const String periodoProgetto = 'Progetto';
+
+  /// Freccia indietro (giorno/settimana prima).
+  static const String periodoPrima = 'Prima';
+
+  /// Freccia avanti (giorno/settimana dopo).
+  static const String periodoDopo = 'Dopo';
+
+  /// Voce "tutti i periodi" del progetto.
+  static const String tuttiPeriodi = 'Tutti i periodi (dal primo inizio)';
+
+  /// Progetto senza note "NOME inizio".
+  static const String nessunPeriodoProgetto =
+      'Questo progetto non ha ancora una nota "NOME inizio": niente da '
+      'mettere nel resoconto.';
+
+  /// Nessun progetto creato.
+  static const String nessunProgettoResoconto =
+      'Nessun progetto: creane uno in pagina Progetti.';
+
+  /// Spiega la fine scelta a mano.
+  static const String spiegaFineAMano =
+      'Hai scordato la nota "fine"? Sposta la fine a mano (non oltre '
+      'adesso).';
+
+  /// Fine di un progetto senza nota "fine".
+  static const String fineAdesso = 'adesso (nessuna nota "fine")';
+
+  /// Tasto: torna alla fine automatica.
+  static const String fineAutomatica = 'Fine automatica';
+
+  /// Tasti per spostare la fine.
+  static const String menoGiorno = '−1 g';
+
+  /// Tasti per spostare la fine.
+  static const String menoOra = '−1 h';
+
+  /// Tasti per spostare la fine.
+  static const String piuOra = '+1 h';
+
+  /// Tasti per spostare la fine.
+  static const String piuGiorno = '+1 g';
+
+  /// Riga della fine del progetto.
+  static String fineProgetto(String quando, {required bool aMano}) =>
+      'Fine: $quando${aMano ? ' (scelta a mano)' : ''}';
+
+  /// Etichetta del periodo: 'mer 18/11' o 'da → a' (a = 'adesso' se in
+  /// corso).
+  static String etichettaPeriodo(
+    String da,
+    String a, {
+    bool aperto = false,
+    bool soloGiorno = false,
+  }) {
+    if (soloGiorno) {
+      return aperto ? '$da (oggi, fino ad adesso)' : da;
+    }
+    return '$da → ${aperto ? 'adesso' : a}';
+  }
+
   // ------------------------------------------------------- V2 resoconto IA
 
   /// Titolo della sezione in Impostazioni.
