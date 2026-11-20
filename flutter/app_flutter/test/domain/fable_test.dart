@@ -154,4 +154,82 @@ void main() {
     final List<Lettura> ls = leggiIstantanea(r.single.istantanea).letture;
     expect(ls.map((Lettura l) => l.fable), <double?>[40, null]);
   });
+
+  test('forma vera claude.ai (20/11): limits + scope.model Fable', () {
+    final Uso u = leggiRisposta(<String, Object?>{
+      'five_hour': null,
+      'seven_day': <String, Object?>{
+        'utilization': 71,
+        'resets_at': '2026-11-24T19:00:00.331964+00:00',
+      },
+      'seven_day_opus': null,
+      'limits': <Object?>[
+        <String, Object?>{
+          'kind': 'weekly_all',
+          'group': 'weekly',
+          'percent': 71,
+          'scope': null,
+        },
+        <String, Object?>{
+          'kind': 'weekly_scoped',
+          'group': 'weekly',
+          'percent': 93,
+          'scope': <String, Object?>{
+            'model': <String, Object?>{'id': null, 'display_name': 'Fable'},
+            'surface': null,
+          },
+        },
+      ],
+      'weekly_scoped_shares': <Object?>[
+        <String, Object?>{
+          'limit_index': 1,
+          'used_percent_of_weekly': 47,
+          'allowance_percent_of_weekly': 50,
+        },
+      ],
+    });
+    expect(u.sett, 71);
+    expect(u.sess, isNull);
+    expect(u.fable, 93);
+  });
+
+  test('limits senza voce Fable -> null; Fable 0.5% non scalata', () {
+    expect(
+      leggiRisposta(<String, Object?>{
+        'seven_day': <String, Object?>{'utilization': 71},
+        'limits': <Object?>[
+          <String, Object?>{'kind': 'weekly_all', 'percent': 71},
+        ],
+      }).fable,
+      isNull,
+    );
+    expect(
+      fableDaLimiti(<String, Object?>{
+        'limits': <Object?>[
+          <String, Object?>{
+            'kind': 'weekly_scoped',
+            'percent': 0.5,
+            'scope': <String, Object?>{
+              'model': <String, Object?>{'display_name': 'Fable'},
+            },
+          },
+        ],
+      }),
+      0.5,
+    );
+    expect(
+      leggiRisposta(<String, Object?>{
+        'limits': <Object?>[
+          <String, Object?>{
+            'kind': 'weekly_scoped',
+            'percent': 0.5,
+            'scope': <String, Object?>{
+              'model': <String, Object?>{'display_name': 'Fable'},
+            },
+          },
+        ],
+      }).fable,
+      0.5,
+    );
+  });
 }
