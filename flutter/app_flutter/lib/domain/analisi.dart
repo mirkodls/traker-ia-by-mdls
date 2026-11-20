@@ -4,6 +4,7 @@
 import 'coppie.dart';
 import 'modelli.dart';
 import 'tempo.dart';
+import 'traduzioni/testi_it.dart';
 
 /// Verdetto di un confronto tra due ritmi.
 enum Verdetto {
@@ -74,8 +75,70 @@ Uso leggiRisposta(Object? body) {
     fable: fableLimiti ?? fable,
     resetSess: b5.$2,
     resetSett: b7.$2,
+    crediti: leggiCrediti(body),
   );
 }
+
+/// Importo {amount_minor, exponent, currency} -> (valore, valuta).
+(double, String)? _importo(Object? v) {
+  if (v is! Map<Object?, Object?>) {
+    return null;
+  }
+  final Object? m = v['amount_minor'];
+  final Object? e = v['exponent'];
+  final Object? c = v['currency'];
+  if (m is! num) {
+    return null;
+  }
+  final int esp = e is int && e >= 0 && e <= 6 ? e : 2;
+  double div = 1;
+  for (int i = 0; i < esp; i++) {
+    div *= 10;
+  }
+  return (m / div, c is String && c.isNotEmpty ? c : 'USD');
+}
+
+/// Crediti di utilizzo dal blocco 'spend' della risposta /usage.
+/// Blocco assente o senza importo usato -> null.
+Crediti? leggiCrediti(Object? body) {
+  final Object? s = body is Map<Object?, Object?> ? body['spend'] : null;
+  if (s is! Map<Object?, Object?>) {
+    return null;
+  }
+  final (double, String)? usato = _importo(s['used']);
+  if (usato == null) {
+    return null;
+  }
+  return Crediti(
+    usati: usato.$1,
+    valuta: usato.$2,
+    attivi: s['enabled'] == true,
+    limite: _importo(s['limit'])?.$1,
+  );
+}
+
+/// Simbolo della valuta ('USD' -> '\$', 'EUR' -> '€', altro = codice).
+String simboloValuta(String codice) => switch (codice.toUpperCase()) {
+  'USD' => r'$',
+  'EUR' => '€',
+  'GBP' => '£',
+  _ => codice,
+};
+
+/// Testo della carta crediti: (importo usato, riga sotto).
+({String valore, String sotto}) testoCrediti(Crediti? c) => c == null
+    ? (valore: '—', sotto: Testi.creditiInAttesa)
+    : (
+        valore: soldi(c.usati, c.valuta),
+        sotto: Testi.creditiSotto(
+          attivi: c.attivi,
+          limite: c.limite == null ? null : soldi(c.limite!, c.valuta),
+        ),
+      );
+
+/// Importo all'italiana: 1234.5 -> '1234,50 \$'.
+String soldi(double v, String valuta) =>
+    '${v.toStringAsFixed(2).replaceAll('.', ',')} ${simboloValuta(valuta)}';
 
 /// Parole che indicano ripristino/reimpostazione del limite: da ignorare.
 const List<String> _paroleRipristino = <String>[

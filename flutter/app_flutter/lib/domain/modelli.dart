@@ -111,7 +111,14 @@ class Evento {
 /// Fable se c'è.
 class Uso {
   /// Crea un uso.
-  const Uso({this.sess, this.sett, this.fable, this.resetSess, this.resetSett});
+  const Uso({
+    this.sess,
+    this.sett,
+    this.fable,
+    this.resetSess,
+    this.resetSett,
+    this.crediti,
+  });
 
   /// % sessione 5 ore.
   final double? sess;
@@ -128,8 +135,34 @@ class Uso {
   /// Prossimo reset settimanale (ora locale).
   final DateTime? resetSett;
 
+  /// Crediti di utilizzo (null = non presenti nella risposta).
+  final Crediti? crediti;
+
   /// Vero se manca tutto (nessuna percentuale).
   bool get vuoto => sess == null && sett == null;
+}
+
+/// Crediti di utilizzo di claude.ai (solo valore attuale, non storico).
+class Crediti {
+  /// Crea i crediti.
+  const Crediti({
+    required this.usati,
+    required this.valuta,
+    required this.attivi,
+    this.limite,
+  });
+
+  /// Importo usato (es. 0.0).
+  final double usati;
+
+  /// Codice valuta (es. 'USD').
+  final String valuta;
+
+  /// Crediti attivati dall'utente.
+  final bool attivi;
+
+  /// Limite di spesa (null = nessun limite).
+  final double? limite;
 }
 
 /// Solo le letture del gestore [gestore], ordinate per ora.
