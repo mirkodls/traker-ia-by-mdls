@@ -56,7 +56,9 @@ Uso leggiRisposta(Object? body) {
   final (double?, DateTime?) b7 = blocco('seven_day');
   double? sess = b5.$1;
   double? sett = b7.$1;
-  double? fable = cercaFable(body);
+  // Fable da 'limits' è già in percento: fuori dalla scala 0-1.
+  final double? fableLimiti = fableDaLimiti(body);
+  double? fable = fableLimiti == null ? cercaFable(body) : null;
   // Alcune versioni danno frazioni 0-1: se tutti <= 1 e uno non intero, scala.
   final List<double> vals = <double>[?sess, ?sett, ?fable];
   if (vals.isNotEmpty &&
@@ -69,7 +71,7 @@ Uso leggiRisposta(Object? body) {
   return Uso(
     sess: sess,
     sett: sett,
-    fable: fable,
+    fable: fableLimiti ?? fable,
     resetSess: b5.$2,
     resetSett: b7.$2,
   );
@@ -104,6 +106,38 @@ double? _utilizzo(Object? v) {
   }
   final Object? u = v['utilization'];
   return u is num ? u.toDouble() : null;
+}
+
+/// % Fable dall'elenco 'limits' (forma vera di claude.ai, 20/11/2026):
+/// voce con scope.model.display_name 'Fable' e 'percent' (già 0-100).
+/// Voci di ripristino ignorate. Niente voce -> null.
+double? fableDaLimiti(Object? body) {
+  final Object? ls = body is Map<Object?, Object?> ? body['limits'] : null;
+  if (ls is! List<Object?>) {
+    return null;
+  }
+  for (final Object? x in ls) {
+    if (x is! Map<Object?, Object?>) {
+      continue;
+    }
+    final Object? kind = x['kind'];
+    if (kind is String && _eRipristino(kind)) {
+      continue;
+    }
+    final Object? scope = x['scope'];
+    final Object? model = scope is Map<Object?, Object?> ? scope['model'] : null;
+    final Object? nome = model is Map<Object?, Object?>
+        ? model['display_name']
+        : null;
+    final Object? p = x['percent'];
+    if (nome is String &&
+        nome.toLowerCase().contains('fable') &&
+        !_eRipristino(nome) &&
+        p is num) {
+      return p.toDouble();
+    }
+  }
+  return null;
 }
 
 /// % Fable nella risposta /usage (valore grezzo, prima della scala 0-1).
