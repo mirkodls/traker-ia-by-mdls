@@ -222,17 +222,50 @@ class _StatoFinestra extends State<Finestra> {
       valore: _s.cartaSett,
       colore: Colori.sett,
     );
+    final ({String valore, String sotto}) cr = _s.cartaCrediti;
+    final Widget crediti = CartaTesto(
+      key: const ValueKey<String>('carta-crediti'),
+      titolo: Testi.cartaCrediti,
+      valore: cr.valore,
+      sotto: cr.sotto,
+      colore: Colori.testo,
+    );
     final Widget coppia = LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints c) => c.maxWidth >= 480
+      builder: (BuildContext context, BoxConstraints c) => c.maxWidth >= 720
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Expanded(child: sess),
+                Expanded(flex: 3, child: sess),
                 const SizedBox(width: 8),
-                Expanded(child: sett),
+                Expanded(flex: 3, child: sett),
+                const SizedBox(width: 8),
+                Expanded(flex: 2, child: crediti),
               ],
             )
-          : Column(children: <Widget>[sess, const SizedBox(height: 8), sett]),
+          : c.maxWidth >= 480
+          ? Column(
+              children: <Widget>[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(child: sess),
+                    const SizedBox(width: 8),
+                    Expanded(child: sett),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                crediti,
+              ],
+            )
+          : Column(
+              children: <Widget>[
+                sess,
+                const SizedBox(height: 8),
+                sett,
+                const SizedBox(height: 8),
+                crediti,
+              ],
+            ),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

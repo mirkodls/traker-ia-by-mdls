@@ -84,6 +84,57 @@ class CartaPercento extends StatelessWidget {
   }
 }
 
+/// Carta testo (es. CREDITI): valore grande, titolo e riga sotto.
+class CartaTesto extends StatelessWidget {
+  /// Crea la carta.
+  const CartaTesto({
+    required this.titolo,
+    required this.valore,
+    required this.sotto,
+    required this.colore,
+    super.key,
+  });
+
+  /// Titolo.
+  final String titolo;
+
+  /// Valore grande (es. '0,00 \$').
+  final String valore;
+
+  /// Riga sotto.
+  final String sotto;
+
+  /// Colore del valore.
+  final Color colore;
+
+  @override
+  Widget build(BuildContext context) => Carta(
+    padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+    child: Row(
+      children: <Widget>[
+        Text(
+          valore,
+          style: TextStyle(
+            color: colore,
+            fontSize: Misure.carta,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(titolo, style: stileTitolo),
+              Text(sotto, style: stilePiccolo),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Riga di stato: pallino + testo.
 class RigaStato extends StatelessWidget {
   /// Crea la riga.

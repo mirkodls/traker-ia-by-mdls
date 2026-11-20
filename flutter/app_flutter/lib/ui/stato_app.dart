@@ -8,6 +8,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:traker_ia/domain/analisi.dart' show testoCrediti;
 import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/combinazioni.dart';
@@ -154,6 +155,10 @@ class StatoApp extends ChangeNotifier {
 
   /// Carta settimana.
   ValoreCarta get cartaSett => _cartaSett;
+
+  /// Carta crediti: importo usato + riga sotto (valore attuale, non storico).
+  ({String valore, String sotto}) get cartaCrediti =>
+      testoCrediti(_ultimoUso?.crediti);
 
   /// Dati del grafico (null prima del caricamento).
   DatiGrafico? get grafico => _grafico;

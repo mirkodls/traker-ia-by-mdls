@@ -242,6 +242,17 @@ abstract final class Testi {
   /// Carta settimana.
   static const String cartaSett = 'SETTIMANA';
 
+  /// Carta crediti.
+  static const String cartaCrediti = 'CREDITI';
+
+  /// Crediti non presenti nella lettura.
+  static const String creditiInAttesa = 'in attesa di lettura';
+
+  /// Riga sotto la carta crediti: 'usati · spenti' / 'usati di 50,00 \$ · attivi'.
+  static String creditiSotto({required bool attivi, String? limite}) =>
+      '${limite == null ? 'usati' : 'usati di $limite'}  ·  '
+      '${attivi ? 'attivi' : 'spenti'}';
+
   /// Reset non ancora noto.
   static const String resetInAttesa = 'reset: in attesa di lettura';
 
