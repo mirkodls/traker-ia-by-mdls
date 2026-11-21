@@ -81,8 +81,12 @@ List<String> _giorni(List<Lettura> letture) {
     final List<Lettura> v = perGiorno[k]!;
     double? settUlt;
     double? sessMax;
+    double? fable;
     int lavoro = 0;
     for (final Lettura l in v) {
+      if (l.fable != null) {
+        fable = l.fable;
+      }
       if (l.sett != null) {
         settUlt = l.sett;
       }
@@ -95,7 +99,8 @@ List<String> _giorni(List<Lettura> letture) {
     }
     out.add(
       '$k n=${v.length} sett_ultimo=${_n(settUlt, dec: 0)} '
-      'sess_max=${_n(sessMax, dec: 0)} lavoro_n=$lavoro',
+      'sess_max=${_n(sessMax, dec: 0)} lavoro_n=$lavoro'
+      '${fable == null ? '' : ' fable_ultimo=${_n(fable, dec: 0)}'}',
     );
   }
   return out;
@@ -232,11 +237,14 @@ void _riga(StringBuffer b, SettimanaProgetto r, Map<int, String> nomi) {
 
 /// Testo da incollare in Claude per le [righe] (1 progetto o tutta una
 /// settimana). [nomi] = nome per id progetto. [creato] = ora della
-/// creazione (null = non scritta).
+/// creazione (null = non scritta). B20: [richiesta] in cima (default
+/// settimana B14) e righe di [intestazione] (periodo) dopo il titolo.
 String esportaPerIA(
   Iterable<SettimanaProgetto> righe,
   Map<int, String> nomi, {
   DateTime? creato,
+  String richiesta = richiestaResoconto,
+  List<String> intestazione = const <String>[],
 }) {
   final List<SettimanaProgetto> ordine = righe.toList()
     ..sort((SettimanaProgetto a, SettimanaProgetto b) {
@@ -244,7 +252,7 @@ String esportaPerIA(
       return c != 0 ? c : a.progettoId.compareTo(b.progettoId);
     });
   final StringBuffer b = StringBuffer()
-    ..writeln('RICHIESTA: $richiestaResoconto')
+    ..writeln('RICHIESTA: $richiesta')
     ..writeln()
     ..writeln(
       '# TraKer IA export v$versioneEsportazione'
@@ -254,8 +262,11 @@ String esportaPerIA(
       'LEGENDA: DATI = misurati dalle letture. ${Testi.stima} = calcolata '
       '(riparto tra progetti simultanei, min/max). pt = punti percentuali '
       'di % settimanale o % sessione 5 ore. Nessun token calcolato dalle %.',
-    )
-    ..writeln();
+    );
+  for (final String r in intestazione) {
+    b.writeln(_pulisci(r));
+  }
+  b.writeln();
   if (ordine.isEmpty) {
     b.writeln('(nessuna settimana da esportare)');
   }

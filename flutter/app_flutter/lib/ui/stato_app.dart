@@ -117,6 +117,9 @@ class StatoApp extends ChangeNotifier {
   /// Tutte le letture.
   List<Lettura> get letture => _letture;
 
+  /// Tutti gli eventi (note, lavoro, reset), dal primo.
+  List<Evento> get eventi => _eventi;
+
   /// Preferenze attuali.
   Preferenze get preferenze => _pref;
 
