@@ -141,11 +141,16 @@ abstract interface class Servizi {
 
   /// V2: salva [testo] come [nome] nella [cartella] (la crea se manca).
   /// Ritorna il percorso del file. Errore -> eccezione col motivo.
+  /// Telefono (B21): [cartella] ignorata, va in Documenti/TraKer IA.
   Future<String> salvaTestoInCartella({
     required String cartella,
     required String nome,
     required String testo,
   });
+
+  /// B21 telefono: menu "Condividi" di Android col [testo] (falso = non
+  /// riuscito o PC).
+  Future<bool> condividiTesto(String testo, {required String titolo});
 
   /// V2 B17: ultimi 4 caratteri della chiave API salvata in cassaforte per
   /// [f] (null = nessuna). La ui NON riceve mai la chiave intera.

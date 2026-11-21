@@ -80,6 +80,7 @@ abstract final class Chiavi {
   /// V2: % della soglia del giorno oltre cui la linea Settimana è rossa
   /// (50-100, base 95).
   static const String v2SogliaRosso = 'v2_soglia_rosso';
+
   /// Telefono: letture a app chiusa accese ('1') o spente ('0').
   static const String sfondoAcceso = 'sfondo_acceso';
 
@@ -304,6 +305,7 @@ class Preferenze {
   /// V2: fornitore, modello e URL del resoconto IA (MAI la chiave API:
   /// quella sta in cassaforte).
   final ConfigIA ia;
+
   /// Telefono: letture a app chiusa accese (interruttore).
   final bool sfondoAcceso;
 

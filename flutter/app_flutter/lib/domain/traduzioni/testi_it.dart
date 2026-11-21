@@ -1365,4 +1365,21 @@ abstract final class Testi {
   /// File non leggibile.
   static String erroreLeggiFile(String motivo) =>
       'Non riesco a leggere il file: $motivo';
+
+  // ----------------------------------------------- V2 telefono (B21)
+
+  /// Tasto Condividi (menu di Android).
+  static const String tastoCondividi = 'Condividi';
+
+  /// Dove va il .md salvato dal telefono.
+  static String salvaSuTelefono(String cartella) => 'Salva va in: $cartella';
+
+  /// Tasto del piano (giorni di lavoro, linee) sul telefono.
+  static const String tastoPiano = 'Piano';
+
+  /// Condividi non riuscito.
+  static const String condividiNo = 'Condividi non riuscito: usa Salva.';
+
+  /// Testo troppo lungo per Condividi.
+  static const String condividiTroppoLungo = 'Troppo lungo: usa Salva.';
 }

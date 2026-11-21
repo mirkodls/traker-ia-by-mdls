@@ -9,6 +9,7 @@ import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/progetti.dart';
 import 'package:traker_ia/domain/resoconto_ia.dart';
+import 'package:traker_ia/domain/sfondo.dart';
 import 'package:traker_ia/ui/servizi.dart';
 
 /// Servizi finti: tutto in memoria.
@@ -97,7 +98,8 @@ class ServiziFinti implements Servizi {
   String? erroreSalva;
 
   @override
-  String get cartellaEsportaPredefinita => 'esporta';
+  String get cartellaEsportaPredefinita =>
+      tel ? cartellaEsportaTelefono : 'esporta';
 
   @override
   Future<String> salvaTestoInCartella({
@@ -222,6 +224,15 @@ class ServiziFinti implements Servizi {
 
   @override
   Future<void> apriPermesso(String voce) async => permessi.add(voce);
+
+  /// B21: testi mandati al menu Condividi.
+  final List<String> condivisi = <String>[];
+
+  @override
+  Future<bool> condividiTesto(String testo, {required String titolo}) async {
+    condivisi.add(testo);
+    return telefono;
+  }
 
   @override
   Future<void> dimenticaCache() async => cacheButtate++;

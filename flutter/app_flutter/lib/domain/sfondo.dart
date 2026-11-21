@@ -96,3 +96,11 @@ bool chiediPermessi({
   required bool sfondoAcceso,
   required bool? batteriaLibera,
 }) => primaVolta || (sfondoAcceso && batteriaLibera == false);
+
+/// B21 telefono: dove finiscono i .md salvati (cartella pubblica Documents,
+/// la stessa che si vede in "I miei file").
+const String cartellaEsportaTelefono = 'Documents/TraKer IA';
+
+/// B21 telefono: testo più lungo di così non si manda al menu Condividi
+/// (Android rifiuta i messaggi troppo grandi): meglio Salva.
+const int maxCaratteriCondividi = 200000;

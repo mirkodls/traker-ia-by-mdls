@@ -138,6 +138,27 @@ class Telefono {
   Future<void> apriPermesso(String voce) =>
       _chiama<bool>('apriPermesso', <String, String>{'voce': voce});
 
+  /// B21: menu Android "Condividi" col [testo] (falso se non riuscito).
+  Future<bool> condividi(String testo, String titolo) async =>
+      await _chiama<bool>('condividi', <String, String>{
+        'testo': testo,
+        'titolo': titolo,
+      }) ??
+      false;
+
+  /// B21: salva [testo] in Documenti/TraKer IA/[nome]; ritorna il percorso.
+  /// Errore -> eccezione (il dialogo mostra il messaggio).
+  Future<String> salvaDocumento(String nome, String testo) async {
+    final String? p = await _canale.invokeMethod<String>(
+      'salvaDocumento',
+      <String, String>{'nome': nome, 'testo': testo},
+    );
+    if (p == null) {
+      throw StateError('salva');
+    }
+    return p;
+  }
+
   Future<T?> _chiama<T>(String metodo, [Object? argomenti]) async {
     try {
       return await _canale.invokeMethod<T>(metodo, argomenti);

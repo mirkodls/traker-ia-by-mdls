@@ -34,7 +34,10 @@ DateTime? dataUtcALocale(Object? s) {
   if (s is! String || s.trim().isEmpty) {
     return null;
   }
-  String t = s.trim().replaceFirstMapped(_troppeCifre, (Match m) => m.group(1)!);
+  String t = s.trim().replaceFirstMapped(
+    _troppeCifre,
+    (Match m) => m.group(1)!,
+  );
   if (!_fuso.hasMatch(t)) {
     t = '${t}Z';
   }
@@ -188,7 +191,9 @@ double? fableDaLimiti(Object? body) {
       continue;
     }
     final Object? scope = x['scope'];
-    final Object? model = scope is Map<Object?, Object?> ? scope['model'] : null;
+    final Object? model = scope is Map<Object?, Object?>
+        ? scope['model']
+        : null;
     final Object? nome = model is Map<Object?, Object?>
         ? model['display_name']
         : null;
@@ -336,13 +341,16 @@ List<PuntoSerie> serieIntensita(
 }
 
 /// Intensità (pt%/h barra 5 ore, media mobile) all'ora [t].
-double? intensitaA(Iterable<Lettura> letture, DateTime t, {int finestraMin = 30}) =>
-    ritmo(
-      letture,
-      Campo.sess,
-      da: t.subtract(Duration(minutes: finestraMin)),
-      a: t,
-    );
+double? intensitaA(
+  Iterable<Lettura> letture,
+  DateTime t, {
+  int finestraMin = 30,
+}) => ritmo(
+  letture,
+  Campo.sess,
+  da: t.subtract(Duration(minutes: finestraMin)),
+  a: t,
+);
 
 /// Valore della barra a un'ora: esatto = c'è una lettura vera lì.
 class ValoreA {
@@ -363,21 +371,33 @@ ValoreA valoreA(
   Campo campo,
   DateTime t, {
   double tolS = 0,
-}) {
+}) => _valoreDi(letture, (Lettura l) => l.valore(campo), t, tolS);
+
+/// B21: % Fable all'ora [t] (stesse regole di [valoreA]; null se nessuna
+/// lettura vicina ha Fable).
+ValoreA fableA(Iterable<Lettura> letture, DateTime t, {double tolS = 0}) =>
+    _valoreDi(letture, (Lettura l) => l.fable, t, tolS);
+
+ValoreA _valoreDi(
+  Iterable<Lettura> letture,
+  double? Function(Lettura) di,
+  DateTime t,
+  double tolS,
+) {
   final List<Lettura> ls = ordinaLetture(
-    letture.where((Lettura l) => l.valore(campo) != null),
+    letture.where((Lettura l) => di(l) != null),
   );
   for (final Lettura l in ls) {
     if (l.ora.difference(t).inMicroseconds.abs() <= tolS * 1e6) {
-      return ValoreA(l.valore(campo), esatto: true);
+      return ValoreA(di(l), esatto: true);
     }
   }
   for (int i = 1; i < ls.length; i++) {
     final Lettura a = ls[i - 1];
     final Lettura b = ls[i];
     if (a.ora.isBefore(t) && t.isBefore(b.ora)) {
-      final double va = a.valore(campo)!;
-      final double vb = b.valore(campo)!;
+      final double va = di(a)!;
+      final double vb = di(b)!;
       if (vb < va - sogliaReset) {
         return const ValoreA(null, esatto: false);
       }

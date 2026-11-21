@@ -78,6 +78,15 @@ String _cella(List<String> r, Map<String, int> col, String nome) {
   return i == null || i >= r.length ? '' : r[i].trim();
 }
 
+/// Numero facoltativo: '' o testo rotto -> null (mai scarta la riga).
+double? _numeroOpz(String s) {
+  try {
+    return _numero(s);
+  } on FormatException {
+    return null;
+  }
+}
+
 /// Numero: '' -> null; testo non numerico -> eccezione FormatException.
 double? _numero(String s) =>
     s.isEmpty ? null : double.parse(s.replaceAll(',', '.'));
@@ -108,6 +117,8 @@ RisultatoImport<Lettura> importaLetture(
           ora: ora,
           sett: _numero(_cella(r, col, 'settimanale')),
           sess: _numero(_cella(r, col, 'sessione')),
+          // B21: colonna 'fable' facoltativa (CSV vecchi senza = null).
+          fable: _numeroOpz(_cella(r, col, 'fable')),
           fonte: fonte.isEmpty ? 'auto' : fonte,
           alPc: pc.isEmpty ? null : pc == '1',
           lavoro: _cella(r, col, 'lavoro') == '1',

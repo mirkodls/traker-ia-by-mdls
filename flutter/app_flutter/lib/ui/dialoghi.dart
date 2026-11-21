@@ -273,6 +273,20 @@ class _StatoImpostazioni extends State<_Impostazioni>
   List<Widget> _sottofondoTelefono() {
     final StatoApp st = widget.stato;
     return <Widget>[
+      // B21: interruttore anche qui (come nella schermata); cambia subito.
+      ListenableBuilder(
+        listenable: st,
+        builder: (BuildContext _, Widget? _) => Row(
+          children: <Widget>[
+            const Expanded(child: Text(Testi.sottofondo, style: stileNormale)),
+            Switch(
+              key: const ValueKey<String>('imp-sottofondo'),
+              value: st.preferenze.sfondoAcceso,
+              onChanged: (bool v) => unawaited(st.cambiaSfondo(acceso: v)),
+            ),
+          ],
+        ),
+      ),
       const Text(Testi.campoMinutiSfondo, style: stilePiccolo),
       // Cambia subito (non serve Salva); si aggiorna da sola.
       ListenableBuilder(

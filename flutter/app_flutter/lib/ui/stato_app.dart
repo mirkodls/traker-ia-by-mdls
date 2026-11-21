@@ -164,6 +164,15 @@ class StatoApp extends ChangeNotifier {
   ({String valore, String sotto}) get cartaCrediti =>
       testoCrediti(_ultimoUso?.crediti);
 
+  /// B21: quota crediti usata 0-1 (null = niente limite o non letti).
+  double? get quotaCrediti {
+    final Crediti? c = _ultimoUso?.crediti;
+    final double? l = c?.limite;
+    return c == null || l == null || l <= 0
+        ? null
+        : (c.usati / l).clamp(0, 1).toDouble();
+  }
+
   /// Dati del grafico (null prima del caricamento).
   DatiGrafico? get grafico => _grafico;
 
@@ -617,7 +626,8 @@ class StatoApp extends ChangeNotifier {
   // ---------------------------------------------------------- V2 progetti
 
   Future<void> _caricaProgetti() async {
-    if (servizi.telefono || !_pref.lavoroV2) {
+    // B21: anche sul telefono (supera D05).
+    if (!_pref.lavoroV2) {
       _progetti = <Progetto>[];
       return;
     }
@@ -695,7 +705,8 @@ class StatoApp extends ChangeNotifier {
   /// Archivia le settimane chiuse (reset passato). Una volta per settimana
   /// (si riprova solo se è fallita): costa poco.
   Future<void> _archivia() async {
-    if (!_pronto || _chiuso || servizi.telefono || !_pref.lavoroV2) {
+    // B21: anche sul telefono (database suo; unione col PC = B22 sync).
+    if (!_pronto || _chiuso || !_pref.lavoroV2) {
       return;
     }
     final DateTime ora = adesso;

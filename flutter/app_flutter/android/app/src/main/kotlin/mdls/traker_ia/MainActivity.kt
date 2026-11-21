@@ -3,14 +3,22 @@
 // Canale "traker_ia/telefono": cookie della pagina di login (anche HttpOnly,
 // solo letti e passati alla cassaforte, mai nei log), stato batteria,
 // pagine dei permessi batteria (popup, pagina app, Samsung, Info app).
+// B21: Condividi testo (menu Android) e Salva .md in Documenti/TraKer IA
+// (MediaStore, senza permessi).
 package mdls.traker_ia
 
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import android.os.PowerManager
+import android.provider.MediaStore
 import android.provider.Settings
+import java.io.File
 import android.webkit.CookieManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -48,6 +56,34 @@ class MainActivity : FlutterActivity() {
                         apriPermesso(call.argument<String>("voce") ?: "infoApp")
                         result.success(true)
                     }
+                    "condividi" -> {
+                        val testo = call.argument<String>("testo") ?: ""
+                        val titolo = call.argument<String>("titolo") ?: ""
+                        val i = Intent(Intent.ACTION_SEND)
+                            .setType("text/plain")
+                            .putExtra(Intent.EXTRA_TEXT, testo)
+                            .putExtra(Intent.EXTRA_SUBJECT, titolo)
+                        // Testo troppo grande per Android = eccezione: falso.
+                        val ok = try {
+                            startActivity(Intent.createChooser(i, titolo))
+                            true
+                        } catch (_: RuntimeException) {
+                            false
+                        }
+                        result.success(ok)
+                    }
+                    "salvaDocumento" -> {
+                        try {
+                            result.success(
+                                salvaDocumento(
+                                    call.argument<String>("nome") ?: "traker-ia.md",
+                                    call.argument<String>("testo") ?: "",
+                                ),
+                            )
+                        } catch (e: Exception) {
+                            result.error("salva", e.javaClass.simpleName, null)
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -77,6 +113,46 @@ class MainActivity : FlutterActivity() {
         } catch (_: SecurityException) {
             infoApp(pkg)
         }
+    }
+
+    /**
+     * Scrive [testo] in Documenti/TraKer IA/[nome]; stesso nome = sovrascrive
+     * (solo file creati da questa app). Ritorna il percorso da mostrare.
+     */
+    private fun salvaDocumento(nome: String, testo: String): String {
+        val sotto = Environment.DIRECTORY_DOCUMENTS + "/TraKer IA"
+        val byte = testo.toByteArray(Charsets.UTF_8)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            // Android 8-9: cartella Documenti dell'app (senza permessi).
+            val d = File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "TraKer IA")
+            d.mkdirs()
+            val f = File(d, nome)
+            f.writeBytes(byte)
+            return f.absolutePath
+        }
+        val r = contentResolver
+        val col = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        var uri: Uri? = null
+        r.query(
+            col,
+            arrayOf(MediaStore.MediaColumns._ID),
+            "${MediaStore.MediaColumns.RELATIVE_PATH}=? AND ${MediaStore.MediaColumns.DISPLAY_NAME}=?",
+            arrayOf("$sotto/", nome),
+            null,
+        )?.use { c ->
+            if (c.moveToFirst()) uri = ContentUris.withAppendedId(col, c.getLong(0))
+        }
+        if (uri == null) {
+            val v = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, nome)
+                put(MediaStore.MediaColumns.MIME_TYPE, "text/markdown")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, "$sotto/")
+            }
+            uri = r.insert(col, v) ?: throw IllegalStateException("insert")
+        }
+        r.openOutputStream(uri!!, "wt")?.use { it.write(byte) }
+            ?: throw IllegalStateException("scrittura")
+        return "$sotto/$nome"
     }
 
     private fun infoApp(pkg: Uri) {
