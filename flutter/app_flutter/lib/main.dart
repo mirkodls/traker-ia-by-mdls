@@ -279,7 +279,7 @@ class ServiziVeri implements Servizi {
       telefono ? _telefono.batteriaLibera() : null;
 
   @override
-  Future<void> apriInfoApp() => _telefono.apriInfoApp();
+  Future<void> apriPermesso(String voce) => _telefono.apriPermesso(voce);
 
   @override
   Future<void> dimenticaCache() async => _archivio.dimenticaCache();

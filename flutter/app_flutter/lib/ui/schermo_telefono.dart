@@ -38,7 +38,7 @@ class SchermoTelefono extends StatelessWidget {
         children: <Widget>[
           _testata(context),
           RigaStato(stato: stato),
-          const SizedBox(height: 4),
+          _RigaSottofondo(stato: stato),
           Expanded(child: d == null ? const SizedBox.shrink() : _grafico(d)),
           const SizedBox(height: 6),
           RigaNota(stato: stato),
@@ -105,6 +105,7 @@ class SchermoTelefono extends StatelessWidget {
           children: <Widget>[
             _voce(c, Icons.settings, Testi.impostazioni, 'imp'),
             _voce(c, Icons.edit_note, Testi.letturaManuale, 'man'),
+            _voce(c, Icons.battery_saver, Testi.menuPermessi, 'perm'),
             if (stato.preferenze.modelliSkill) ...<Widget>[
               _voce(
                 c,
@@ -135,6 +136,8 @@ class SchermoTelefono extends StatelessWidget {
         );
       case 'man':
         await apriManuale(context, stato);
+      case 'perm':
+        await apriPermessi(context, stato);
       case 'mod':
         await apriModifica(context, stato, Gruppo.modelli);
       case 'skill':
@@ -263,6 +266,56 @@ class SchermoTelefono extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Interruttore Sottofondo (letture a app chiusa) con intervallo e stima
+/// batteria; se la batteria è limitata, avviso che apre i permessi.
+class _RigaSottofondo extends StatelessWidget {
+  const _RigaSottofondo({required this.stato});
+
+  final StatoApp stato;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool acceso = stato.preferenze.sfondoAcceso;
+    final bool limitata = acceso && stato.batteriaLibera == false;
+    return Row(
+      children: <Widget>[
+        const Icon(Icons.nightlight_outlined, size: 16, color: Colori.spento),
+        const SizedBox(width: 6),
+        const Text(Testi.sottofondo, style: stileNormale),
+        const SizedBox(width: 8),
+        Expanded(
+          child: limitata
+              ? TextButton(
+                  onPressed: () => unawaited(apriPermessi(context, stato)),
+                  style: TextButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: const Text(
+                    Testi.batteriaLimitata,
+                    style: TextStyle(color: Colori.errore, fontSize: 11),
+                  ),
+                )
+              : Text(
+                  Testi.rigaSottofondo(
+                    acceso: acceso,
+                    login: stato.cookie,
+                    minuti: stato.preferenze.minutiSfondo,
+                  ),
+                  style: const TextStyle(color: Colori.spento, fontSize: 11),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+        ),
+        Switch(
+          value: acceso,
+          onChanged: (bool v) => unawaited(stato.cambiaSfondo(acceso: v)),
+        ),
+      ],
+    );
+  }
 }
 
 /// Carta % piccola per il telefono.

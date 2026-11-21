@@ -205,8 +205,8 @@ class ServiziFinti implements Servizi {
   /// Volte che la cache è stata buttata.
   int cacheButtate = 0;
 
-  /// Volte che si è aperto Info app.
-  int infoApp = 0;
+  /// Pagine permessi aperte.
+  final List<String> permessi = <String>[];
 
   @override
   bool get telefono => tel;
@@ -221,7 +221,7 @@ class ServiziFinti implements Servizi {
   Future<bool?> batteriaLibera() async => batteria;
 
   @override
-  Future<void> apriInfoApp() async => infoApp++;
+  Future<void> apriPermesso(String voce) async => permessi.add(voce);
 
   @override
   Future<void> dimenticaCache() async => cacheButtate++;

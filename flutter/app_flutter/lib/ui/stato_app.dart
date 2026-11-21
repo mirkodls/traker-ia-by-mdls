@@ -77,6 +77,7 @@ class StatoApp extends ChangeNotifier {
   String _stato = Testi.avvio;
   bool _statoErrore = false;
   String? _avvisoDaMostrare;
+  bool _permessiDaMostrare = false;
 
   // Scelte della carta confronti (null = automatico).
   DateTime? _notaScelta;
@@ -228,6 +229,15 @@ class StatoApp extends ChangeNotifier {
   /// Avviso da mostrare (2 letture fallite), null = niente.
   String? get avvisoDaMostrare => _avvisoDaMostrare;
 
+  /// Telefono: aprire la pagina permessi (primo avvio o batteria limitata
+  /// con Sottofondo acceso).
+  bool get permessiDaMostrare => _permessiDaMostrare;
+
+  /// La pagina permessi è stata aperta.
+  void permessiVisti() {
+    _permessiDaMostrare = false;
+  }
+
   /// Tutte le letture in [periodo] della combinazione (per le spiegazioni).
   Periodo? periodoDi(Combo k) => periodoCombo(_letture, k);
 
@@ -256,6 +266,12 @@ class StatoApp extends ChangeNotifier {
         _avvisoDaMostrare = Testi.rifaiLogin;
       }
       _batteria = await servizi.batteriaLibera();
+      if (imp[Chiavi.permessiChiesti] != '1') {
+        _permessiDaMostrare = true;
+        await servizi.salvaImpostazioni(<String, String>{
+          Chiavi.permessiChiesti: '1',
+        });
+      }
       await _aggiornaSfondo();
     }
     await _avvioPrimaVolta(imp[Chiavi.avvioDeciso]);
@@ -291,16 +307,39 @@ class StatoApp extends ChangeNotifier {
     }
   }
 
-  /// Telefono: lettura in sottofondo accesa se c'è il login e non è
-  /// "solo manuale".
+  /// Telefono: lettura in sottofondo accesa se c'è il login, non è
+  /// "solo manuale" e l'interruttore Sottofondo è acceso.
   Future<void> _aggiornaSfondo() async {
     if (!servizi.telefono) {
       return;
     }
     await servizi.aggiornaSfondo(
-      minuti: _pref.minuti,
-      acceso: _cookie && _pref.metodo != metodoManuale,
+      minuti: _pref.minutiSfondo,
+      acceso: sfondoDaAccendere(_pref, login: _cookie),
     );
+  }
+
+  /// Telefono: interruttore Sottofondo. Acceso con batteria limitata =
+  /// apre la pagina permessi.
+  Future<void> cambiaSfondo({required bool acceso}) async {
+    await _salvaPref(_pref.copia(sfondoAcceso: acceso));
+    await _aggiornaSfondo();
+    _batteria = await servizi.batteriaLibera();
+    if (chiediPermessi(
+      primaVolta: false,
+      sfondoAcceso: acceso,
+      batteriaLibera: _batteria,
+    )) {
+      _permessiDaMostrare = true;
+    }
+    _avvisa();
+  }
+
+  /// Telefono: minuti tra due letture a app chiusa (15/30/60).
+  Future<void> cambiaMinutiSfondo(int minuti) async {
+    await _salvaPref(_pref.copia(minutiSfondo: minuti));
+    await _aggiornaSfondo();
+    _avvisa();
   }
 
   /// Telefono: tornando nell'app rilegge i dati (la lettura in sottofondo
@@ -326,7 +365,7 @@ class StatoApp extends ChangeNotifier {
     }
   }
 
-  /// Rilegge lo stato della batteria (dopo Info app).
+  /// Rilegge lo stato della batteria (dopo la pagina permessi).
   Future<void> aggiornaBatteria() async {
     _batteria = await servizi.batteriaLibera();
     _avvisa();
