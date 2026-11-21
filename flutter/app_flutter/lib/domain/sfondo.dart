@@ -67,3 +67,40 @@ bool serveLetturaAlRitorno(
   }
   return ultima == null || ora.difference(ultima) >= Duration(minutes: minuti);
 }
+
+/// Lettura a app chiusa da accendere: login fatto, non "solo manuale" e
+/// interruttore Sottofondo acceso.
+bool sfondoDaAccendere(Preferenze pref, {required bool login}) =>
+    login && pref.metodo != metodoManuale && pref.sfondoAcceso;
+
+/// Pagine dei permessi del telefono (solo batteria: l'app non usa
+/// notifiche né allarmi).
+abstract final class Permesso {
+  /// Popup di Android "senza limiti di batteria".
+  static const String batteria = 'batteria';
+
+  /// Pagina batteria di questa app (Senza limitazioni).
+  static const String paginaBatteria = 'paginaBatteria';
+
+  /// Samsung: Batteria > App mai in sospensione.
+  static const String samsung = 'samsung';
+
+  /// Info app (se le altre pagine mancano su questo telefono).
+  static const String infoApp = 'infoApp';
+}
+
+/// Vero se aprire la pagina permessi: primo avvio sul telefono, oppure
+/// Sottofondo appena acceso con batteria limitata.
+bool chiediPermessi({
+  required bool primaVolta,
+  required bool sfondoAcceso,
+  required bool? batteriaLibera,
+}) => primaVolta || (sfondoAcceso && batteriaLibera == false);
+
+/// B21 telefono: dove finiscono i .md salvati (cartella pubblica Documents,
+/// la stessa che si vede in "I miei file").
+const String cartellaEsportaTelefono = 'Documents/TraKer IA';
+
+/// B21 telefono: testo più lungo di così non si manda al menu Condividi
+/// (Android rifiuta i messaggi troppo grandi): meglio Salva.
+const int maxCaratteriCondividi = 200000;

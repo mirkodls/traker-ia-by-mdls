@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:traker_ia/domain/analisi.dart';
 import 'package:traker_ia/domain/archivio_settimane.dart';
+import 'package:traker_ia/domain/import_csv.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/preferenze.dart';
@@ -232,4 +233,38 @@ void main() {
       0.5,
     );
   });
+
+  test('B21: fableA nel riquadro (esatta, a metà, null senza Fable)', () {
+    final List<Lettura> ls = <Lettura>[
+      Lettura(ora: DateTime(2026, 11, 20, 10), sett: 10, fable: 40),
+      Lettura(ora: DateTime(2026, 11, 20, 11), sett: 12, fable: 50),
+      Lettura(ora: DateTime(2026, 11, 20, 12), sett: 13),
+    ];
+    final ValoreA e = fableA(ls, DateTime(2026, 11, 20, 10));
+    expect(e.valore, 40);
+    expect(e.esatto, isTrue);
+    final ValoreA m = fableA(ls, DateTime(2026, 11, 20, 10, 30));
+    expect(m.valore, closeTo(45, 1e-9));
+    expect(m.esatto, isFalse);
+    expect(fableA(ls, DateTime(2026, 11, 20, 11, 30)).valore, isNull);
+    expect(fableA(const <Lettura>[], DateTime(2026)).valore, isNull);
+  });
+
+  test(
+    'B21: CSV con colonna fable facoltativa (rotta = null, riga tenuta)',
+    () {
+      const String csv =
+          'ora;settimanale;sessione;fonte;al_pc;lavoro;modelli;skill;fable\n'
+          '2026-11-20 10:00;10;5;auto;1;0;;;40\n'
+          '2026-11-20 10:06;11;6;auto;1;0;;;xx\n';
+      final List<Lettura> ls = importaLetture(csv).voci;
+      expect(ls, hasLength(2));
+      expect(ls.first.fable, 40);
+      expect(ls.last.fable, isNull);
+      const String vecchio =
+          'ora;settimanale;sessione;fonte;al_pc;lavoro;modelli;skill\n'
+          '2026-11-20 10:00;10;5;auto;1;0;;\n';
+      expect(importaLetture(vecchio).voci.single.fable, isNull);
+    },
+  );
 }

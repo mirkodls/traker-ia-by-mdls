@@ -24,33 +24,53 @@ import 'package:traker_ia/ui/tema.dart';
 
 /// Tasti "Progetto attivo" (più progetti insieme): sotto la nota.
 class BarraProgetti extends StatelessWidget {
-  /// Crea la barra.
-  const BarraProgetti({required this.stato, super.key});
+  /// Crea la barra. [unaRiga] (telefono, B21) = una sola riga che scorre
+  /// di lato, così la schermata non si allunga.
+  const BarraProgetti({required this.stato, this.unaRiga = false, super.key});
 
   /// Stato dell'app.
   final StatoApp stato;
 
+  /// Telefono: una riga che scorre di lato.
+  final bool unaRiga;
+
   @override
   Widget build(BuildContext context) {
+    final List<Widget> tasti = <Widget>[
+      for (final Progetto p in stato.progetti)
+        _TastoProgetto(
+          progetto: p,
+          colore: coloreProgetto(p.id ?? idSenzaProgetto, stato.progetti),
+          attivo: stato.progettiAttivi.contains(p.id),
+          onTap: () => stato.cambiaProgettoAttivo(p),
+        ),
+    ];
+    const Widget titolo = Tooltip(
+      message: Testi.spiegaProgettoAttivo,
+      child: Text(Testi.progettoAttivo, style: stileTitolo),
+    );
+    if (unaRiga) {
+      return SingleChildScrollView(
+        key: const ValueKey<String>('progetti-una-riga'),
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: <Widget>[
+            titolo,
+            for (final Widget t in tasti) ...<Widget>[
+              const SizedBox(width: 6),
+              t,
+            ],
+          ],
+        ),
+      );
+    }
     return Carta(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Wrap(
         spacing: 6,
         runSpacing: 6,
         crossAxisAlignment: WrapCrossAlignment.center,
-        children: <Widget>[
-          const Tooltip(
-            message: Testi.spiegaProgettoAttivo,
-            child: Text(Testi.progettoAttivo, style: stileTitolo),
-          ),
-          for (final Progetto p in stato.progetti)
-            _TastoProgetto(
-              progetto: p,
-              colore: coloreProgetto(p.id ?? idSenzaProgetto, stato.progetti),
-              attivo: stato.progettiAttivi.contains(p.id),
-              onTap: () => stato.cambiaProgettoAttivo(p),
-            ),
-        ],
+        children: <Widget>[titolo, ...tasti],
       ),
     );
   }
@@ -143,6 +163,10 @@ class _StatoPagina extends State<PaginaProgetti> {
 
   StatoApp get _s => widget.stato;
 
+  /// B21: telefono = solo esporta (Resoconto IA via API solo sul PC).
+  String get _tastoResoconto =>
+      _s.servizi.telefono ? Testi.titoloEsportaIA : Testi.tastoResocontoIA;
+
   @override
   void initState() {
     super.initState();
@@ -211,7 +235,8 @@ class _StatoPagina extends State<PaginaProgetti> {
           OutlinedButton(
             key: const ValueKey<String>('resoconto-ia'),
             onPressed: () => apriDialogoPeriodo(context, _s),
-            child: const Text(Testi.tastoResocontoIA),
+            // B21: sul telefono niente IA via API: solo esporta il testo.
+            child: Text(_tastoResoconto),
           ),
         ],
       ),
@@ -287,7 +312,7 @@ class _StatoPagina extends State<PaginaProgetti> {
                             tipo: TipoPeriodo.progetto,
                             progettoId: p.id,
                           ),
-                          child: const Text(Testi.tastoResocontoIA),
+                          child: Text(_tastoResoconto),
                         ),
                         FilledButton(
                           key: ValueKey<String>('modifica-${p.id}'),

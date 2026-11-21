@@ -60,7 +60,12 @@ Future<void> _apriPagina(WidgetTester tester) async {
 }
 
 void main() {
-  for (final Size taglia in const <Size>[Size(420, 500), Size(1300, 950)]) {
+  for (final Size taglia in const <Size>[
+    Size(420, 500),
+    Size(1300, 950),
+    Size(360, 640),
+    Size(393, 852),
+  ]) {
     testWidgets('barra progetto attivo ${taglia.width.toInt()}: tasti, '
         'toggle, nessun overflow', (WidgetTester tester) async {
       final ({StatoApp stato, ServiziFinti f}) a = await _apri(tester, taglia);
@@ -114,7 +119,12 @@ void main() {
     expect(find.byType(BarraProgetti), findsNothing);
   });
 
-  for (final Size taglia in const <Size>[Size(420, 500), Size(1300, 950)]) {
+  for (final Size taglia in const <Size>[
+    Size(420, 500),
+    Size(1300, 950),
+    Size(360, 640),
+    Size(393, 852),
+  ]) {
     testWidgets('pagina progetti ${taglia.width.toInt()}: riquadri e righe, '
         'nessun overflow', (WidgetTester tester) async {
       final ({StatoApp stato, ServiziFinti f}) a = await _apri(tester, taglia);
@@ -169,7 +179,12 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  for (final Size taglia in const <Size>[Size(420, 500), Size(1300, 950)]) {
+  for (final Size taglia in const <Size>[
+    Size(420, 500),
+    Size(1300, 950),
+    Size(360, 640),
+    Size(393, 852),
+  ]) {
     testWidgets('scheda settimana ${taglia.width.toInt()}: grafici salvati, '
         'costo, log, token', (WidgetTester tester) async {
       final ({StatoApp stato, ServiziFinti f}) a = await _apri(tester, taglia);

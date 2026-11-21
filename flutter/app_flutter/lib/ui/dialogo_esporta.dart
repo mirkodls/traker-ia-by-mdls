@@ -19,6 +19,7 @@ import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/progetti.dart';
 import 'package:traker_ia/domain/resoconto_ia.dart';
 import 'package:traker_ia/domain/resoconto_periodo.dart';
+import 'package:traker_ia/domain/sfondo.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/dialogo_resoconto.dart';
@@ -225,7 +226,13 @@ class _StatoDialogoEsporta extends State<_DialogoEsporta> {
         : _nomeProgetto;
   }
 
+  /// B21: telefono = niente cartella, niente Resoconto IA (chiave solo PC).
+  bool get _telefono => widget.stato.servizi.telefono;
+
   Future<void> _caricaSalvati() async {
+    if (_telefono) {
+      return;
+    }
     final DateTime? i = _inizio;
     final PeriodoIA? p = _periodo;
     final String c = _cartella.text.trim();
@@ -371,6 +378,23 @@ class _StatoDialogoEsporta extends State<_DialogoEsporta> {
       _esito = Testi.copiatoEsporta;
       _errore = false;
     });
+  }
+
+  Future<void> _condividi() async {
+    if (_testoIA.isEmpty) {
+      return;
+    }
+    if (_testoIA.length > maxCaratteriCondividi) {
+      _mostra(Testi.condividiTroppoLungo, errore: true);
+      return;
+    }
+    final bool ok = await widget.stato.servizi.condividiTesto(
+      _testoIA,
+      titolo: _nomeFile,
+    );
+    if (!ok) {
+      _mostra(Testi.condividiNo, errore: true);
+    }
   }
 
   Future<void> _salva() async {
@@ -658,28 +682,43 @@ class _StatoDialogoEsporta extends State<_DialogoEsporta> {
                 child: const Text(Testi.tastoCopiaEsporta),
               ),
               const SizedBox(height: 8),
-              TextField(
-                key: const ValueKey<String>('esporta-cartella'),
-                controller: _cartella,
-                onSubmitted: (String _) => unawaited(_caricaSalvati()),
-                style: stileNormale,
-                decoration: const InputDecoration(
-                  labelText: Testi.campoCartellaEsporta,
+              if (_telefono) ...<Widget>[
+                FilledButton(
+                  key: const ValueKey<String>('esporta-condividi'),
+                  onPressed: vuoto ? null : _condividi,
+                  style: stileAccento(),
+                  child: const Text(Testi.tastoCondividi),
                 ),
-              ),
+                const SizedBox(height: 6),
+                Text(
+                  Testi.salvaSuTelefono(_cartella.text),
+                  style: stilePiccolo,
+                ),
+              ] else
+                TextField(
+                  key: const ValueKey<String>('esporta-cartella'),
+                  controller: _cartella,
+                  onSubmitted: (String _) => unawaited(_caricaSalvati()),
+                  style: stileNormale,
+                  decoration: const InputDecoration(
+                    labelText: Testi.campoCartellaEsporta,
+                  ),
+                ),
               const SizedBox(height: 6),
               FilledButton(
                 key: const ValueKey<String>('esporta-salva'),
                 onPressed: vuoto ? null : _salva,
                 child: const Text(Testi.tastoSalvaMd),
               ),
-              const SizedBox(height: 6),
-              FilledButton(
-                key: const ValueKey<String>('esporta-resoconto'),
-                onPressed: _occupato || vuoto ? null : _resoconto,
-                style: stileAccento(),
-                child: const Text(Testi.tastoResocontoIA),
-              ),
+              if (!_telefono) ...<Widget>[
+                const SizedBox(height: 6),
+                FilledButton(
+                  key: const ValueKey<String>('esporta-resoconto'),
+                  onPressed: _occupato || vuoto ? null : _resoconto,
+                  style: stileAccento(),
+                  child: const Text(Testi.tastoResocontoIA),
+                ),
+              ],
               if (_occupato)
                 const Padding(
                   padding: EdgeInsets.only(top: 4),
@@ -696,9 +735,13 @@ class _StatoDialogoEsporta extends State<_DialogoEsporta> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 8),
-              const Text(Testi.titoloResocontiSalvati, style: stileNormale),
-              if (_salvati.isEmpty)
+              if (!_telefono) ...<Widget>[
+                const SizedBox(height: 8),
+                const Text(Testi.titoloResocontiSalvati, style: stileNormale),
+              ],
+              if (_telefono)
+                const SizedBox.shrink()
+              else if (_salvati.isEmpty)
                 const Text(Testi.nessunResoconto, style: stilePiccolo)
               else
                 for (final FileResoconto f in _salvati)

@@ -27,6 +27,7 @@ import 'package:traker_ia/domain/collegamenti.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/resoconto_ia.dart';
+import 'package:traker_ia/domain/sfondo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/app.dart';
 import 'package:traker_ia/ui/servizi.dart';
@@ -184,6 +185,9 @@ class ServiziVeri implements Servizi {
 
   @override
   String get cartellaEsportaPredefinita {
+    if (telefono) {
+      return cartellaEsportaTelefono;
+    }
     final String casa =
         Platform.environment['USERPROFILE'] ??
         Platform.environment['HOME'] ??
@@ -200,6 +204,9 @@ class ServiziVeri implements Servizi {
     required String nome,
     required String testo,
   }) async {
+    if (telefono) {
+      return _telefono.salvaDocumento(nome, testo);
+    }
     final Directory d = Directory(cartella);
     await d.create(recursive: true);
     final File f = File('${d.path}${Platform.pathSeparator}$nome');
@@ -279,7 +286,11 @@ class ServiziVeri implements Servizi {
       telefono ? _telefono.batteriaLibera() : null;
 
   @override
-  Future<void> apriInfoApp() => _telefono.apriInfoApp();
+  Future<void> apriPermesso(String voce) => _telefono.apriPermesso(voce);
+
+  @override
+  Future<bool> condividiTesto(String testo, {required String titolo}) async =>
+      telefono && await _telefono.condividi(testo, titolo);
 
   @override
   Future<void> dimenticaCache() async => _archivio.dimenticaCache();

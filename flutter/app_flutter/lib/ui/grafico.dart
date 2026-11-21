@@ -173,11 +173,14 @@ String testoMouse(
   );
   final ValoreA sett = valoreA(letture, Campo.sett, t);
   final ValoreA sess = valoreA(letture, Campo.sess, t);
+  final ValoreA fable = fableA(letture, t);
   final double? inte = intensitaA(letture, t);
   final List<String> righe = <String>[
     quandoData(t),
     riga(Testi.rqSett, sett, '%'),
     riga(Testi.rqSess, sess, '%'),
+    // B21: riga Fable solo se letta in quel tratto.
+    if (fable.valore != null) riga(Testi.legFable, fable, '%'),
     if (v2 == null)
       riga(Testi.rqIntensita, ValoreA(inte, esatto: sess.esatto), ' pt/h')
     else

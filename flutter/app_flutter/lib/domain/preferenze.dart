@@ -81,6 +81,15 @@ abstract final class Chiavi {
   /// (50-100, base 95).
   static const String v2SogliaRosso = 'v2_soglia_rosso';
 
+  /// Telefono: letture a app chiusa accese ('1') o spente ('0').
+  static const String sfondoAcceso = 'sfondo_acceso';
+
+  /// Telefono: minuti tra due letture a app chiusa (15/30/60).
+  static const String minutiSfondo = 'minuti_sfondo';
+
+  /// Telefono: pagina permessi già mostrata al primo avvio ('1').
+  static const String permessiChiesti = 'permessi_chiesti';
+
   /// Tutte le chiavi lette all'avvio.
   static final List<String> tutte = <String>[
     for (final LineaGrafico l in LineaGrafico.values) ...<String>[
@@ -110,6 +119,9 @@ abstract final class Chiavi {
     importFatto,
     cartellaImport,
     avvioDeciso,
+    sfondoAcceso,
+    minutiSfondo,
+    permessiChiesti,
   ];
 }
 
@@ -132,6 +144,17 @@ const List<String> modelliIniziali = <String>[
 
 /// Minuti predefiniti tra due letture.
 const int minutiPredefiniti = 10;
+
+/// Telefono: scelte di minuti per le letture a app chiusa (meno spesso =
+/// meno batteria). Android non va sotto 15.
+const List<int> sceltaMinutiSfondo = <int>[15, 30, 60];
+
+/// Telefono: minuti predefiniti a app chiusa (obiettivo ~1% batteria/24h).
+const int minutiSfondoPredefiniti = 30;
+
+/// [m] se è una scelta valida, altrimenti il predefinito.
+int normalizzaMinutiSfondo(int? m) =>
+    sceltaMinutiSfondo.contains(m) ? m! : minutiSfondoPredefiniti;
 
 /// Lunghezza massima di un nome tasto.
 const int maxNome = 20;
@@ -182,6 +205,8 @@ class Preferenze {
     this.rossoAcceso = true,
     int sogliaRosso = sogliaRossoPredefinita,
     ConfigIA? ia,
+    this.sfondoAcceso = true,
+    this.minutiSfondo = minutiSfondoPredefiniti,
   }) : ia = ia ?? ConfigIA(),
        sogliaRosso = sogliaRossoValida(sogliaRosso),
        finestraPostuma = finestraPostumaValida(finestraPostuma),
@@ -217,6 +242,10 @@ class Preferenze {
       ia: ConfigIA.daMappa(m),
       sogliaRosso: sogliaRossoValida(
         int.tryParse((m[Chiavi.v2SogliaRosso] ?? '').trim()),
+      ),
+      sfondoAcceso: m[Chiavi.sfondoAcceso] != '0',
+      minutiSfondo: normalizzaMinutiSfondo(
+        int.tryParse(m[Chiavi.minutiSfondo] ?? ''),
       ),
     );
   }
@@ -277,6 +306,12 @@ class Preferenze {
   /// quella sta in cassaforte).
   final ConfigIA ia;
 
+  /// Telefono: letture a app chiusa accese (interruttore).
+  final bool sfondoAcceso;
+
+  /// Telefono: minuti tra due letture a app chiusa (15/30/60).
+  final int minutiSfondo;
+
   /// Preferenze -> impostazioni da salvare.
   Map<String, String> aMappa() => <String, String>{
     ...ia.aMappa(),
@@ -297,6 +332,8 @@ class Preferenze {
     Chiavi.v2LineaIdeale: lineaIdeale ? '1' : '0',
     Chiavi.v2LineaAdattiva: lineaAdattiva ? '1' : '0',
     Chiavi.v2FinestraPostuma: '$finestraPostuma',
+    Chiavi.sfondoAcceso: sfondoAcceso ? '1' : '0',
+    Chiavi.minutiSfondo: '$minutiSfondo',
   };
 
   /// Copia con alcuni valori cambiati.
@@ -319,6 +356,8 @@ class Preferenze {
     bool? rossoAcceso,
     int? sogliaRosso,
     ConfigIA? ia,
+    bool? sfondoAcceso,
+    int? minutiSfondo,
   }) => Preferenze(
     minuti: minuti ?? this.minuti,
     metodo: metodo ?? this.metodo,
@@ -338,6 +377,8 @@ class Preferenze {
     rossoAcceso: rossoAcceso ?? this.rossoAcceso,
     sogliaRosso: sogliaRosso ?? this.sogliaRosso,
     ia: ia ?? this.ia,
+    sfondoAcceso: sfondoAcceso ?? this.sfondoAcceso,
+    minutiSfondo: normalizzaMinutiSfondo(minutiSfondo ?? this.minutiSfondo),
   );
 
   /// Accende/spegne il giorno [g] (1 = lunedì ... 7 = domenica) del piano.

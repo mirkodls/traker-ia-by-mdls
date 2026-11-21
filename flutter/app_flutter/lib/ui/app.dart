@@ -76,8 +76,12 @@ class _StatoFinestra extends State<Finestra> {
   }
 
   void _controllaAvviso() {
+    if (_avvisoAperto) {
+      return;
+    }
     final String? m = _s.avvisoDaMostrare;
-    if (m == null || _avvisoAperto) {
+    if (m == null) {
+      _controllaPermessi();
       return;
     }
     _s.avvisoVisto();
@@ -85,6 +89,21 @@ class _StatoFinestra extends State<Finestra> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
         await apriAvviso(context, m);
+      }
+      _avvisoAperto = false;
+    });
+  }
+
+  /// Telefono: pagina permessi al primo avvio o con batteria limitata.
+  void _controllaPermessi() {
+    if (!_s.permessiDaMostrare) {
+      return;
+    }
+    _s.permessiVisti();
+    _avvisoAperto = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        await apriPermessi(context, _s);
       }
       _avvisoAperto = false;
     });

@@ -67,6 +67,12 @@ void main() {
     expect(await a.letture(), isEmpty);
   });
 
+  test('interruttore Sottofondo spento: niente rete, niente lettura', () async {
+    await a.salvaImpostazione(Chiavi.sfondoAcceso, '0');
+    expect(await letturaSfondo(a, web(_uso)), EsitoSfondo.saltata);
+    expect(await a.letture(), isEmpty);
+  });
+
   test('401: segna login scaduto, poi lettura buona lo toglie', () async {
     const Object scaduto = ErroreLettura('401', loginScaduto: true);
     expect(await letturaSfondo(a, web(scaduto)), EsitoSfondo.loginScaduto);
@@ -81,5 +87,43 @@ void main() {
       EsitoSfondo.fallita,
     );
     expect(await a.impostazione(Chiavi.loginScaduto), isNull);
+  });
+
+  test('B21: forma vera /usage (20/11, B19): five_hour null, Fable da '
+      'limits, crediti -> salva sett+Fable, sess vuota', () async {
+    const Map<String, Object?> vera = <String, Object?>{
+      'five_hour': null,
+      'seven_day': <String, Object?>{
+        'utilization': 71,
+        'resets_at': '2026-11-24T19:00:00.331964+00:00',
+      },
+      'seven_day_opus': null,
+      'limits': <Object?>[
+        <String, Object?>{'kind': 'weekly_all', 'percent': 71, 'scope': null},
+        <String, Object?>{
+          'kind': 'weekly_scoped',
+          'percent': 93,
+          'scope': <String, Object?>{
+            'model': <String, Object?>{'id': null, 'display_name': 'Fable'},
+          },
+        },
+      ],
+      'spend': <String, Object?>{
+        'enabled': true,
+        'used': <String, Object?>{
+          'amount_minor': 1250,
+          'exponent': 2,
+          'currency': 'USD',
+        },
+      },
+    };
+    expect(
+      await letturaSfondo(a, web(vera), orologio: () => ora),
+      EsitoSfondo.salvata,
+    );
+    final Lettura l = (await a.letture()).single;
+    expect(l.sett, 71);
+    expect(l.sess, isNull);
+    expect(l.fable, 93);
   });
 }
