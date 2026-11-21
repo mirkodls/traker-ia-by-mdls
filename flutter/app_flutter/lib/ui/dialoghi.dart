@@ -17,6 +17,7 @@ import 'package:traker_ia/ui/pagina_login.dart';
 import 'package:traker_ia/ui/scheda_grafico.dart';
 import 'package:traker_ia/ui/servizi.dart';
 import 'package:traker_ia/ui/sezione_ia.dart';
+import 'package:traker_ia/ui/sezione_sync.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 import 'package:traker_ia/ui/tema.dart';
 
@@ -364,6 +365,11 @@ class _StatoImpostazioni extends State<_Impostazioni>
           Testi.spiegaSottofondoGruppo,
           _sottofondoTelefono(),
         ),
+      _gruppo(
+        Testi.gruppoSync,
+        _tel ? Testi.spiegaSyncTel : Testi.spiegaSyncPc,
+        <Widget>[SezioneSync(stato: widget.stato)],
+      ),
       if (_errore != null)
         Text(_errore!, style: const TextStyle(color: Colori.errore)),
     ],

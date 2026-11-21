@@ -1382,4 +1382,108 @@ abstract final class Testi {
 
   /// Testo troppo lungo per Condividi.
   static const String condividiTroppoLungo = 'Troppo lungo: usa Salva.';
+
+  // ----------------------------------------------- Sync Wi-Fi (B22)
+
+  /// Gruppo impostazioni sync.
+  static const String gruppoSync = 'Sync PC e telefono';
+
+  /// Spiegazione PC.
+  static const String spiegaSyncPc =
+      'Unisce i dati col telefono sul Wi-Fi di casa. Cifrato, niente internet.';
+
+  /// Spiegazione telefono.
+  static const String spiegaSyncTel =
+      'Unisce i dati col PC quando sei sul Wi-Fi di casa (anche in sottofondo).';
+
+  /// Tasto PC.
+  static const String tastoAbbinaTelefono = 'Abbina telefono';
+
+  /// Tasto telefono.
+  static const String tastoAbbinaPc = 'Abbina al PC';
+
+  /// Tasto telefono.
+  static const String tastoSyncOra = 'Sincronizza ora';
+
+  /// Tasto telefono.
+  static const String tastoSyncTutto = 'Sincronizza tutto';
+
+  /// Tasto PC.
+  static const String tastoDimenticaTelefoni = 'Dimentica telefoni';
+
+  /// Titolo dialogo abbinamento PC.
+  static const String titoloAbbina = 'Abbinamento';
+
+  /// PC in attesa.
+  static const String abbinaAttesa =
+      'Sul telefono: Impostazioni > Generale > Abbina al PC.\n'
+      'Aspetto il telefono (3 minuti)...';
+
+  /// PC: codice da scrivere sul telefono.
+  static const String abbinaScriviCodice = 'Scrivi questo codice sul telefono:';
+
+  /// PC: porta occupata.
+  static const String abbinaPortaOccupata =
+      'Porta 45791 occupata: chiudi altre copie dell\'app e riprova.';
+
+  /// Telefono: cerca.
+  static const String abbinaCerco = 'Cerco il PC sul Wi-Fi...';
+
+  /// Telefono: campo codice.
+  static const String campoCodicePc = 'Codice mostrato sul PC (6 cifre)';
+
+  /// Tasto conferma.
+  static const String tastoConferma = 'Conferma';
+
+  /// Nessun telefono.
+  static const String nessunTelefono = 'Nessun telefono abbinato.';
+
+  /// Telefoni abbinati.
+  static String telefoniAbbinati(List<String> nomi) =>
+      'Abbinati: ${nomi.join(', ')}';
+
+  /// PC abbinato (telefono).
+  static String pcAbbinato(String nome) => 'Abbinato a: $nome';
+
+  /// Ultimo sync.
+  static String ultimoSync(String quando) => 'Ultimo sync: $quando';
+
+  /// Esiti.
+  static const String syncNoWifi = 'Non sei sul Wi-Fi: sync saltato.';
+
+  /// Esiti.
+  static const String syncPcNonTrovato =
+      'PC non trovato. App aperta sul PC? Stesso Wi-Fi? Firewall: Consenti.';
+
+  /// Esiti.
+  static const String syncErrore = 'Sync non riuscito: riprova.';
+
+  /// Esiti.
+  static const String syncAnnullato = 'Abbinamento annullato.';
+
+  /// Esiti.
+  static const String syncCodiceSbagliato =
+      'Codice diverso da quello del PC: abbinamento NON fatto. Riprova.';
+
+  /// Esiti.
+  static const String syncApriAbbinaSulPc =
+      'Prima premi "Abbina telefono" sul PC, poi riprova.';
+
+  /// Esiti.
+  static const String syncNonAbbinato = 'Prima abbina il PC.';
+
+  /// Esiti.
+  static const String syncRiabbina =
+      'Il PC non conosce questo telefono: abbina di nuovo.';
+
+  /// Esiti.
+  static String syncAbbinato(String nome) => 'Abbinato a $nome.';
+
+  /// Esiti.
+  static String syncFatto(String nome, int n) => n == 0
+      ? 'Sync con $nome: già tutto uguale.'
+      : 'Sync con $nome: $n righe nuove.';
+
+  /// PC: telefono abbinato.
+  static String abbinatoTelefono(String nome) => 'Abbinato: $nome. Fatto!';
 }

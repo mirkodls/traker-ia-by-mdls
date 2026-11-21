@@ -10,6 +10,7 @@ import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/progetti.dart';
+import 'package:traker_ia/domain/sync_dati.dart';
 import 'package:traker_ia/domain/tempo.dart';
 
 /// Archivio dei progetti.
@@ -115,6 +116,91 @@ class ArchivioProgetti {
       );
     }
     return out;
+  }
+
+  /// Sync (B22): settimane da [da] in poi (null = tutte) col NOME del
+  /// progetto (gli id cambiano tra PC e telefono).
+  Future<List<SettimanaSync>> settimaneSync(DateTime? da) async {
+    final Map<int, String> nomi = <int, String>{
+      for (final Progetto p in await progetti())
+        if (p.id != null) p.id!: p.nome,
+    };
+    return <SettimanaSync>[
+      for (final SettimanaProgetto s in await settimane())
+        if (nomi[s.progettoId] != null &&
+            (da == null || !s.inizio.isBefore(da)))
+          SettimanaSync(
+            progetto: nomi[s.progettoId]!,
+            inizio: s.inizio,
+            fine: s.fine,
+            istantanea: s.istantanea,
+            log: s.log,
+            token: s.tokenManuali,
+          ),
+    ];
+  }
+
+  /// Sync (B22): aggiunge i progetti che mancano (per nome) e le settimane
+  /// che mancano (stesso progetto+inizio = già presente, non si tocca; solo
+  /// i token a mano mancanti si riempiono). Ritorna le righe aggiunte.
+  Future<int> aggiungiSync(
+    List<Progetto> arrivati,
+    List<SettimanaSync> settimaneArrivate,
+  ) async {
+    int n = 0;
+    await _db.transaction(() async {
+      for (final Progetto p in progettiNuovi(await progetti(), arrivati)) {
+        await _db
+            .into(_db.progetti)
+            .insert(
+              ProgettiCompanion.insert(
+                nome: p.nome.trim(),
+                colore: Value<int>(p.colore),
+                note: Value<String>(p.note),
+              ),
+            );
+        n++;
+      }
+      if (settimaneArrivate.isEmpty) {
+        return;
+      }
+      final Map<String, int> ids = <String, int>{
+        for (final Progetto p in await progetti())
+          if (p.id != null) nomeNormale(p.nome): p.id!,
+      };
+      final Map<String, SettimanaProgetto> gia = <String, SettimanaProgetto>{
+        for (final SettimanaProgetto s in await settimane())
+          '${s.progettoId}|${formatta(s.inizio)}': s,
+      };
+      for (final SettimanaSync s in settimaneArrivate) {
+        final int? pid = ids[nomeNormale(s.progetto)];
+        if (pid == null) {
+          continue;
+        }
+        final SettimanaProgetto? g = gia['$pid|${formatta(s.inizio)}'];
+        if (g == null) {
+          await _db
+              .into(_db.progettoSettimane)
+              .insert(
+                ProgettoSettimaneCompanion.insert(
+                  progettoId: pid,
+                  settInizio: formatta(s.inizio),
+                  settFine: Value<String?>(
+                    s.fine == null ? null : formatta(s.fine!),
+                  ),
+                  snapshotJson: Value<String>(s.istantanea),
+                  logTesto: Value<String>(s.log),
+                  tokenManuali: Value<int?>(s.token),
+                ),
+                mode: InsertMode.insertOrIgnore,
+              );
+          n++;
+        } else if (g.tokenManuali == null && s.token != null && g.id != null) {
+          await salvaTokenManuali(g.id!, s.token);
+        }
+      }
+    });
+    return n;
   }
 
   /// Token scritti a mano per la riga [idRiga] (null = cancella).

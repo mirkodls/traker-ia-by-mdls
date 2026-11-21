@@ -16,9 +16,10 @@ Regola del progetto: solo MIT, BSD o Apache 2.0. Risultato: tutti OK.
 | tray_manager | MIT | icona vicino all'orologio | Windows |
 | launch_at_startup | MIT | avvio con Windows | Windows |
 | window_manager | MIT | "Sempre in primo piano" — NON usato (Blocco 3): la versione 0.7 compila codice C in più (nativeapi). Fatto con un piccolo canale nostro in windows/runner/flutter_window.cpp, zero pacchetti | Windows |
-| multicast_dns | BSD-3 | sync Wi-Fi: trova dispositivi | tutte tranne web |
+| multicast_dns | BSD-3 | sync Wi-Fi: trova dispositivi — NON usato (B22): ricerca con UDP broadcast di dart:io, zero pacchetti | tutte tranne web |
+| crypto | BSD-3 | sync Wi-Fi: SHA-256/HMAC per abbinamento e cifratura (AGGIUNTO B22, 3.0.8, Dart team; zero dipendenze nuove: typed_data già presente) | tutte |
 | path_provider | BSD-3 | cartella dati dell'app (AGGIUNTO Blocco 2) | tutte |
-| cryptography | Apache 2.0 | cifratura sync Wi-Fi | tutte |
+| cryptography | Apache 2.0 | cifratura sync Wi-Fi — NON usato (B22): basta crypto + BigInt di Dart | tutte |
 
 Note:
 - Nel Blocco 0 NON è stato aggiunto nessun pacchetto: ogni blocco aggiunge solo quelli che gli servono.

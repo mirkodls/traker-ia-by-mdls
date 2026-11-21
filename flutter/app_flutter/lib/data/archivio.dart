@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 
 import 'package:traker_ia/data/database.dart';
 import 'package:traker_ia/domain/modelli.dart';
+import 'package:traker_ia/domain/sync_dati.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/unione.dart';
 
@@ -36,12 +37,13 @@ class Archivio {
     if (c != null) {
       return c;
     }
-    final List<RigaLettura> righe = await (_db.select(_db.letture)
-          ..orderBy(<OrderClauseGenerator<$LettureTable>>[
-            ($LettureTable t) => OrderingTerm.asc(t.ora),
-            ($LettureTable t) => OrderingTerm.asc(t.id),
-          ]))
-        .get();
+    final List<RigaLettura> righe =
+        await (_db.select(_db.letture)
+              ..orderBy(<OrderClauseGenerator<$LettureTable>>[
+                ($LettureTable t) => OrderingTerm.asc(t.ora),
+                ($LettureTable t) => OrderingTerm.asc(t.id),
+              ]))
+            .get();
     final List<Lettura> out = List<Lettura>.unmodifiable(
       righe.map(_daRigaLettura).whereType<Lettura>(),
     );
@@ -55,12 +57,13 @@ class Archivio {
     if (c != null) {
       return c;
     }
-    final List<RigaEvento> righe = await (_db.select(_db.eventi)
-          ..orderBy(<OrderClauseGenerator<$EventiTable>>[
-            ($EventiTable t) => OrderingTerm.asc(t.ora),
-            ($EventiTable t) => OrderingTerm.asc(t.id),
-          ]))
-        .get();
+    final List<RigaEvento> righe =
+        await (_db.select(_db.eventi)
+              ..orderBy(<OrderClauseGenerator<$EventiTable>>[
+                ($EventiTable t) => OrderingTerm.asc(t.ora),
+                ($EventiTable t) => OrderingTerm.asc(t.id),
+              ]))
+            .get();
     final List<Evento> out = List<Evento>.unmodifiable(
       righe.map(_daRigaEvento).whereType<Evento>(),
     );
@@ -90,10 +93,7 @@ class Archivio {
   /// Aggiunge le letture [arrivate] (import o sync) saltando i doppioni.
   /// Ritorna quante sono state aggiunte.
   Future<int> aggiungiLettureSenzaDoppioni(Iterable<Lettura> arrivate) async {
-    final RisultatoUnione<Lettura> r = unisciLetture(
-      await letture(),
-      arrivate,
-    );
+    final RisultatoUnione<Lettura> r = unisciLetture(await letture(), arrivate);
     if (r.aggiunte == 0) {
       return 0;
     }
@@ -124,18 +124,79 @@ class Archivio {
     return r.aggiunte;
   }
 
+  /// Sync/sottofondo (B22): aggiunge SOLO le letture nuove (mai riscrive la
+  /// tabella). Ritorna quante.
+  Future<int> aggiungiLettureSoloNuove(Iterable<Lettura> arrivate) async {
+    final List<Lettura> n = lettureNuove(await letture(), arrivate);
+    if (n.isEmpty) {
+      return 0;
+    }
+    await _db.batch((Batch b) {
+      b.insertAll(_db.letture, n.map(_rigaLettura).toList());
+    });
+    _letture = null;
+    return n.length;
+  }
+
+  /// Sync (B22): aggiunge SOLO gli eventi nuovi. Ritorna quanti.
+  Future<int> aggiungiEventiSoloNuovi(Iterable<Evento> arrivati) async {
+    final List<Evento> n = eventiNuovi(await eventi(), arrivati);
+    if (n.isEmpty) {
+      return 0;
+    }
+    await _db.batch((Batch b) {
+      b.insertAll(_db.eventi, n.map(_rigaEvento).toList());
+    });
+    _eventi = null;
+    return n.length;
+  }
+
+  /// Ore (ms) dell'ultimo cambio delle impostazioni sincronizzate [chiavi]
+  /// (mancante = mai cambiata).
+  Future<Map<String, int>> oreImpostazioni(Iterable<String> chiavi) async =>
+      <String, int>{
+        for (final String k in chiavi)
+          k: int.tryParse(await impostazione(chiaveOrario(k)) ?? '') ?? 0,
+      };
+
+  /// Sync (B22): scrive [valore] arrivato dall'altro dispositivo con la SUA
+  /// [ora] di cambio (così non rimbalza indietro).
+  Future<void> salvaImpostazioneSync(
+    String chiave,
+    String valore,
+    int ora,
+  ) async {
+    if (!chiaviSync.contains(chiave)) {
+      return;
+    }
+    await _scrivi(chiave, valore);
+    await _scrivi(chiaveOrario(chiave), '$ora');
+  }
+
   /// Valore dell'impostazione [chiave], null se non c'è.
   Future<String?> impostazione(String chiave) async {
     _controllaChiave(chiave);
-    final RigaImpostazione? r = await (_db.select(_db.impostazioni)
-          ..where(($ImpostazioniTable t) => t.chiave.equals(chiave)))
-        .getSingleOrNull();
+    final RigaImpostazione? r =
+        await (_db.select(_db.impostazioni)
+              ..where(($ImpostazioniTable t) => t.chiave.equals(chiave)))
+            .getSingleOrNull();
     return r?.valore;
   }
 
   /// Salva l'impostazione [chiave] (sovrascrive). Mai segreti.
+  /// Le chiavi del sync segnano anche l'ora del cambio (solo se cambiano).
   Future<void> salvaImpostazione(String chiave, String valore) async {
     _controllaChiave(chiave);
+    if (chiaviSync.contains(chiave) && await impostazione(chiave) != valore) {
+      await _scrivi(
+        chiaveOrario(chiave),
+        '${DateTime.now().millisecondsSinceEpoch}',
+      );
+    }
+    await _scrivi(chiave, valore);
+  }
+
+  Future<void> _scrivi(String chiave, String valore) async {
     await _db
         .into(_db.impostazioni)
         .insertOnConflictUpdate(

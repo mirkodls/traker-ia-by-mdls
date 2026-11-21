@@ -21,6 +21,7 @@ import 'package:traker_ia/data/lettori_anthropic.dart';
 import 'package:traker_ia/data/rete.dart';
 import 'package:traker_ia/data/ricevitore.dart';
 import 'package:traker_ia/data/sfondo_telefono.dart';
+import 'package:traker_ia/data/sync_rete.dart';
 import 'package:traker_ia/domain/archivio_settimane.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/collegamenti.dart';
@@ -28,6 +29,7 @@ import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/resoconto_ia.dart';
 import 'package:traker_ia/domain/sfondo.dart';
+import 'package:traker_ia/domain/sync_dati.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/ui/app.dart';
 import 'package:traker_ia/ui/servizi.dart';
@@ -55,6 +57,7 @@ class ServiziVeri implements Servizi {
     _claudeCode = LettoreClaudeCode(client: _client);
     _web = LettoreClaudeWeb(client: _client, cassaforte: _cassaforte);
     _ia = ClienteIA(cassaforte: _cassaforte);
+    _dati = DatiSync(_archivio, _progetti);
   }
 
   /// Minuti tra due letture (dalle preferenze).
@@ -69,6 +72,58 @@ class ServiziVeri implements Servizi {
   late final LettoreClaudeCode _claudeCode;
   late final LettoreClaudeWeb _web;
   late final ClienteIA _ia;
+  late final DatiSync _dati;
+  ServerSync? _server;
+
+  ServerSync get _serverPc => _server ??= ServerSync(
+    dati: _dati,
+    cassaforte: _cassaforte,
+    nome: Platform.localHostname,
+  );
+
+  late final ClientSync _syncTel = ClientSync(
+    dati: _dati,
+    cassaforte: _cassaforte,
+  );
+
+  /// B22 PC: ascolta i telefoni solo se ce n'è almeno uno abbinato.
+  Future<void> avviaSync() async {
+    if (!telefono && (await leggiCoppie(_cassaforte)).isNotEmpty) {
+      await _serverPc.avvia();
+    }
+  }
+
+  @override
+  Future<bool> apriAbbinamento({
+    required void Function(String codice) codice,
+    required void Function(String nome) fatto,
+  }) => _serverPc.apriAbbinamento(mostraCodice: codice, abbinato: fatto);
+
+  @override
+  void chiudiAbbinamento() => _server?.chiudiAbbinamento();
+
+  @override
+  Future<List<String>> abbinati() async => <String>[
+    for (final Coppia c in await leggiCoppie(_cassaforte)) c.nome,
+  ];
+
+  @override
+  Future<void> dimenticaAbbinati() async {
+    await _cassaforte.cancella(chiaveCoppieSync);
+    await _server?.ferma();
+  }
+
+  @override
+  Future<EsitoSync> abbinaAlPc(Future<String?> Function() chiediCodice) =>
+      _syncTel.abbina(chiediCodice);
+
+  @override
+  Future<EsitoSync> sincronizza({bool tutto = false}) =>
+      _syncTel.sincronizza(tutto: tutto);
+
+  @override
+  Stream<int> get arriviSync =>
+      telefono ? const Stream<int>.empty() : _serverPc.sincronizzati;
 
   /// Avvia il ricevitore dell'estensione (falso se la porta è occupata).
   Future<bool> avviaRicevitore() => _ricevitore.avvia();
@@ -357,6 +412,7 @@ Future<void> main() async {
     WidgetsBinding.instance.addObserver(_Ritorno(stato));
   } else {
     unawaited(servizi.avviaRicevitore());
+    unawaited(servizi.avviaSync());
   }
   runApp(TrakerApp(stato: stato));
   await stato.avvia();

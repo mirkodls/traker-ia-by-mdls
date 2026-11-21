@@ -150,7 +150,7 @@ const int minutiPredefiniti = 10;
 const List<int> sceltaMinutiSfondo = <int>[15, 30, 60];
 
 /// Telefono: minuti predefiniti a app chiusa (obiettivo ~1% batteria/24h).
-const int minutiSfondoPredefiniti = 30;
+const int minutiSfondoPredefiniti = 60;
 
 /// [m] se è una scelta valida, altrimenti il predefinito.
 int normalizzaMinutiSfondo(int? m) =>
