@@ -104,21 +104,23 @@ enum Telefono {
 
   /// Pagina in primo piano (per mostrare Condividi).
   private static func pagina() -> UIViewController? {
-    let scene = UIApplication.shared.connectedScenes
-      .compactMap { $0 as? UIWindowScene }
-      .first { $0.activationState == .foregroundActive }
-      ?? UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
-    var vc = scene?.windows.first { $0.isKeyWindow }?.rootViewController
-      ?? scene?.windows.first?.rootViewController
+    let scene: [UIWindowScene] = UIApplication.shared.connectedScenes.compactMap {
+      $0 as? UIWindowScene
+    }
+    let attiva: UIWindowScene? =
+      scene.first(where: { $0.activationState == .foregroundActive }) ?? scene.first
+    let finestre: [UIWindow] = attiva?.windows ?? []
+    let finestra: UIWindow? = finestre.first(where: { $0.isKeyWindow }) ?? finestre.first
+    var vc: UIViewController? = finestra?.rootViewController
     while let sopra = vc?.presentedViewController { vc = sopra }
     return vc
   }
 
   /// Menu "Condividi" di iPhone col testo (falso = non riuscito).
-  private static func condividi(_ testo: String, titolo: String) -> Bool {
+  /// [titolo] non serve su iPhone (il foglio mostra il testo).
+  private static func condividi(_ testo: String, titolo _: String) -> Bool {
     guard let vc = pagina() else { return false }
     let foglio = UIActivityViewController(activityItems: [testo], applicationActivities: nil)
-    foglio.setValue(titolo, forKey: "subject")
     // iPad: il foglio deve sapere da dove uscire.
     if let pop = foglio.popoverPresentationController {
       pop.sourceView = vc.view
