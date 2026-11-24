@@ -17,6 +17,7 @@ import 'package:traker_ia/ui/pagina_login.dart';
 import 'package:traker_ia/ui/scheda_grafico.dart';
 import 'package:traker_ia/ui/servizi.dart';
 import 'package:traker_ia/ui/sezione_ia.dart';
+import 'package:traker_ia/ui/sezione_sync.dart';
 import 'package:traker_ia/ui/stato_app.dart';
 import 'package:traker_ia/ui/tema.dart';
 
@@ -287,30 +288,34 @@ class _StatoImpostazioni extends State<_Impostazioni>
           ],
         ),
       ),
-      const Text(Testi.campoMinutiSfondo, style: stilePiccolo),
-      // Cambia subito (non serve Salva); si aggiorna da sola.
-      ListenableBuilder(
-        listenable: st,
-        builder: (BuildContext _, Widget? _) => DropdownButton<int>(
-          value: st.preferenze.minutiSfondo,
-          isExpanded: true,
-          dropdownColor: Colori.carta2,
-          style: stileNormale,
-          items: <DropdownMenuItem<int>>[
-            for (final int m in sceltaMinutiSfondo)
-              DropdownMenuItem<int>(
-                value: m,
-                child: Text(Testi.sceltaMinutiSfondo(m)),
-              ),
-          ],
-          onChanged: (int? v) =>
-              unawaited(st.cambiaMinutiSfondo(v ?? minutiSfondoPredefiniti)),
+      if (st.servizi.iphone)
+        const Text(Testi.spiegaSfondoIphone, style: stilePiccolo)
+      else ...<Widget>[
+        const Text(Testi.campoMinutiSfondo, style: stilePiccolo),
+        // Cambia subito (non serve Salva); si aggiorna da sola.
+        ListenableBuilder(
+          listenable: st,
+          builder: (BuildContext _, Widget? _) => DropdownButton<int>(
+            value: st.preferenze.minutiSfondo,
+            isExpanded: true,
+            dropdownColor: Colori.carta2,
+            style: stileNormale,
+            items: <DropdownMenuItem<int>>[
+              for (final int m in sceltaMinutiSfondo)
+                DropdownMenuItem<int>(
+                  value: m,
+                  child: Text(Testi.sceltaMinutiSfondo(m)),
+                ),
+            ],
+            onChanged: (int? v) =>
+                unawaited(st.cambiaMinutiSfondo(v ?? minutiSfondoPredefiniti)),
+          ),
         ),
-      ),
+      ],
       ListenableBuilder(
         listenable: st,
         builder: (BuildContext _, Widget? _) => Text(
-          Testi.batteria(st.batteriaLibera),
+          Testi.batteria(st.batteriaLibera, iphone: st.servizi.iphone),
           style: TextStyle(
             color: st.batteriaLibera == false ? Colori.errore : Colori.spento,
             fontSize: Misure.piccolo,
@@ -323,7 +328,8 @@ class _StatoImpostazioni extends State<_Impostazioni>
         child: const Text(Testi.titoloPermessi),
       ),
       const SizedBox(height: 6),
-      const Text(Testi.spiegaSfondo, style: stilePiccolo),
+      if (!st.servizi.iphone)
+        const Text(Testi.spiegaSfondo, style: stilePiccolo),
     ];
   }
 
@@ -364,6 +370,11 @@ class _StatoImpostazioni extends State<_Impostazioni>
           Testi.spiegaSottofondoGruppo,
           _sottofondoTelefono(),
         ),
+      _gruppo(
+        Testi.gruppoSync,
+        _tel ? Testi.spiegaSyncTel : Testi.spiegaSyncPc,
+        <Widget>[SezioneSync(stato: widget.stato)],
+      ),
       if (_errore != null)
         Text(_errore!, style: const TextStyle(color: Colori.errore)),
     ],
@@ -919,6 +930,9 @@ class _Permessi extends StatefulWidget {
 }
 
 class _StatoPermessi extends State<_Permessi> with WidgetsBindingObserver {
+  /// B23: iPhone = una sola voce (Aggiorna in background).
+  bool get _iphone => widget.stato.servizi.iphone;
+
   @override
   void initState() {
     super.initState();
@@ -976,22 +990,32 @@ class _StatoPermessi extends State<_Permessi> with WidgetsBindingObserver {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text(Testi.spiegaPermessi, style: stilePiccolo),
-              _riga(
-                Testi.permessoBatteria,
-                Testi.consenti,
-                Permesso.batteria,
-                ok: widget.stato.batteriaLibera,
-              ),
-              _riga(
-                Testi.permessoPaginaBatteria,
-                Testi.apri,
-                Permesso.paginaBatteria,
-              ),
-              _riga(Testi.permessoSamsung, Testi.apri, Permesso.samsung),
+              if (_iphone) ...<Widget>[
+                const Text(Testi.spiegaPermessiIphone, style: stilePiccolo),
+                _riga(
+                  Testi.permessoIphone,
+                  Testi.apri,
+                  Permesso.infoApp,
+                  ok: widget.stato.batteriaLibera,
+                ),
+              ] else ...<Widget>[
+                const Text(Testi.spiegaPermessi, style: stilePiccolo),
+                _riga(
+                  Testi.permessoBatteria,
+                  Testi.consenti,
+                  Permesso.batteria,
+                  ok: widget.stato.batteriaLibera,
+                ),
+                _riga(
+                  Testi.permessoPaginaBatteria,
+                  Testi.apri,
+                  Permesso.paginaBatteria,
+                ),
+                _riga(Testi.permessoSamsung, Testi.apri, Permesso.samsung),
+              ],
               const SizedBox(height: 8),
               Text(
-                Testi.batteria(widget.stato.batteriaLibera),
+                Testi.batteria(widget.stato.batteriaLibera, iphone: _iphone),
                 style: TextStyle(
                   color: widget.stato.batteriaLibera == false
                       ? Colori.errore

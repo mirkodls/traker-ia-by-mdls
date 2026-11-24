@@ -146,15 +146,15 @@ void main() {
   });
 
   group('sottofondo e permessi', () {
-    test('minuti a app chiusa: solo 15/30/60, altrimenti 30', () {
+    test('minuti a app chiusa: solo 15/30/60, altrimenti 60 (B22)', () {
       expect(normalizzaMinutiSfondo(15), 15);
       expect(normalizzaMinutiSfondo(60), 60);
       expect(normalizzaMinutiSfondo(10), minutiSfondoPredefiniti);
-      expect(normalizzaMinutiSfondo(null), 30);
+      expect(normalizzaMinutiSfondo(null), 60);
       final Preferenze p = Preferenze.daMappa(<String, String?>{
         Chiavi.minutiSfondo: '45',
       });
-      expect(p.minutiSfondo, 30);
+      expect(p.minutiSfondo, 60);
       expect(p.sfondoAcceso, isTrue);
       final Preferenze q = Preferenze.daMappa(
         p.copia(sfondoAcceso: false, minutiSfondo: 60).aMappa(),

@@ -31,7 +31,7 @@ void main() {
     expect(f.metodi, isEmpty);
     expect(s.stato, Testi.serveLogin);
     expect(s.statoErrore, isTrue);
-    expect(f.sfondo.last, (30, false));
+    expect(f.sfondo.last, (60, false));
   });
 
   test('login nella pagina: cookie salvato, sfondo acceso, legge', () async {
@@ -41,7 +41,7 @@ void main() {
     await s.salvaLoginWeb('sk-ant-1');
     expect(f.cookie, 'sk-ant-1');
     expect(s.cookie, isTrue);
-    expect(f.sfondo.last, (30, true));
+    expect(f.sfondo.last, (60, true));
     expect(f.lett.single.sett, 30);
   });
 
@@ -111,9 +111,9 @@ void main() {
       ..batteria = true;
     final StatoApp s = nuovo();
     await s.avvia();
-    expect(f.sfondo.last, (30, true));
+    expect(f.sfondo.last, (60, true));
     await s.cambiaSfondo(acceso: false);
-    expect(f.sfondo.last, (30, false));
+    expect(f.sfondo.last, (60, false));
     expect(f.imp[Chiavi.sfondoAcceso], '0');
     expect(s.permessiDaMostrare, isFalse);
     await s.cambiaMinutiSfondo(60);
@@ -150,13 +150,13 @@ void main() {
     await tester.pumpWidget(TrakerApp(stato: s));
     await tester.pump();
     expect(
-      find.text(Testi.rigaSottofondo(acceso: true, login: true, minuti: 30)),
+      find.text(Testi.rigaSottofondo(acceso: true, login: true, minuti: 60)),
       findsOneWidget,
     );
     await tester.tap(find.byType(Switch));
     await tester.pump();
     await tester.pump();
-    expect(f.sfondo.last, (30, false));
+    expect(f.sfondo.last, (60, false));
     expect(tester.takeException(), isNull);
   });
 
@@ -189,7 +189,7 @@ void main() {
     await tester.pumpAndSettle();
     // Generale: batteria; Accesso: login; Grafico sì; IA no (solo PC).
     expect(find.text(Testi.batteria(false)), findsOneWidget);
-    expect(find.text(Testi.sceltaMinutiSfondo(30)), findsOneWidget);
+    expect(find.text(Testi.sceltaMinutiSfondo(60)), findsOneWidget);
     expect(find.text(Testi.schedaGrafico), findsOneWidget);
     expect(find.text(Testi.titoloIA), findsNothing);
     await tester.ensureVisible(find.text(Testi.titoloPermessi));

@@ -10,6 +10,7 @@ import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/progetti.dart';
 import 'package:traker_ia/domain/resoconto_ia.dart';
 import 'package:traker_ia/domain/sfondo.dart';
+import 'package:traker_ia/domain/sync_dati.dart';
 import 'package:traker_ia/ui/servizi.dart';
 
 /// Servizi finti: tutto in memoria.
@@ -211,7 +212,13 @@ class ServiziFinti implements Servizi {
   final List<String> permessi = <String>[];
 
   @override
-  bool get telefono => tel;
+  bool get telefono => tel || ios;
+
+  /// B23: finge l'iPhone.
+  bool ios = false;
+
+  @override
+  bool get iphone => ios;
 
   @override
   Future<String> cookieWeb(String sito) async => cookieDellaPagina;
@@ -433,4 +440,59 @@ class ServiziFinti implements Servizi {
   @override
   Future<void> apriFile(String percorso) async =>
       collegamenti.add('apri:$percorso');
+
+  // ------------------------------------------------------------ B22 sync
+  /// Codice che il finto PC mostra.
+  String codiceFinto = '123456';
+
+  /// Esito finto del sync.
+  EsitoSync esitoSync = const EsitoSync(ok: true, messaggio: 'ok');
+
+  /// Dispositivi abbinati finti.
+  final List<String> abbinatiFinti = <String>[];
+
+  /// Quante volte sincronizza.
+  int sync = 0;
+
+  /// Arrivi sync finti.
+  // ignore: close_sinks, vive quanto il test
+  final StreamController<int> arriviSyncFinti =
+      StreamController<int>.broadcast();
+
+  @override
+  Future<bool> apriAbbinamento({
+    required void Function(String codice) codice,
+    required void Function(String nome) fatto,
+  }) async {
+    codice(codiceFinto);
+    return true;
+  }
+
+  @override
+  void chiudiAbbinamento() {}
+
+  @override
+  Future<List<String>> abbinati() async => List<String>.of(abbinatiFinti);
+
+  @override
+  Future<void> dimenticaAbbinati() async => abbinatiFinti.clear();
+
+  @override
+  Future<EsitoSync> abbinaAlPc(Future<String?> Function() chiediCodice) async {
+    final String? c = await chiediCodice();
+    if (c == codiceFinto) {
+      abbinatiFinti.add('PC');
+      return const EsitoSync(ok: true, messaggio: 'Abbinato a PC.');
+    }
+    return const EsitoSync(ok: false, messaggio: 'no');
+  }
+
+  @override
+  Future<EsitoSync> sincronizza({bool tutto = false}) async {
+    sync++;
+    return esitoSync;
+  }
+
+  @override
+  Stream<int> get arriviSync => arriviSyncFinti.stream;
 }

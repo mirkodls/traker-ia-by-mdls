@@ -58,9 +58,11 @@ bool _presente<T>(
 ) {
   final DateTime t = ora(v);
   final DateTime fine = t.add(tolleranzaDoppione);
-  for (int i = _primoDa(l, ora, t.subtract(tolleranzaDoppione));
-      i < l.length && !ora(l[i]).isAfter(fine);
-      i++) {
+  for (
+    int i = _primoDa(l, ora, t.subtract(tolleranzaDoppione));
+    i < l.length && !ora(l[i]).isAfter(fine);
+    i++
+  ) {
     if (uguali(l[i], v)) {
       return true;
     }
@@ -91,12 +93,35 @@ RisultatoUnione<T> _unisci<T>(
 RisultatoUnione<Lettura> unisciLetture(
   Iterable<Lettura> mie,
   Iterable<Lettura> arrivate,
-) =>
-    _unisci(mie, arrivate, (Lettura l) => l.ora, stessaLettura);
+) => _unisci(mie, arrivate, (Lettura l) => l.ora, stessaLettura);
 
 /// Unisce gli eventi arrivati dal sync ai miei, senza doppioni.
 RisultatoUnione<Evento> unisciEventi(
   Iterable<Evento> mie,
   Iterable<Evento> arrivati,
-) =>
-    _unisci(mie, arrivati, (Evento e) => e.ora, stessoEvento);
+) => _unisci(mie, arrivati, (Evento e) => e.ora, stessoEvento);
+
+/// Solo le letture [arrivate] che non ho già (sync: si aggiungono, mai si
+/// riscrive la tabella).
+List<Lettura> lettureNuove(Iterable<Lettura> mie, Iterable<Lettura> arrivate) =>
+    _nuove(mie, arrivate, (Lettura l) => l.ora, stessaLettura);
+
+/// Solo gli eventi [arrivati] che non ho già.
+List<Evento> eventiNuovi(Iterable<Evento> mie, Iterable<Evento> arrivati) =>
+    _nuove(mie, arrivati, (Evento e) => e.ora, stessoEvento);
+
+List<T> _nuove<T>(
+  Iterable<T> mie,
+  Iterable<T> arrivate,
+  DateTime Function(T) ora,
+  bool Function(T, T) uguali,
+) {
+  final List<T> base = ordinaPerOra(mie, ora);
+  final List<T> nuove = <T>[];
+  for (final T v in ordinaPerOra(arrivate, ora)) {
+    if (!_presente(base, v, ora, uguali) && !_presente(nuove, v, ora, uguali)) {
+      nuove.add(v);
+    }
+  }
+  return nuove;
+}

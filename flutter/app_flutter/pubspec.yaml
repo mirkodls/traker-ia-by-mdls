@@ -39,6 +39,8 @@ dependencies:
   webview_flutter: ^4.14.1
   workmanager: ^0.10.10
   webview_flutter_android: ^4.14.1
+  # B22 sync: SHA-256/HMAC (Dart team, BSD-3; OK Mirko 21/11)
+  crypto: ^3.0.8
 
 
 dev_dependencies:

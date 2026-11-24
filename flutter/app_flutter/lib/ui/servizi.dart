@@ -8,6 +8,7 @@ import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/piani_progetti.dart';
 import 'package:traker_ia/domain/resoconto_ia.dart';
+import 'package:traker_ia/domain/sync_dati.dart';
 
 /// Esito di un import dei vecchi dati.
 typedef EsitoImportUi = ({int file, int letture, int eventi, int scartate});
@@ -94,6 +95,10 @@ abstract interface class Servizi {
   /// sottofondo; niente estensione, Claude Code, cartella vecchi dati.
   bool get telefono;
 
+  /// B23: vero su iPhone (telefono con regole Apple: sottofondo deciso da
+  /// iPhone, una sola pagina permessi).
+  bool get iphone;
+
   /// Cookie della pagina di login per [sito] ('' = nessuno).
   Future<String> cookieWeb(String sito);
 
@@ -179,4 +184,29 @@ abstract interface class Servizi {
 
   /// V2 B17: apre il file con il programma di Windows (Esplora risorse).
   Future<void> apriFile(String percorso);
+
+  /// B22 PC: apre l'abbinamento per 3 minuti. [codice] quando il telefono
+  /// si collega, [fatto] ad abbinamento salvato. Falso = porta occupata.
+  Future<bool> apriAbbinamento({
+    required void Function(String codice) codice,
+    required void Function(String nome) fatto,
+  });
+
+  /// B22 PC: chiude l'abbinamento.
+  void chiudiAbbinamento();
+
+  /// B22: nomi dei dispositivi abbinati.
+  Future<List<String>> abbinati();
+
+  /// B22 PC: dimentica tutti i telefoni (il PC smette di ascoltare).
+  Future<void> dimenticaAbbinati();
+
+  /// B22 telefono: abbina al PC; [chiediCodice] chiede il codice del PC.
+  Future<EsitoSync> abbinaAlPc(Future<String?> Function() chiediCodice);
+
+  /// B22 telefono: sync col PC ([tutto] = non solo gli ultimi giorni).
+  Future<EsitoSync> sincronizza({bool tutto = false});
+
+  /// B22 PC: un telefono ha fatto il sync (righe nuove arrivate).
+  Stream<int> get arriviSync;
 }

@@ -27,7 +27,14 @@ abstract interface class Cassaforte {
 class CassaforteSistema implements Cassaforte {
   /// Crea la cassaforte ([archivio] solo per prove).
   CassaforteSistema([FlutterSecureStorage? archivio])
-    : _s = archivio ?? const FlutterSecureStorage();
+    : _s = archivio ?? const FlutterSecureStorage(iOptions: _iphone);
+
+  /// B23 iPhone: leggibile anche a telefono bloccato (dopo il primo sblocco)
+  /// per le letture in sottofondo; mai nel backup iCloud (solo questo
+  /// telefono). Android/Windows non lo usano.
+  static const IOSOptions _iphone = IOSOptions(
+    accessibility: KeychainAccessibility.first_unlock_this_device,
+  );
 
   final FlutterSecureStorage _s;
 

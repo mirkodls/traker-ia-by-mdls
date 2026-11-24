@@ -29,6 +29,7 @@ import 'package:traker_ia/domain/serie_intensita.dart';
 import 'package:traker_ia/domain/serie_piano.dart';
 import 'package:traker_ia/domain/sfondo.dart';
 import 'package:traker_ia/domain/stile_linee.dart';
+import 'package:traker_ia/domain/sync_dati.dart';
 import 'package:traker_ia/domain/tempo.dart';
 import 'package:traker_ia/domain/traduzioni/testi_it.dart';
 import 'package:traker_ia/domain/tray.dart';
@@ -58,6 +59,8 @@ class StatoApp extends ChangeNotifier {
   Timer? _minuto;
   Timer? _primaLettura;
   StreamSubscription<void>? _estensione;
+  StreamSubscription<int>? _sync;
+  DateTime? _ultimoSyncTel;
   bool _chiuso = false;
 
   List<Lettura> _letture = <Lettura>[];
@@ -281,6 +284,7 @@ class StatoApp extends ChangeNotifier {
           Chiavi.permessiChiesti: '1',
         });
       }
+      await _sfondoA60();
       await _aggiornaSfondo();
     }
     await _avvioPrimaVolta(imp[Chiavi.avvioDeciso]);
@@ -308,12 +312,36 @@ class StatoApp extends ChangeNotifier {
     unawaited(_archivia());
     if (giri && !_chiuso) {
       _estensione = servizi.arriviEstensione.listen((_) => _daEstensione());
+      // B22: PC = dati arrivati dal telefono; telefono = sync all'avvio.
+      _sync = servizi.arriviSync.listen((int n) {
+        if (n > 0) {
+          unawaited(_dopoSync());
+        }
+      });
+      unawaited(_syncAutomatico());
       _primaLettura = Timer(const Duration(milliseconds: 1500), () {
         unawaited(leggi());
       });
       _programma();
       _minuto = Timer.periodic(const Duration(minutes: 1), (_) => _ricalcola());
     }
+  }
+
+  /// B22 (scelta Mirko 21/11: ogni 60 min per ~1% batteria/giorno): una
+  /// volta sola, chi aveva il vecchio predefinito 30 passa a 60. Scelte a
+  /// mano 15/60 non si toccano; dopo si può rimettere 30 dal menu.
+  Future<void> _sfondoA60() async {
+    const String fatto = 'b22_sfondo_60';
+    if ((await servizi.impostazioni(<String>[fatto]))[fatto] == '1') {
+      return;
+    }
+    if (_pref.minutiSfondo == 30) {
+      _pref = _pref.copia(minutiSfondo: 60);
+    }
+    await servizi.salvaImpostazioni(<String, String>{
+      Chiavi.minutiSfondo: '${_pref.minutiSfondo}',
+      fatto: '1',
+    });
   }
 
   /// Telefono: lettura in sottofondo accesa se c'è il login, non è
@@ -372,6 +400,46 @@ class StatoApp extends ChangeNotifier {
     if (giri && serveLetturaAlRitorno(_letture, adesso, _pref.minuti)) {
       await leggi();
     }
+    if (giri) {
+      await _syncAutomatico();
+    }
+  }
+
+  // ------------------------------------------------------------ sync (B22)
+
+  /// Dati o impostazioni cambiati dal sync: rilegge tutto (niente letture).
+  Future<void> _dopoSync() async {
+    if (!_pronto || _chiuso) {
+      return;
+    }
+    await servizi.dimenticaCache();
+    _pref = Preferenze.daMappa(await servizi.impostazioni(Chiavi.tutte));
+    await _ricarica();
+    await _caricaProgetti();
+    _ricalcola();
+    _avvisa();
+  }
+
+  /// Telefono: sync col PC (tasto). [tutto] = non solo gli ultimi giorni.
+  Future<EsitoSync> sincronizza({bool tutto = false}) async {
+    _ultimoSyncTel = adesso;
+    final EsitoSync e = await servizi.sincronizza(tutto: tutto);
+    if (e.ok && e.ricevute > 0) {
+      await _dopoSync();
+    }
+    return e;
+  }
+
+  /// Telefono: sync da solo all'apertura (max 1 ogni 10 min, solo se
+  /// abbinato). Fuori casa: si ferma subito (controllo Wi-Fi, niente rete).
+  Future<void> _syncAutomatico() async {
+    final DateTime? u = _ultimoSyncTel;
+    if (!servizi.telefono ||
+        (u != null && adesso.difference(u) < const Duration(minutes: 10)) ||
+        (await servizi.abbinati()).isEmpty) {
+      return;
+    }
+    await sincronizza();
   }
 
   /// Rilegge lo stato della batteria (dopo la pagina permessi).
@@ -488,6 +556,7 @@ class StatoApp extends ChangeNotifier {
     _minuto?.cancel();
     _primaLettura?.cancel();
     unawaited(_estensione?.cancel());
+    unawaited(_sync?.cancel());
     super.dispose();
   }
 

@@ -4,13 +4,17 @@
 // Android (pacchetto workmanager, MIT) e canale "traker_ia/telefono"
 // (MainActivity.kt) per cookie della pagina di login, batteria, permessi.
 // Cookie: solo dalla pagina di login alla cassaforte, mai nei log.
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 
 import 'package:traker_ia/data/archivio.dart';
+import 'package:traker_ia/data/archivio_progetti.dart';
 import 'package:traker_ia/data/cassaforte.dart';
 import 'package:traker_ia/data/database.dart';
 import 'package:traker_ia/data/lettori_anthropic.dart';
 import 'package:traker_ia/data/rete.dart';
+import 'package:traker_ia/data/sync_rete.dart';
 import 'package:traker_ia/domain/catena.dart';
 import 'package:traker_ia/domain/modelli.dart';
 import 'package:traker_ia/domain/preferenze.dart';
@@ -39,15 +43,25 @@ enum EsitoSfondo {
 @pragma('vm:entry-point')
 void avvioSfondo() {
   Workmanager().executeTask((String compito, Map<String, Object?>? _) async {
-    final Archivio a = Archivio(DatabaseTraker.suDisco());
+    final DatabaseTraker db = DatabaseTraker.suDisco();
+    final Archivio a = Archivio(db);
+    final CassaforteSistema c = CassaforteSistema();
     try {
       await letturaSfondo(
         a,
-        LettoreClaudeWeb(
-          client: const ClientJsonIo(),
-          cassaforte: CassaforteSistema(),
-        ),
+        LettoreClaudeWeb(client: const ClientJsonIo(), cassaforte: c),
       );
+      // B22: sync col PC nello stesso risveglio (radio già accesa). Solo
+      // Wi-Fi e solo ultimo indirizzo del PC (niente ricerca = meno
+      // batteria; la ricerca la fa l'app aperta).
+      if ((await leggiCoppie(c)).isNotEmpty) {
+        await ClientSync(
+          dati: DatiSync(a, ArchivioProgetti(db)),
+          cassaforte: c,
+        ).sincronizza(cerca: false);
+      }
+    } on Object {
+      // Mai crash in sottofondo: si riprova al prossimo giro.
     } finally {
       await a.chiudi();
     }
@@ -77,7 +91,8 @@ Future<EsitoSfondo> letturaSfondo(
     if (uso.vuoto) {
       return EsitoSfondo.fallita;
     }
-    await a.aggiungiLettureSenzaDoppioni(<Lettura>[
+    // B22 leggerezza: aggiunge 1 riga (prima riscriveva tutta la tabella).
+    await a.aggiungiLettureSoloNuove(<Lettura>[
       letturaAutomatica(uso, orologio(), pref, await a.eventi()),
     ]);
     if (imp[Chiavi.loginScaduto] == '1') {
@@ -93,7 +108,8 @@ Future<EsitoSfondo> letturaSfondo(
   }
 }
 
-/// Comandi del telefono (solo Android).
+/// Comandi del telefono (Android: MainActivity.kt; B23 iPhone:
+/// AppDelegate.swift).
 class Telefono {
   /// Crea i comandi.
   const Telefono();
@@ -114,6 +130,11 @@ class Telefono {
       lavoroLetture,
       lavoroLetture,
       frequency: Duration(minutes: minutiSfondo(minuti)),
+      // B23 iPhone: la frequenza la decide iPhone (circa 1 ora, 60 min
+      // anche in AppDelegate.swift); qui solo "non prima di".
+      initialDelay: Platform.isIOS
+          ? Duration(minutes: minutiSfondo(minuti))
+          : null,
       constraints: Constraints(
         networkType: NetworkType.connected,
         requiresBatteryNotLow: true,
