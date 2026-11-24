@@ -1,0 +1,43 @@
+# TraKer IA by mdls - build iPhone (B23). SOLO a mano (workflow_dispatch):
+# costa minuti macOS (x10). Esce un .ipa NON firmato da installare con
+# Sideloadly (Apple ID dell'utente). Mai chiavi/segreti qui.
+name: iPhone (a mano)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: flutter/app_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.50.0
+          channel: stable
+          cache: true
+      - name: Pacchetti
+        run: flutter pub get
+      - name: Controllo codice
+        run: flutter analyze
+      - name: Compila (senza firma)
+        run: >-
+          flutter build ios --release --no-codesign
+          --build-name 2.3.0 --build-number ${{ github.run_number }}
+      - name: Crea .ipa
+        run: |
+          mkdir -p ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app ipa/Payload/
+          cd ipa && zip -qr ../traker-ia_2.3.0-ios-${{ github.run_number }}.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: traker-ia-ios
+          path: flutter/app_flutter/traker-ia_2.3.0-ios-*.ipa
+          retention-days: 3
