@@ -81,6 +81,67 @@ void main() {
     await tel.a.chiudi();
   });
 
+  test('B23 interfaccia Wi-Fi: Android wlan*, iPhone solo en0', () {
+    expect(interfacciaWifi('wlan0', iphone: false), isTrue);
+    expect(interfacciaWifi('rmnet0', iphone: false), isFalse);
+    expect(interfacciaWifi('en0', iphone: true), isTrue);
+    expect(interfacciaWifi('pdp_ip0', iphone: true), isFalse);
+    expect(interfacciaWifi('en2', iphone: true), isFalse);
+  });
+
+  test('B23 vicini /24: 253 indirizzi, senza il proprio, solo IPv4', () {
+    final List<InternetAddress> v = indirizziVicini(
+      InternetAddress('192.168.1.37'),
+    );
+    expect(v, hasLength(253));
+    expect(v.first.address, '192.168.1.1');
+    expect(v.last.address, '192.168.1.254');
+    expect(
+      v.map((InternetAddress a) => a.address),
+      isNot(contains('192.168.1.37')),
+    );
+    expect(indirizziVicini(InternetAddress('::1')), isEmpty);
+  });
+
+  test(
+    'B23 iPhone: trova il PC chiedendo ai vicini (senza broadcast)',
+    () async {
+      final ClientSync c = ClientSync(
+        dati: tel.dati,
+        cassaforte: tel.c,
+        porta: server.portaVera,
+        portaUdp: server.portaUdpVera,
+        controllaWifi: () async => true,
+        // Domanda "broadcast" verso un indirizzo dove nessuno risponde
+        // (192.0.2.1 = rete di esempio): il PC risponde solo al vicino.
+        indirizzoRicerca: InternetAddress('192.0.2.1'),
+        sottoRete: true,
+        mieiIndirizzi: () async => <InternetAddress>[
+          InternetAddress('127.0.0.2'),
+        ],
+      );
+      final ({InternetAddress ip, int porta})? t = await c.cerca();
+      expect(t, isNotNull);
+      expect(t!.ip.address, '127.0.0.1');
+      expect(t.porta, server.portaVera);
+    },
+  );
+
+  test('B23 senza vicini lo stesso indirizzo muto non trova niente', () async {
+    final ClientSync c = ClientSync(
+      dati: tel.dati,
+      cassaforte: tel.c,
+      porta: server.portaVera,
+      portaUdp: server.portaUdpVera,
+      controllaWifi: () async => true,
+      indirizzoRicerca: InternetAddress('192.0.2.1'),
+      mieiIndirizzi: () async => <InternetAddress>[
+        InternetAddress('127.0.0.2'),
+      ],
+    );
+    expect(await c.cerca(), isNull);
+  });
+
   test(
     'abbinamento: ricerca UDP + codice giusto -> coppia salvata da entrambi',
     () async {

@@ -4,6 +4,8 @@
 // Android (pacchetto workmanager, MIT) e canale "traker_ia/telefono"
 // (MainActivity.kt) per cookie della pagina di login, batteria, permessi.
 // Cookie: solo dalla pagina di login alla cassaforte, mai nei log.
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 
 import 'package:traker_ia/data/archivio.dart';
@@ -106,7 +108,8 @@ Future<EsitoSfondo> letturaSfondo(
   }
 }
 
-/// Comandi del telefono (solo Android).
+/// Comandi del telefono (Android: MainActivity.kt; B23 iPhone:
+/// AppDelegate.swift).
 class Telefono {
   /// Crea i comandi.
   const Telefono();
@@ -127,6 +130,11 @@ class Telefono {
       lavoroLetture,
       lavoroLetture,
       frequency: Duration(minutes: minutiSfondo(minuti)),
+      // B23 iPhone: la frequenza la decide iPhone (circa 1 ora, 60 min
+      // anche in AppDelegate.swift); qui solo "non prima di".
+      initialDelay: Platform.isIOS
+          ? Duration(minutes: minutiSfondo(minuti))
+          : null,
       constraints: Constraints(
         networkType: NetworkType.connected,
         requiresBatteryNotLow: true,

@@ -95,6 +95,10 @@ abstract interface class Servizi {
   /// sottofondo; niente estensione, Claude Code, cartella vecchi dati.
   bool get telefono;
 
+  /// B23: vero su iPhone (telefono con regole Apple: sottofondo deciso da
+  /// iPhone, una sola pagina permessi).
+  bool get iphone;
+
   /// Cookie della pagina di login per [sito] ('' = nessuno).
   Future<String> cookieWeb(String sito);
 

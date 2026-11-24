@@ -84,6 +84,8 @@ class ServiziVeri implements Servizi {
   late final ClientSync _syncTel = ClientSync(
     dati: _dati,
     cassaforte: _cassaforte,
+    nome: iphone ? 'iPhone' : 'Telefono',
+    sottoRete: iphone,
   );
 
   /// B22 PC: ascolta i telefoni solo se ce n'è almeno uno abbinato.
@@ -321,7 +323,10 @@ class ServiziVeri implements Servizi {
   final Telefono _telefono = const Telefono();
 
   @override
-  bool get telefono => Platform.isAndroid;
+  bool get telefono => Platform.isAndroid || Platform.isIOS;
+
+  @override
+  bool get iphone => Platform.isIOS;
 
   /// Prepara la lettura in sottofondo (solo telefono).
   Future<void> preparaTelefono() async {

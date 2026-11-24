@@ -212,7 +212,13 @@ class ServiziFinti implements Servizi {
   final List<String> permessi = <String>[];
 
   @override
-  bool get telefono => tel;
+  bool get telefono => tel || ios;
+
+  /// B23: finge l'iPhone.
+  bool ios = false;
+
+  @override
+  bool get iphone => ios;
 
   @override
   Future<String> cookieWeb(String sito) async => cookieDellaPagina;

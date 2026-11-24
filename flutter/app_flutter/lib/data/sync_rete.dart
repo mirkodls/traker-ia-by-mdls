@@ -521,21 +521,48 @@ bool indirizzoDiCasa(InternetAddress a) {
       (b[0] == 172 && b[1] >= 16 && b[1] <= 31);
 }
 
-/// Telefono: vero se è sul Wi-Fi (interfaccia wlan con indirizzo di casa).
-Future<bool> suWifi() async {
+/// Vero se [nome] è l'interfaccia Wi-Fi: Android 'wlan0', iPhone 'en0'
+/// (B23; su iPhone il cavo/hotspot usano altri nomi).
+bool interfacciaWifi(String nome, {required bool iphone}) {
+  final String n = nome.toLowerCase();
+  return iphone ? n == 'en0' : n.startsWith('wlan');
+}
+
+/// Telefono: indirizzi di casa sul Wi-Fi (vuoto = non sul Wi-Fi).
+Future<List<InternetAddress>> indirizziWifi() async {
+  final List<InternetAddress> r = <InternetAddress>[];
   try {
     for (final NetworkInterface i in await NetworkInterface.list(
       type: InternetAddressType.IPv4,
     )) {
-      if (i.name.toLowerCase().startsWith('wlan') &&
-          i.addresses.any(indirizzoDiCasa)) {
-        return true;
+      if (interfacciaWifi(i.name, iphone: Platform.isIOS)) {
+        r.addAll(i.addresses.where(indirizzoDiCasa));
       }
     }
   } on Object {
-    return false;
+    return const <InternetAddress>[];
   }
-  return false;
+  return r;
+}
+
+/// Telefono: vero se è sul Wi-Fi (interfaccia Wi-Fi con indirizzo di casa).
+Future<bool> suWifi() async => (await indirizziWifi()).isNotEmpty;
+
+/// B23 iPhone: gli altri 253 indirizzi della rete /24 di [mio] (senza
+/// iPhone il broadcast serve un permesso speciale Apple: si chiede a
+/// ognuno, 253 pacchetti piccoli = niente batteria).
+List<InternetAddress> indirizziVicini(InternetAddress mio) {
+  if (mio.type != InternetAddressType.IPv4) {
+    return const <InternetAddress>[];
+  }
+  final List<int> b = mio.rawAddress;
+  return <InternetAddress>[
+    for (int x = 1; x <= 254; x++)
+      if (x != b[3])
+        InternetAddress.fromRawAddress(
+          Uint8List.fromList(<int>[b[0], b[1], b[2], x]),
+        ),
+  ];
 }
 
 /// Telefono: chiama il PC.
@@ -549,6 +576,8 @@ class ClientSync {
     this.portaUdp = portaRicerca,
     this.controllaWifi = suWifi,
     this.indirizzoRicerca,
+    this.sottoRete = false,
+    this.mieiIndirizzi = indirizziWifi,
   });
 
   /// Database.
@@ -571,6 +600,13 @@ class ClientSync {
 
   /// Dove mandare la domanda (null = broadcast 255.255.255.255).
   final InternetAddress? indirizzoRicerca;
+
+  /// B23 iPhone: chiede anche a ogni indirizzo della rete /24 (il broadcast
+  /// su iPhone è bloccato senza permesso speciale Apple).
+  final bool sottoRete;
+
+  /// Indirizzi del telefono sul Wi-Fi (per [sottoRete]).
+  final Future<List<InternetAddress>> Function() mieiIndirizzi;
 
   /// Cerca il PC in rete (1,5 s). [pcId] = solo quel PC.
   Future<({InternetAddress ip, int porta})?> cerca({String? pcId}) async {
@@ -599,8 +635,24 @@ class ClientSync {
       });
       final InternetAddress dove =
           indirizzoRicerca ?? InternetAddress('255.255.255.255');
+      final List<InternetAddress> vicini = <InternetAddress>[
+        if (sottoRete)
+          for (final InternetAddress a in await mieiIndirizzi())
+            ...indirizziVicini(a),
+      ];
+      final List<int> domanda = utf8.encode(domandaRicerca);
       for (int i = 0; i < 3 && !trovato.isCompleted; i++) {
-        u.send(utf8.encode(domandaRicerca), dove, portaUdp);
+        try {
+          u.send(domanda, dove, portaUdp);
+        } on SocketException {
+          // iPhone senza permesso broadcast: restano i vicini.
+          if (vicini.isEmpty) {
+            rethrow;
+          }
+        }
+        for (final InternetAddress v in vicini) {
+          u.send(domanda, v, portaUdp);
+        }
         await Future.any(<Future<Object?>>[
           trovato.future,
           Future<void>.delayed(const Duration(milliseconds: 500)),

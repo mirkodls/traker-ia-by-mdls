@@ -907,12 +907,33 @@ abstract final class Testi {
   static String loginErrore(String dettaglio) =>
       'Pagina non caricata ($dettaglio). Controlla internet, poi Ricarica.';
 
-  /// Riga batteria.
-  static String batteria(bool? libera) => switch (libera) {
-    true => 'Batteria: senza limiti. Ok.',
-    false => 'Batteria: limitata. Letture a app chiusa bloccate.',
-    null => 'Batteria: stato sconosciuto.',
-  };
+  /// Riga batteria ([iphone] = "Aggiorna in background" di iPhone).
+  static String batteria(bool? libera, {bool iphone = false}) => iphone
+      ? switch (libera) {
+          true => 'Aggiorna in background: attivo. Ok.',
+          false =>
+            'Aggiorna in background: spento. Letture a app chiusa '
+                'bloccate.',
+          null => 'Aggiorna in background: stato sconosciuto.',
+        }
+      : switch (libera) {
+          true => 'Batteria: senza limiti. Ok.',
+          false => 'Batteria: limitata. Letture a app chiusa bloccate.',
+          null => 'Batteria: stato sconosciuto.',
+        };
+
+  /// B23 iPhone: letture a app chiusa (orario deciso da iPhone).
+  static const String spiegaSfondoIphone =
+      'App chiusa: iPhone decide quando leggere (circa ogni ora, a volte '
+      'meno). Usi spesso l\'app = legge più spesso.';
+
+  /// B23 iPhone: spiegazione pagina permessi.
+  static const String spiegaPermessiIphone =
+      'Per leggere a app chiusa iPhone deve lasciarla lavorare.';
+
+  /// B23 iPhone: voce permessi.
+  static const String permessoIphone =
+      'Impostazioni > TraKer IA > Aggiorna in background: ON';
 
   /// Passi batteria Samsung.
   static const String passiBatteria =
